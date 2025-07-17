@@ -10,4 +10,13 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column()
+  first_name: string;
+
+  @Column()
+  last_name: string;
+
+  @Column()
+  role_id: number;
 }

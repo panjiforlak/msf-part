@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { RabbitmqService } from '../../integrations/rabbitmq/rabbitmq.service';
-
+import { throwError } from '../../common/helpers/response.helper';
 @Injectable()
 export class UsersService {
   constructor(
@@ -20,11 +20,22 @@ export class UsersService {
     return this.userRepository.find();
   }
 
-  findById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+  async findById(id: number): Promise<User | null> {
+    const result: any = await this.userRepository.findOne({ where: { id } });
+    if (!result) {
+      throwError('User not found', 404);
+    }
+    const response: any = {
+      id: result.id,
+      username: result.username,
+      first_name: result.first_name,
+      last_name: result.last_name,
+    };
+    return response;
   }
 
   async create(data: Partial<User>): Promise<User> {
+    console.log(data);
     const user = this.userRepository.create(data);
     const savedUser = await this.userRepository.save(user);
 
