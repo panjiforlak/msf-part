@@ -25,7 +25,12 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document); // http://localhost:3000/docs
-
+  app.enableCors({
+    origin: ['*'],
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true, // allow cookies / Authorization header
+  });
+  app.setGlobalPrefix('api');
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());
   await app.listen(process.env.PORT ?? 3000);
