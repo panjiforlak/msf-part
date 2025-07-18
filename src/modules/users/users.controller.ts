@@ -22,7 +22,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query() query: GetUsersQueryDto) {
+  findAll(@Query() query: GetUsersQueryDto) {
     return this.usersService.findAll(query);
   }
 

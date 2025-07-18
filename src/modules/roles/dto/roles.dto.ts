@@ -10,40 +10,29 @@ import {
 } from 'class-validator';
 import { JoinColumn, ManyToOne } from 'typeorm';
 
-export class CreateUserDto {
+export class CreateRolesDto {
   @IsString()
   @IsNotEmpty()
-  username: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
-  password: string;
+  roleCode: string;
 
   @IsString()
   @IsNotEmpty()
   name: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
 
   @Type(() => Number)
   @IsNumber()
-  roleId: number;
+  role_parent: number;
 }
 
-export class UserResponseDto {
+export class RolesResponseDto {
   id: number;
-  username: string;
+  roleCode: string;
   name: string;
-  email: string;
-  roleId: number;
-  roles?: any;
+  role_parent: number;
   meta?: any;
 }
 
-export class GetUsersQueryDto {
+export class GetRolesQueryDto {
   @IsOptional()
   @IsNumberString()
   page?: string;
@@ -56,30 +45,30 @@ export class GetUsersQueryDto {
   search?: string;
 }
 
-export class UpdateUserDto {
+export class UpdateRolesDto {
+  @IsString()
+  @IsNotEmpty()
+  roleCode: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
 
   @Type(() => Number)
   @IsNumber()
-  roleId: number;
+  role_parent: number;
 }
 
-export class DeleteUserDto {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+// export class DeleteUserDto {
+//   @IsString()
+//   @IsNotEmpty()
+//   name: string;
 
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
+//   @IsEmail()
+//   @IsNotEmpty()
+//   email: string;
 
-  @Type(() => Boolean)
-  @IsNumber()
-  isActive: boolean;
-}
+//   @Type(() => Boolean)
+//   @IsNumber()
+//   isActive: boolean;
+// }

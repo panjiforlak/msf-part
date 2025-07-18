@@ -20,6 +20,7 @@ import {
   GetUsersQueryDto,
   UpdateUserDto,
 } from './dto/user.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsersService {
@@ -70,10 +71,13 @@ export class UsersService {
           : {},
         skip,
         take: limit,
+        relations: ['roles'],
       });
-
+      const transformedResult = plainToInstance(Users, result, {
+        excludeExtraneousValues: true,
+      });
       return paginateResponse(
-        result,
+        transformedResult,
         total,
         page,
         limit,
