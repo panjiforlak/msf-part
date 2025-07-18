@@ -1,11 +1,11 @@
 import { AppDataSource } from '../data-source';
-import { User } from '../../modules/users/entities/user.entity';
+import { Users } from '../../modules/users/entities/users.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
   await AppDataSource.initialize();
 
-  const userRepository = AppDataSource.getRepository(User);
+  const userRepository = AppDataSource.getRepository(Users);
 
   const exist = await userRepository.findOne({ where: { username: 'admin' } });
 
@@ -17,11 +17,11 @@ async function seed() {
   const hashedPassword = await bcrypt.hash('admin123', 10);
 
   const adminUser = userRepository.create({
-    first_name: 'Staff',
-    last_name: 'Gudang',
-    username: 'admingudang',
+    name: 'Administrator',
+    username: 'admin',
     password: hashedPassword,
-    role_id: 1,
+    roleId: 1,
+    email: 'admin@msf.com',
   });
 
   await userRepository.save(adminUser);

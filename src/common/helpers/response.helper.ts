@@ -32,36 +32,12 @@ export function errorResponse(
   };
 }
 
-export function paginateResponse<T = any>(
-  data: T[],
-  total: number,
-  page = 1,
-  limit = 10,
-  message = 'Success',
-  statusCode = 200,
-) {
-  const totalPages = Math.ceil(total / limit);
-  return {
-    statusCode,
-    message,
-    data,
-    meta: {
-      total,
-      page,
-      limit,
-      totalPages,
-    },
-  };
-}
-
 export const throwError = (
-  message = 'Bad Request',
-  statusCode = HttpStatus.BAD_REQUEST,
+  message: string | object = 'Bad Request',
+  statusCode: HttpStatus = HttpStatus.BAD_REQUEST,
 ): never => {
   throw new HttpException(
-    {
-      message,
-    },
+    typeof message === 'string' ? { message } : message,
     statusCode,
   );
 };

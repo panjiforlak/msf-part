@@ -1,31 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import {
-  successResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
-
-jest.mock('../../common/helpers/response.helper', () => ({
-  successResponse: (data: any) => ({ success: true, data }),
-  throwError: (message: string, status: number) => {
-    throw new Error(`${status} - ${message}`);
-  },
-}));
+import { UserResponseDto } from './dto/user.dto';
+import { ApiResponse } from '@/common/helpers/response.helper';
+import { Users } from './entities/users.entity';
 
 describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
 
-  const mockUser = { id: 1, username: 'admin' };
-
-  const mockUsersService = {
-    findAll: jest.fn().mockResolvedValue([mockUser]),
-    findById: jest.fn((id: number) =>
-      id === 1 ? Promise.resolve(mockUser) : Promise.resolve(null),
-    ),
-    create: jest.fn((body) => Promise.resolve({ id: 2, ...body })),
-    delete: jest.fn().mockResolvedValue({ affected: 1 }),
+  const userEntity: Users = {
+    id: 1,
+    name: 'John Doe',
+    username: 'johndoe',
+    email: 'john@example.com',
+    password: 'hashed-password',
+    roleId: 2,
+    isActive: true,
+    createdAt: new Date(),
+    deletedAt: null,
+  };
+  const userDto: UserResponseDto = {
+    id: 1,
+    name: 'John Doe',
+    username: 'johndoe',
+    email: 'john@example.com',
+    roleId: 2,
   };
 
   beforeEach(async () => {
@@ -34,7 +34,13 @@ describe('UsersController', () => {
       providers: [
         {
           provide: UsersService,
-          useValue: mockUsersService,
+          useValue: {
+            findAll: jest.fn(),
+            findById: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -43,47 +49,75 @@ describe('UsersController', () => {
     service = module.get<UsersService>(UsersService);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-
   it('should return all users', async () => {
-    const result = await controller.findAll();
-    expect(result).toEqual({ success: true, data: [mockUser] });
-    expect(service.findAll).toHaveBeenCalled();
+    const result: ApiResponse<UserResponseDto[]> = {
+      statusCode: 200,
+      message: 'Success',
+      data: [userDto],
+    };
+
+    jest.spyOn(service, 'findAll').mockResolvedValue(result);
+    expect(await controller.findAll({} as any)).toEqual(result);
   });
 
-  it('should return one user', async () => {
-    const result = await controller.findOne(1);
-    expect(result).toEqual({ success: true, data: mockUser });
-    expect(service.findById).toHaveBeenCalledWith(1);
-  });
+  it('should return user by id', async () => {
+    const result: ApiResponse<UserResponseDto> = {
+      statusCode: 200,
+      message: 'User found',
+      data: userDto,
+    };
 
-  it('should throw error if user not found', async () => {
-    await expect(controller.findOne(999)).rejects.toThrow(
-      '404 - User not found',
-    );
+    jest.spyOn(service, 'findById').mockResolvedValue(result);
+    expect(await controller.findOne(1)).toEqual(result);
   });
 
   it('should create a user', async () => {
-    const body = { username: 'test' };
-    const result = await controller.create(body);
-    expect(result).toEqual({
-      success: true,
-      data: { id: 2, username: 'test' },
-    });
-    expect(service.create).toHaveBeenCalledWith(body);
+    const result: ApiResponse<UserResponseDto> = {
+      statusCode: 201,
+      message: 'User created',
+      data: userDto,
+    };
+
+    jest.spyOn(service, 'create').mockResolvedValue(result);
+
+    const createDto = {
+      username: 'johndoe',
+      password: 'password123',
+      name: 'John Doe',
+      email: 'john@example.com',
+      roleId: 2,
+    };
+
+    expect(await controller.create(createDto)).toEqual(result);
   });
 
-  it('should delete a user', async () => {
-    const result = await controller.delete(1);
-    expect(result).toEqual({ message: 'User deleted successfully' });
-    expect(service.delete).toHaveBeenCalledWith(1);
+  it('should update a user', async () => {
+    const result: ApiResponse<Users> = {
+      statusCode: 200,
+      message: 'User updated',
+      data: userEntity,
+    };
+
+    jest.spyOn(service, 'update').mockResolvedValue(result);
+
+    const updateDto = {
+      name: 'John Updated',
+      email: 'updated@example.com',
+      roleId: 2,
+    };
+
+    expect(await controller.update(1, updateDto)).toEqual(result);
   });
 
-  it('should throw NotFoundException if user not found', async () => {
-    mockUsersService.delete.mockResolvedValueOnce({ affected: 0 });
+  it('should remove a user', async () => {
+    const result: ApiResponse<null> = {
+      statusCode: 200,
+      message: 'User deleted',
+      data: null,
+    };
 
-    await expect(controller.delete(999)).rejects.toThrow('User not found');
+    jest.spyOn(service, 'remove').mockResolvedValue(result);
+
+    expect(await controller.remove(1)).toEqual(result);
   });
 });
