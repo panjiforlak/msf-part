@@ -1,5 +1,5 @@
 import { Expose, Exclude } from 'class-transformer';
-import { Users } from 'src/modules/users/entities/users.entity';
+import { Users } from '../../users/entities/users.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

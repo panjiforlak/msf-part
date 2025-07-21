@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Users } from './entities/users.entity';
+import { Users } from '.././users/entities/users.entity';
 import { RabbitmqModule } from '../../integrations/rabbitmq/rabbitmq.module';
 import { S3Module } from '../../integrations/s3/s3.module';
 

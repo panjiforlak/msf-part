@@ -1,5 +1,5 @@
 import { Exclude, Expose } from 'class-transformer';
-import { Roles } from 'src/modules/roles/entities/roles.entity';
+import { Roles } from '../../roles/entities/roles.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

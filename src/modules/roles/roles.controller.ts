@@ -42,15 +42,15 @@ export class RolesController {
     return this.rolesService.create(dto);
   }
 
-  //   @UseGuards(JwtAuthGuard)
-  //   @Put(':id')
-  //   update(@Param('id') id: number, @Body() dto: UpdateRolesDto) {
-  //     return this.rolesService.update(id, dto);
-  //   }
+  // @UseGuards(JwtAuthGuard)
+  // @Put(':id')
+  // update(@Param('id') id: number, @Body() dto: UpdateRolesDto) {
+  //   return this.rolesService.update(id, dto);
+  // }
 
-  //   @UseGuards(JwtAuthGuard)
-  //   @Delete(':id')
-  //   remove(@Param('id') id: number) {
-  //     return this.rolesService.remove(id);
-  //   }
+  // @UseGuards(JwtAuthGuard)
+  // @Delete(':id')
+  // remove(@Param('id') id: number) {
+  //   return this.rolesService.remove(id);
+  // }
 }
