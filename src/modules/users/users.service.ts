@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { ILike, Repository } from 'typeorm';
+import { FindOneOptions, ILike, Repository } from 'typeorm';
 import { RabbitmqService } from '../../integrations/rabbitmq/rabbitmq.service';
 import {
   ApiResponse,
@@ -37,6 +37,14 @@ export class UsersService {
         isActive: true,
       },
       withDeleted: false,
+      relations: ['roles'],
+    });
+  }
+
+  async findByIdWithRole(id: number) {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['roles'],
     });
   }
 

@@ -59,7 +59,13 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return access_token', () => {
-      const mockUser = { id: 1, username: 'admin' };
+      const mockUser = {
+        id: 1,
+        username: 'admin',
+        roles: { name: 'admin' },
+        roleId: 1,
+        isActive: true,
+      };
       mockJwtService.sign.mockReturnValue('signed-token');
 
       const result = service.login(mockUser);

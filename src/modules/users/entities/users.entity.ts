@@ -48,6 +48,6 @@ export class Users {
 
   @Expose()
   @ManyToOne(() => Roles, (role) => role.users)
-  @JoinColumn({ name: 'roleId' }) // optional: rename kolom FK
+  @JoinColumn({ name: 'roleId' })
   roles?: Roles;
 }
