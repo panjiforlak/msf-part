@@ -12,41 +12,39 @@ import {
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GetSettingsQueryDto } from './dto/settings.dto';
+import {
+  GetSettingsQueryDto,
+  UpdateSettingsDto,
+  CreatedSettingsDto,
+} from './dto/settings.dto';
 
-@ApiTags('Roles')
+@ApiTags('Settings')
 @ApiBearerAuth('jwt')
-@Controller('roles')
+@Controller('settings')
 export class SettingsController {
   constructor(private readonly settingService: SettingsService) {}
 
-  //   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: GetSettingsQueryDto) {
     return this.settingService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.settingService.findById(id);
+  @Get(':slug')
+  findOne(@Param('slug') slug: string) {
+    return this.settingService.findByKey(slug);
   }
 
-  //   @UseGuards(JwtAuthGuard)
-  //   @Post()
-  //   create(@Body() dto: CreateRolesDto) {
-  //     return this.settingService.create(dto);
-  //   }
+  @UseGuards(JwtAuthGuard)
+  @Put(':slug')
+  update(@Param('slug') slug: string, @Body() dto: UpdateSettingsDto) {
+    return this.settingService.updateBySlug(slug, dto);
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Put(':id')
-  // update(@Param('id') id: number, @Body() dto: UpdateRolesDto) {
-  //   return this.settingService.update(id, dto);
-  // }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Delete(':id')
-  // remove(@Param('id') id: number) {
-  //   return this.settingService.remove(id);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  create(@Body() dto: CreatedSettingsDto) {
+    return this.settingService.create(dto);
+  }
 }

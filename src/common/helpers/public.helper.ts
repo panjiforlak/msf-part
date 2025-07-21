@@ -27,3 +27,13 @@ export function paginateResponse<T>(
     pagination,
   };
 }
+
+export function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, '-') // ganti spasi & underscore dengan -
+    .replace(/[^\w-]+/g, '') // hapus karakter selain huruf/angka/-
+    .replace(/--+/g, '-'); // hilangkan double --
+}

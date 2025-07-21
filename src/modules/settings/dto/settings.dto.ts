@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { JoinColumn, ManyToOne } from 'typeorm';
 
-export class CreateRolesDto {
+export class CreateSettingsDto {
   @IsString()
   @IsNotEmpty()
   roleCode: string;
@@ -56,4 +56,28 @@ export class GetSettingsQueryDto {
 
   @IsOptional()
   search?: string;
+}
+
+export class UpdateSettingsDto {
+  @IsString()
+  value?: string;
+}
+export class CreatedSettingsDto {
+  @IsString()
+  @IsNotEmpty()
+  key: string;
+
+  @IsString()
+  value?: string;
+}
+export class SettingsResponseDto {
+  @IsNumber()
+  id: number;
+
+  @IsString()
+  @IsNotEmpty()
+  key: string;
+
+  @IsString()
+  value?: string;
 }
