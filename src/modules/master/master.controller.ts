@@ -1,22 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { MasterService } from './master.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  CreateMasterDto,
-  GetMasterQueryDto,
-  UpdateMasterDto,
-} from './dto/master.dto';
+import { GetMasterQueryDto } from './dto/master.dto';
 
 @ApiTags('Masterdata')
 @ApiBearerAuth('jwt')
@@ -27,6 +13,6 @@ export class MasterController {
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: GetMasterQueryDto) {
-    return this.masterService.findAll(query);
+    return this.masterService.findAllMasterData(query);
   }
 }

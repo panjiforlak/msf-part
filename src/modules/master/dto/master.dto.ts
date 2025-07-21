@@ -1,14 +1,11 @@
 import { Expose, Type } from 'class-transformer';
 import {
-  IsEmail,
   IsNotEmpty,
   IsNumber,
   IsString,
-  MinLength,
   IsOptional,
   IsNumberString,
 } from 'class-validator';
-import { JoinColumn, ManyToOne } from 'typeorm';
 import { Items } from '../entities/master.entity';
 
 export class CreateMasterDto {
@@ -92,17 +89,3 @@ export class UpdateMasterDto {
   @IsNotEmpty()
   title: string;
 }
-
-// export class DeleteUserDto {
-//   @IsString()
-//   @IsNotEmpty()
-//   name: string;
-
-//   @IsEmail()
-//   @IsNotEmpty()
-//   email: string;
-
-//   @Type(() => Boolean)
-//   @IsNumber()
-//   isActive: boolean;
-// }
