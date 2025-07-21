@@ -18,9 +18,9 @@ import {
   UpdateMasterDto,
 } from './dto/master.dto';
 
-@ApiTags('Master')
+@ApiTags('Masterdata')
 @ApiBearerAuth('jwt')
-@Controller('master')
+@Controller('masterdata')
 export class MasterController {
   constructor(private readonly masterService: MasterService) {}
 
