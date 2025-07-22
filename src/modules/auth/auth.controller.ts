@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -34,4 +36,18 @@ export class AuthController {
     const user = await this.authService.getProfileWithRole(req.user.id);
     return successResponse(user, 'Get profile successfully!');
   }
+
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    const result = await this.authService.sendResetPasswordEmail(body.email);
+    return successResponse(result, 'Reset link sent to email');
+  }
+
+  // @Post('reset-password')
+  // @HttpCode(200)
+  // async resetPassword(@Body() dto: ResetPasswordDto) {
+  //   const result = await this.authService.resetPassword(dto);
+  //   return successResponse(result, 'Password has been reset successfully!');
+  // }
 }

@@ -48,4 +48,9 @@ export class AuthService {
     const { password, ...result } = user ?? {};
     return result;
   }
+
+  async sendResetPasswordEmail(email: string) {
+    const sendMail = await this.usersService.sendResetPasswordEmail(email);
+    return sendMail;
+  }
 }

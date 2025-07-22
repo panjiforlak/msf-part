@@ -21,19 +21,32 @@ import {
   UpdateUserDto,
 } from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
+import { randomBytes } from 'crypto';
+import { MailService } from '../../integrations/mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Users)
     private userRepository: Repository<Users>,
-    private readonly rabbitmqService: RabbitmqService,
+    private readonly mailService: MailService,
   ) {}
 
   async findByUsername(username: string): Promise<Users | null> {
     return this.userRepository.findOne({
       where: {
         username,
+        isActive: true,
+      },
+      withDeleted: false,
+      relations: ['roles'],
+    });
+  }
+
+  async findByEmail(email: string): Promise<Users | null> {
+    return this.userRepository.findOne({
+      where: {
+        email,
         isActive: true,
       },
       withDeleted: false,
@@ -170,6 +183,39 @@ export class UsersService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to delete user');
+    }
+  }
+
+  async sendResetPasswordEmail(email: string) {
+    try {
+      const user = await this.findByEmail(email);
+
+      if (user) {
+        const token = randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = expires;
+        await this.userRepository.save(user);
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+        await this.mailService.sendEmail(
+          email,
+          'Reset Password',
+          `Click here to reset your password: ${resetLink}`,
+        );
+      }
+
+      // Selalu kembalikan respons yang sama, aman dari user enumeration
+      return {
+        message:
+          'If your email is registered, we have sent you a password reset link.',
+      };
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      // Jangan bocorkan error detail ke client, cukup generic
+      throwError('Something went wrong. Please try again later.', 500);
     }
   }
 }
