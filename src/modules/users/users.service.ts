@@ -19,6 +19,7 @@ import {
   UserResponseDto,
   GetUsersQueryDto,
   UpdateUserDto,
+  ForgotPassDto,
 } from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import { randomBytes } from 'crypto';
@@ -36,6 +37,17 @@ export class UsersService {
     return this.userRepository.findOne({
       where: {
         username,
+        isActive: true,
+      },
+      withDeleted: false,
+      relations: ['roles'],
+    });
+  }
+
+  async findByPassword(token: string): Promise<Users | null> {
+    return this.userRepository.findOne({
+      where: {
+        reset_password_token: token,
         isActive: true,
       },
       withDeleted: false,
@@ -192,12 +204,14 @@ export class UsersService {
 
       if (user) {
         const token = randomBytes(32).toString('hex');
+        console.log('Reset token:', token); // For debugging purposes
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        console.log('Reset expires:', expires); // For debugging purposes
 
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = expires;
+        user.reset_password_token = token;
+        user.reset_password_expires = expires;
         await this.userRepository.save(user);
-
+        console.log('Reset expires:', user); // For debugging purposes
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
         await this.mailService.sendEmail(
@@ -207,14 +221,12 @@ export class UsersService {
         );
       }
 
-      // Selalu kembalikan respons yang sama, aman dari user enumeration
       return {
         message:
           'If your email is registered, we have sent you a password reset link.',
       };
     } catch (error) {
       console.error('Forgot password error:', error);
-      // Jangan bocorkan error detail ke client, cukup generic
       throwError('Something went wrong. Please try again later.', 500);
     }
   }

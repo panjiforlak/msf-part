@@ -44,10 +44,10 @@ export class AuthController {
     return successResponse(result, 'Reset link sent to email');
   }
 
-  // @Post('reset-password')
-  // @HttpCode(200)
-  // async resetPassword(@Body() dto: ResetPasswordDto) {
-  //   const result = await this.authService.resetPassword(dto);
-  //   return successResponse(result, 'Password has been reset successfully!');
-  // }
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    const result = await this.authService.resetPassword(dto);
+    return successResponse(result, 'Password has been reset successfully!');
+  }
 }

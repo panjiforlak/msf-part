@@ -46,8 +46,11 @@ export class Users {
   @DeleteDateColumn()
   deletedAt: Date | null;
 
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+  @Column()
+  reset_password_token?: string;
+
+  @Column()
+  reset_password_expires?: Date;
 
   @Expose()
   @ManyToOne(() => Roles, (role) => role.users)

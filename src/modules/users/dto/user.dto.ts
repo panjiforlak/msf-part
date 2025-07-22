@@ -68,6 +68,23 @@ export class UpdateUserDto {
   @Type(() => Number)
   @IsNumber()
   roleId: number;
+
+  @IsString()
+  reset_password_token?: string;
+
+  @Type(() => Date)
+  reset_password_expires?: Date;
+}
+export class ForgotPassDto {
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+
+  @IsString()
+  reset_password_token?: string;
+
+  @Type(() => Date)
+  reset_password_expires?: Date;
 }
 
 export class DeleteUserDto {
