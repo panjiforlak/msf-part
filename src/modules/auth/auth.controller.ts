@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Post,
@@ -49,5 +48,12 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     const result = await this.authService.resetPassword(dto);
     return successResponse(result, 'Password has been reset successfully!');
+  }
+
+  @Post('check-token-reset')
+  @HttpCode(200)
+  async cekTokenReset(@Body() dto: ResetPasswordDto) {
+    const result = await this.authService.cekTokenReset(dto);
+    return successResponse(result, 'Token is Valid!');
   }
 }

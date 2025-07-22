@@ -37,3 +37,17 @@ export function slugify(text: string): string {
     .replace(/[^\w-]+/g, '') // hapus karakter selain huruf/angka/-
     .replace(/--+/g, '-'); // hilangkan double --
 }
+
+export function getResetCountdown(expire: string) {
+  const expireDate = new Date(expire);
+  const now = new Date();
+
+  const diffMs = expireDate.getTime() - now.getTime();
+
+  if (diffMs <= 0) return 'Expired';
+
+  const minutes = Math.floor(diffMs / 1000 / 60);
+  const seconds = Math.floor((diffMs / 1000) % 60);
+
+  return `${minutes}m ${seconds}s remaining`;
+}

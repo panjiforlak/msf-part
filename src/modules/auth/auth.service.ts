@@ -2,8 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-import { throwError } from '../../common/helpers/response.helper';
+import {
+  successResponse,
+  throwError,
+} from '../../common/helpers/response.helper';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { getResetCountdown } from '../../common/helpers/public.helper';
 
 interface UserPayload {
   id: number;
@@ -81,5 +85,26 @@ export class AuthService {
 
       return { email: user.email };
     }
+  }
+
+  async cekTokenReset(dto: ResetPasswordDto) {
+    const { token } = dto;
+    const user = await this.usersService.findByPassword(token);
+    if (!user) {
+      throwError('Invalid or expired reset token', 400);
+    }
+    if (
+      !user!.reset_password_expires ||
+      user!.reset_password_expires < new Date()
+    ) {
+      throwError('Invalid or expired reset token', 400);
+    }
+    return {
+      email: user?.email,
+      expired:
+        user && user.reset_password_expires
+          ? getResetCountdown(user.reset_password_expires.toISOString())
+          : null,
+    };
   }
 }
