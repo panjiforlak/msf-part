@@ -28,11 +28,11 @@ export class CreateMasterDto {
 }
 
 export class MasterResponseDto {
-  category_id: number;
-  title: string;
-  description: string;
-  icon: string;
-  link: string;
+  category_id?: number;
+  title?: string;
+  description?: string;
+  icon?: string;
+  link?: string;
   meta?: any;
 }
 
@@ -77,10 +77,6 @@ export class GetMasterDataQueryDto {
 }
 
 export class UpdateMasterDto {
-  @IsString()
-  @IsNotEmpty()
-  roleCode: string;
-
   @Type(() => Number)
   @IsNumber()
   category_id: number;
@@ -88,4 +84,8 @@ export class UpdateMasterDto {
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  link: string;
 }

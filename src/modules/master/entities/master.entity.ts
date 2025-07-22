@@ -37,6 +37,10 @@ export class Items {
   @Column()
   link: string;
 
+  @Expose()
+  @Column({ default: true })
+  is_active: boolean;
+
   @Exclude()
   @CreateDateColumn()
   createdAt: Date;
