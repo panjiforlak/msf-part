@@ -43,7 +43,6 @@ export class AuthService {
 
   async getProfileWithRole(userId: number) {
     const user = await this.usersService.findByIdWithRole(userId);
-    console.log('user', user);
     if (!user) throwError('User not found', 404);
     const { password, ...result } = user ?? {};
     return result;
