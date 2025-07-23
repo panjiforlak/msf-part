@@ -9,34 +9,30 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Vehicles {
+export class Suppliers {
   @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 
   @Expose()
-  @Column()
-  vin_number: string;
+  @Column({ type: 'uuid', default: () => 'gen_random_uuid()' })
+  uuid: string;
 
   @Expose()
   @Column()
-  vehicle_number: string;
+  item_id?: number;
 
   @Expose()
   @Column()
-  brand: string;
+  supplier_name?: string;
 
   @Expose()
   @Column()
-  type: string;
+  supplier_address?: string;
 
   @Expose()
   @Column()
-  capacity_ton: string;
-
-  @Expose()
-  @Column()
-  status: string;
+  remarks?: string;
 
   @Exclude()
   @Column()
@@ -44,7 +40,7 @@ export class Vehicles {
 
   @Exclude()
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt?: Date;
 
   @Exclude()
   @Column()
@@ -52,11 +48,11 @@ export class Vehicles {
 
   @Exclude()
   @UpdateDateColumn()
-  updatedAt: Date | null;
+  updatedAt?: Date | null;
 
   @Exclude()
-  @Column()
-  deletedBy?: number;
+  @Column({ type: 'int', nullable: true })
+  deletedBy?: number | null;
 
   @Exclude()
   @DeleteDateColumn()

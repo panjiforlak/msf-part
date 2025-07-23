@@ -184,4 +184,28 @@ export class VehicleService {
       throw new InternalServerErrorException('Failed to update Vehicles');
     }
   }
+
+  async remove(id: number, userId: number): Promise<ApiResponse<null>> {
+    try {
+      const vehicles = await this.vehicleRepository.findOne({
+        where: { id },
+      });
+
+      if (!vehicles) {
+        throwError('vehicles not found', 404);
+      }
+
+      vehicles!.deletedBy = userId;
+
+      await this.vehicleRepository.save(vehicles!);
+      await this.vehicleRepository.softRemove(vehicles!);
+
+      return successResponse(null, 'vehicles deleted successfully');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to delete vehicles');
+    }
+  }
 }
