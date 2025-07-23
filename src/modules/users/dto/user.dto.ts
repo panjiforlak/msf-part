@@ -67,13 +67,13 @@ export class UpdateUserDto {
 
   @Type(() => Number)
   @IsNumber()
-  roleId: number;
+  roleId?: number;
 
   @IsString()
-  reset_password_token?: string;
+  reset_password_token?: string | null;
 
   @Type(() => Date)
-  reset_password_expires?: Date;
+  reset_password_expires?: Date | null;
 }
 export class ForgotPassDto {
   @IsString()

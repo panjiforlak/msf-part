@@ -42,11 +42,11 @@ export class RolesController {
     return this.rolesService.create(dto);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Put(':id')
-  // update(@Param('id') id: number, @Body() dto: UpdateRolesDto) {
-  //   return this.rolesService.update(id, dto);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  update(@Param('id') id: number, @Body() dto: UpdateRolesDto) {
+    return this.rolesService.update(id, dto);
+  }
 
   // @UseGuards(JwtAuthGuard)
   // @Delete(':id')

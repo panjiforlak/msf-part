@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -44,13 +45,13 @@ export class Users {
   createdAt: Date;
 
   @DeleteDateColumn()
-  deletedAt: Date | null;
+  deletedAt?: Date | null;
 
-  @Column()
-  reset_password_token?: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  reset_password_token?: string | null;
 
-  @Column()
-  reset_password_expires?: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  reset_password_expires?: Date | null;
 
   @Expose()
   @ManyToOne(() => Roles, (role) => role.users)

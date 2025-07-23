@@ -207,14 +207,11 @@ export class UsersService {
 
       if (user) {
         const token = randomBytes(32).toString('hex');
-        console.log('Reset token:', token); // For debugging purposes
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        console.log('Reset expires:', expires); // For debugging purposes
 
         user.reset_password_token = token;
         user.reset_password_expires = expires;
         await this.userRepository.save(user);
-        console.log('Reset expires:', user); // For debugging purposes
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
         await this.mailService.sendEmail(
@@ -229,7 +226,6 @@ export class UsersService {
           'If your email is registered, we have sent you a password reset link.',
       };
     } catch (error) {
-      console.error('Forgot password error:', error);
       throwError('Something went wrong. Please try again later.', 500);
     }
   }

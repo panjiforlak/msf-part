@@ -17,5 +17,5 @@ export class Settings {
 
   @Expose()
   @Column()
-  isActive: boolean;
+  isActive?: boolean;
 }

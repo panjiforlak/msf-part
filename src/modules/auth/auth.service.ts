@@ -78,8 +78,8 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
     if (user) {
       user.password = hashedPassword;
-      user.reset_password_token = undefined;
-      user.reset_password_expires = undefined;
+      user.reset_password_token = null;
+      user.reset_password_expires = null;
 
       await this.usersService.update(user.id, user);
 

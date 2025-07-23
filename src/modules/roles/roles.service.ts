@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles } from './entities/roles.entity';
-import { ILike, Repository } from 'typeorm';
+import { ILike, Not, Repository } from 'typeorm';
 import {
   ApiResponse,
   successResponse,
@@ -103,6 +103,51 @@ export class RolesService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to create user');
+    }
+  }
+
+  async update(
+    id: number,
+    updateDto: UpdateRolesDto,
+  ): Promise<ApiResponse<Roles>> {
+    try {
+      const roles = await this.rolesRepository.findOne({ where: { id } });
+      if (!roles) {
+        throwError('Roles not found', 404);
+      }
+
+      if (updateDto.roleCode) {
+        const existingNip = await this.rolesRepository.findOne({
+          where: {
+            roleCode: updateDto.roleCode,
+            id: Not(id),
+          },
+        });
+        if (existingNip) {
+          throwError('Role Code already in use by another role', 409);
+        }
+      }
+
+      const updatedData = {
+        ...updateDto,
+      };
+
+      const updateRoles = this.rolesRepository.merge(roles!, updatedData);
+      const result = await this.rolesRepository.save(updateRoles);
+
+      const response: any = {
+        id: result.id,
+        roleCode: result.roleCode,
+        name: result.name,
+        role_parent: result.role_parent,
+      };
+
+      return successResponse(response, 'Roles updated successfully');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to update roles');
     }
   }
 }
