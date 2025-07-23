@@ -44,6 +44,9 @@ export class Users {
   @CreateDateColumn()
   createdAt: Date;
 
+  @UpdateDateColumn()
+  updatedAt?: Date | null;
+
   @DeleteDateColumn()
   deletedAt?: Date | null;
 

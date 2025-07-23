@@ -1,36 +1,26 @@
-import { AppDataSource } from '../data-source';
+import { DataSource } from 'typeorm';
 import { Users } from '../../modules/users/entities/users.entity';
 import * as bcrypt from 'bcrypt';
 
-async function seed() {
-  await AppDataSource.initialize();
+export class UserSeeder {
+  async run(dataSource: DataSource): Promise<void> {
+    const userRepository = dataSource.getRepository(Users);
+    const hashedPassword = await bcrypt.hash('password123', 10);
 
-  const userRepository = AppDataSource.getRepository(Users);
+    const users: Partial<Users>[] = [];
 
-  const exist = await userRepository.findOne({ where: { username: 'admin' } });
+    for (let i = 1; i <= 10; i++) {
+      users.push({
+        email: `user${i}@example.com`,
+        username: `user${i}`,
+        password: hashedPassword,
+        roleId: 2,
+      });
+    }
 
-  if (exist) {
-    console.log('👤 Admin user already exists. Skipping...');
-    return;
+    const createdUsers = userRepository.create(users); // Konversi ke entity
+    await userRepository.save(createdUsers);
+
+    console.log('✅ 10 dummy users seeded');
   }
-
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-
-  const adminUser = userRepository.create({
-    name: 'Administrator',
-    username: 'admin',
-    password: hashedPassword,
-    roleId: 1,
-    email: 'admin@msf.com',
-  });
-
-  await userRepository.save(adminUser);
-
-  console.log('✅ Admin user seeded successfully');
-  process.exit();
 }
-
-seed().catch((err) => {
-  console.error('❌ Seeding error:', err);
-  process.exit(1);
-});
