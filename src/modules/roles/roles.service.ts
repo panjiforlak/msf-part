@@ -57,6 +57,9 @@ export class RolesService {
 
       const [result, total] = await this.rolesRepository.findAndCount({
         where: query.search ? [{ name: ILike(`%${query.search}%`) }] : {},
+        order: {
+          id: 'DESC',
+        },
         skip,
         take: limit,
         relations: ['parent'],

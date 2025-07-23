@@ -54,6 +54,9 @@ export class VehicleService {
               { vehicle_number: ILike(`%${query.search}%`) },
             ]
           : { status: 'active' },
+        order: {
+          id: 'DESC',
+        },
         skip,
         take: limit,
       });

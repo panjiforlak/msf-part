@@ -102,6 +102,9 @@ export class UsersService {
               { name: ILike(`%${query.search}%`) },
             ]
           : {},
+        order: {
+          id: 'DESC',
+        },
         skip,
         take: limit,
         relations: ['roles'],
