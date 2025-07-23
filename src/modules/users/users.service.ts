@@ -131,6 +131,11 @@ export class UsersService {
       if (existing) {
         throwError('Username already registered', 409);
       }
+
+      const existingMail = await this.findByEmail(data.email);
+      if (existingMail) {
+        throwError('Email already registered', 409);
+      }
       const hashedPassword = await bcrypt.hash(data.password, 10);
       const newUser = this.userRepository.create({
         ...data,
@@ -150,7 +155,6 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to create user');
     }
   }
