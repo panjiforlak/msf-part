@@ -6,7 +6,7 @@ import {
   successResponse,
   throwError,
 } from '../../common/helpers/response.helper';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CheckTokenDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { getResetCountdown } from '../../common/helpers/public.helper';
 
 interface UserPayload {
@@ -87,7 +87,7 @@ export class AuthService {
     }
   }
 
-  async cekTokenReset(dto: ResetPasswordDto) {
+  async cekTokenReset(dto: CheckTokenDto) {
     const { token } = dto;
     const user = await this.usersService.findByPassword(token);
     if (!user) {

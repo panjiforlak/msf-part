@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
@@ -11,23 +12,28 @@ import {
 import { JoinColumn, ManyToOne } from 'typeorm';
 
 export class CreateUserDto {
+  @ApiProperty({ example: 'usertest' })
   @IsString()
   @IsNotEmpty()
   username: string;
 
+  @ApiProperty({ example: '******' })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
   password: string;
 
+  @ApiProperty({ example: 'User Testing' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
+  @ApiProperty({ example: 1 })
   @Type(() => Number)
   @IsNumber()
   roleId: number;
