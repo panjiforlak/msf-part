@@ -40,13 +40,13 @@ export class Roles {
   children?: Roles[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt?: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date | null;
+  updatedAt?: Date | null;
 
   @DeleteDateColumn()
-  deletedAt: Date | null;
+  deletedAt?: Date | null;
 
   @OneToMany(() => Users, (user) => user.roles)
   users?: Users[];

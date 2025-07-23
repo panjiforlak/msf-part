@@ -150,4 +150,22 @@ export class RolesService {
       throw new InternalServerErrorException('Failed to update roles');
     }
   }
+
+  async remove(id: number): Promise<ApiResponse<null>> {
+    try {
+      const roles = await this.rolesRepository.findOne({ where: { id } });
+
+      if (!roles) {
+        throwError('roles not found', 404);
+      }
+      await this.rolesRepository.softRemove(roles!);
+
+      return successResponse(null, 'Roles deleted successfully');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to delete roles');
+    }
+  }
 }

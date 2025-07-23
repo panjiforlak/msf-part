@@ -48,9 +48,9 @@ export class RolesController {
     return this.rolesService.update(id, dto);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Delete(':id')
-  // remove(@Param('id') id: number) {
-  //   return this.rolesService.remove(id);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    return this.rolesService.remove(id);
+  }
 }
