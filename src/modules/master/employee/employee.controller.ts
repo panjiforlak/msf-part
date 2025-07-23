@@ -9,42 +9,44 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { VehicleService } from './employee.service';
+import { EmployeeService } from './employee.service';
 import { JwtAuthGuard } from '../../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  GetVehicleQueryDto,
-  QueryParamDto,
-  CreateVehiclesDto,
-} from './dto/vehicle.dto';
+import { QueryParamDto, CreateEmployeeDto } from './dto/employee.dto';
 
-@ApiTags('Vehicles')
+@ApiTags('Employee')
 @ApiBearerAuth('jwt')
-@Controller('vehicles')
-export class VehicleController {
-  constructor(private readonly vehicleService: VehicleService) {}
+@Controller('employee')
+export class EmployeeController {
+  constructor(private readonly employeeService: EmployeeService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: QueryParamDto) {
-    return this.vehicleService.findAll(query);
+    return this.employeeService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.vehicleService.findById(id);
+    return this.employeeService.findById(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateVehiclesDto) {
-    return this.vehicleService.create(dto);
+  create(@Body() dto: CreateEmployeeDto) {
+    return this.employeeService.create(dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  update(@Param('id') id: number, @Body() dto: CreateVehiclesDto) {
-    return this.vehicleService.update(id, dto);
+  update(@Param('id') id: number, @Body() dto: CreateEmployeeDto) {
+    return this.employeeService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: number) {
+    return this.employeeService.remove(id);
   }
 }

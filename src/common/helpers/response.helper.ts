@@ -1,8 +1,14 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 export interface ApiResponse<T = any> {
+  // meta(meta: any): any;
   statusCode: number;
   message: string;
   data?: T;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+  };
 }
 
 export function successResponse<T = any>(

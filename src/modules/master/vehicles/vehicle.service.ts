@@ -181,49 +181,4 @@ export class VehicleService {
       throw new InternalServerErrorException('Failed to update Vehicles');
     }
   }
-
-  // async findAllMasterData(
-  //   query: GetMasterDataQueryDto,
-  // ): Promise<ApiResponse<GetMasterDataDto[]>> {
-  //   try {
-  //     const page = parseInt(query.page ?? '1', 10);
-  //     const limit = parseInt(query.limit ?? '10', 10);
-  //     const skip = (page - 1) * limit;
-
-  //     const [result, total] = await this.categoryRepository.findAndCount({
-  //       where: query.search
-  //         ? [
-  //             {
-  //               name: ILike(`%${query.search}%`),
-  //             },
-  //           ]
-  //         : {},
-  //       skip,
-  //       take: limit,
-  //       relations: ['items'],
-  //     });
-
-  //     const data: GetMasterDataDto[] = result.map((category) => ({
-  //       category: category.name,
-  //       items: (category.items ?? []).map((item) => ({
-  //         title: item.title,
-  //         desc: item.description,
-  //         icon: item.icon,
-  //         link: item.link,
-  //       })),
-  //     }));
-
-  //     return paginateResponse(
-  //       data,
-  //       total,
-  //       page,
-  //       limit,
-  //       'Get all Master successfully',
-  //     );
-  //   } catch (error) {
-  //     if (error instanceof HttpException) throw error;
-  //     console.error(error.stack);
-  //     throw new InternalServerErrorException('Failed to fetch categories');
-  //   }
-  // }
 }

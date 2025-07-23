@@ -9,6 +9,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { MasterModule } from './modules/master/master.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { VehicleModule } from './modules/master/vehicles/vehicle.module';
+import { EmployeeModule } from './modules/master/employee/employee.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { VehicleModule } from './modules/master/vehicles/vehicle.module';
     MasterModule,
     SettingsModule,
     VehicleModule,
+    EmployeeModule,
   ],
 })
 export class AppModule {}
