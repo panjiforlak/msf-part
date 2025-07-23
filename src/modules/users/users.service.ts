@@ -150,6 +150,7 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
+      console.log(error.stack);
       throw new InternalServerErrorException('Failed to create user');
     }
   }
