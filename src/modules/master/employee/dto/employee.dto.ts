@@ -46,7 +46,8 @@ export class CreateEmployeeDto {
   division: string;
   position: string;
   sallary: string;
-  status?: string;
+  @IsEnum(EmploymentStatus)
+  status?: EmploymentStatus;
 }
 
 export class ReturnResponseDto {
