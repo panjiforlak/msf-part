@@ -9,7 +9,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Items } from './master.entity';
+import { Items_master } from './master.entity';
 
 @Entity()
 export class Categories {
@@ -29,6 +29,6 @@ export class Categories {
   @UpdateDateColumn()
   updatedAt: Date | null;
 
-  @OneToMany(() => Items, (item) => item.category)
-  items?: Items[];
+  @OneToMany(() => Items_master, (item) => item.category)
+  items?: Items_master[];
 }

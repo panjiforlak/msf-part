@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsNumberString,
 } from 'class-validator';
-import { Items } from '../entities/master.entity';
+import { Items_master } from '../entities/master.entity';
 
 export class CreateMasterDto {
   @Type(() => Number)
@@ -52,7 +52,7 @@ export class GetMasterQueryDto {
 export class GetMasterDataDto {
   category: string;
 
-  @Type(() => Items)
+  @Type(() => Items_master)
   items: ItemDto[];
 }
 

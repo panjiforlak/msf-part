@@ -17,7 +17,7 @@ import {
   CreateMasterDto,
   MasterResponseDto,
 } from './dto/master.dto';
-import { Items } from './entities/master.entity';
+import { Items_master } from './entities/master.entity';
 import { throwError } from '../../common/helpers/response.helper';
 
 @Injectable()
@@ -25,11 +25,11 @@ export class MasterService {
   constructor(
     @InjectRepository(Categories)
     private readonly categoryRepository: Repository<Categories>,
-    @InjectRepository(Items)
-    private readonly itemsRepository: Repository<Items>,
+    @InjectRepository(Items_master)
+    private readonly itemsRepository: Repository<Items_master>,
   ) {}
 
-  async findByTitle(title: string): Promise<Items | null> {
+  async findByTitle(title: string): Promise<Items_master | null> {
     return this.itemsRepository.findOne({
       where: {
         title,
@@ -79,6 +79,7 @@ export class MasterService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      console.log(error.stack);
       throw new InternalServerErrorException('Failed to fetch categories');
     }
   }

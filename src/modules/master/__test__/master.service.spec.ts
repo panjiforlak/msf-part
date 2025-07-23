@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MasterService } from '../master.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Categories } from '../entities/category.entity';
-import { Items } from '../entities/master.entity';
+import { Items_master } from '../entities/master.entity';
 import { Repository } from 'typeorm';
 import { InternalServerErrorException, HttpException } from '@nestjs/common';
 import { CreateMasterDto } from '../dto/master.dto';
@@ -38,7 +38,7 @@ describe('MasterService', () => {
           useFactory: mockCategoryRepo,
         },
         {
-          provide: getRepositoryToken(Items),
+          provide: getRepositoryToken(Items_master),
           useFactory: mockItemRepo,
         },
       ],
@@ -46,7 +46,7 @@ describe('MasterService', () => {
 
     service = module.get<MasterService>(MasterService);
     categoryRepository = module.get(getRepositoryToken(Categories));
-    itemsRepository = module.get(getRepositoryToken(Items));
+    itemsRepository = module.get(getRepositoryToken(Items_master));
   });
 
   it('should be defined', () => {

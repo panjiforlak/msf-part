@@ -11,8 +11,8 @@ import {
 } from 'typeorm';
 import { Categories } from './category.entity';
 
-@Entity()
-export class Items {
+@Entity('items_master')
+export class Items_master {
   @Exclude()
   @PrimaryGeneratedColumn()
   id: number;
