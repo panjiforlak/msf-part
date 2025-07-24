@@ -72,4 +72,8 @@ export class CreateDto {
   @IsString()
   @MaxLength(255)
   remarks: string;
+
+  @ApiProperty()
+  @IsNumber()
+  racks_id: number;
 }

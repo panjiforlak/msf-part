@@ -50,6 +50,10 @@ export class Inventory {
   @Column({ type: 'varchar', length: 255 })
   remarks: string;
 
+  @ApiProperty()
+  @Column({ name: 'racks_id', type: 'int', nullable: true, default: 0 })
+  racks_id: number;
+
   @ApiProperty({ required: false })
   @Column({ name: 'createdBy', type: 'int', nullable: true, default: 0 })
   createdBy: number;

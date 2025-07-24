@@ -11,6 +11,7 @@ import { EmployeeModule } from './modules/master/employee/employee.module';
 import { SuppliersModule } from './modules/master/suppliers/suppliers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { WorkingareaModule } from './modules/master/workingarea/workingarea.module';
+import { StorageareaModule } from './modules/master/storage/storagearea.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { WorkingareaModule } from './modules/master/workingarea/workingarea.modu
     SuppliersModule,
     InventoryModule,
     WorkingareaModule,
+    StorageareaModule,
   ],
 })
 export class AppModule {}

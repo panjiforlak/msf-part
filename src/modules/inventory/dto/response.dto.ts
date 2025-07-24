@@ -35,6 +35,9 @@ export class ResponseDto {
   remarks: string;
 
   @ApiProperty()
+  racks_id: number;
+
+  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty({ required: false })
