@@ -66,7 +66,7 @@ export class WorkingareaService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch suppliers');
+      throw new InternalServerErrorException('Failed to fetch working area');
     }
   }
 
@@ -130,7 +130,7 @@ export class WorkingareaService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to create supplier');
+      throw new InternalServerErrorException('Failed to create working area');
     }
   }
 
