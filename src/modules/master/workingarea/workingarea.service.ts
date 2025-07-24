@@ -35,6 +35,7 @@ export class WorkingareaService {
     });
   }
 
+  // findAll
   async findAll(query: ParamsDto): Promise<ApiResponse<Workingarea[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
