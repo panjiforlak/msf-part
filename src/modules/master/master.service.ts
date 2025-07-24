@@ -79,7 +79,6 @@ export class MasterService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to fetch categories');
     }
   }

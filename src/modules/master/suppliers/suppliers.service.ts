@@ -69,7 +69,6 @@ export class SuppliersService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to fetch suppliers');
     }
   }
