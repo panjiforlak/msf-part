@@ -33,9 +33,9 @@ export class BatchInboundController {
     return this.services.findAll(query);
   }
 
-  @Get('pda')
-  findAllPDA(@Query() query: ParamsDto) {
-    return this.services.findAllPDA(query);
+  @Get('pda/:pickerId')
+  findAllPDA(@Param('pickerId') pickerId: number, @Query() query: ParamsDto) {
+    return this.services.findAllPDA(pickerId, query);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -60,14 +60,19 @@ export class BatchInboundService {
     }
   }
 
-  async findAllPDA(query: ParamsDto): Promise<ApiResponse<BatchInbound[]>> {
+  async findAllPDA(
+    picker_id: number,
+    query: ParamsDto,
+  ): Promise<ApiResponse<BatchInbound[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
       const [result, total] = await this.repository.findAndCount({
-        where: query.search ? [{ barcode: ILike(`%${query.search}%`) }] : {},
+        where: query.search
+          ? [{ barcode: ILike(`%${query.search}%`) }]
+          : { picker_id },
         withDeleted: false,
         order: {
           id: 'DESC',
