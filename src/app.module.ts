@@ -14,6 +14,7 @@ import { WorkingareaModule } from './modules/master/workingarea/workingarea.modu
 import { StorageareaModule } from './modules/master/storage/storagearea.module';
 import { InOutAreaModule } from './modules/master/inoutarea/inout.module';
 import { DocShippingModule } from './modules/doc_shipping/doc_shipping.module';
+import { BatchInboundModule } from './modules/batch_in/batchin.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DocShippingModule } from './modules/doc_shipping/doc_shipping.module';
     StorageareaModule,
     InOutAreaModule,
     DocShippingModule,
+    BatchInboundModule,
   ],
 })
 export class AppModule {}
