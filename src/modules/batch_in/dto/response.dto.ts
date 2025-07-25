@@ -1,8 +1,14 @@
 export class ResponseDto {
   id: number;
   uuid?: string;
-  doc_ship_no: string;
-  doc_ship_photo: string;
+  inventory_id: number;
+  doc_ship_id: number;
+  supplier_id: number;
+  quantity: number;
+  price: number;
+  arrival_date: string;
+  status_reloc: string;
+  picker_id: number;
   createdBy: number;
   createdAt: Date;
   updatedBy: number;

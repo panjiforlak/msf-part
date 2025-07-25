@@ -31,6 +31,10 @@ export class CreateDto {
   @IsNumber()
   price: number;
 
+  @ApiProperty()
+  @IsNumber()
+  picker_id: number;
+
   @ApiProperty({ type: String, format: 'date-time' })
   @Type(() => Date)
   @IsDate()

@@ -41,6 +41,9 @@ export class BatchInbound {
   @Column({ type: 'int', default: 0 })
   price: number;
 
+  @Column({ type: 'int', default: 0 })
+  picker_id: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   arrival_date: Date;
 
