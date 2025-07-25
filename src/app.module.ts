@@ -13,6 +13,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { WorkingareaModule } from './modules/master/workingarea/workingarea.module';
 import { StorageareaModule } from './modules/master/storage/storagearea.module';
 import { InOutAreaModule } from './modules/master/inoutarea/inout.module';
+import { DocShippingModule } from './modules/doc_shipping/doc_shipping.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { InOutAreaModule } from './modules/master/inoutarea/inout.module';
     WorkingareaModule,
     StorageareaModule,
     InOutAreaModule,
+    DocShippingModule,
   ],
 })
 export class AppModule {}

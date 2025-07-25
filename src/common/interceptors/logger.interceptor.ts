@@ -5,6 +5,8 @@ import {
   NestInterceptor,
   Logger,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import multer from 'multer';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 
 @Injectable()
@@ -43,4 +45,19 @@ export class LoggerInterceptor implements NestInterceptor {
       }),
     );
   }
+}
+
+export const MemoryFileInterceptor = () =>
+  FileInterceptor('file', {
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: memoryFileFilter,
+  });
+
+function memoryFileFilter(
+  req: Express.Request,
+  file: Express.Multer.File,
+  callback: multer.FileFilterCallback,
+): void {
+  callback(null, true);
 }
