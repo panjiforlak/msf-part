@@ -1,3 +1,4 @@
+import { RelocInbound } from '../../relocation/entities/relocin.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
 import {
   Entity,
@@ -8,6 +9,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum batchin_type {
@@ -78,4 +80,7 @@ export class BatchInbound {
   @ManyToOne(() => Inventory, (inventory) => inventory.batch_inbounds)
   @JoinColumn({ name: 'inventory_id' })
   inventory?: Inventory;
+
+  @OneToMany(() => RelocInbound, (batch_inbound) => batch_inbound.batch_in)
+  batch_in?: RelocInbound[];
 }

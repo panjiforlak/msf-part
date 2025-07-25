@@ -46,6 +46,7 @@ export class RelocInboundService {
         },
         skip,
         take: limit,
+        relations: ['batch_in'],
       });
       return paginateResponse(
         result,

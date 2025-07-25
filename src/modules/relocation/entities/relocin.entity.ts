@@ -1,3 +1,4 @@
+import { BatchInbound } from 'src/modules/batch_in/entities/batchin.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
 import {
   Entity,
@@ -8,6 +9,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('reloc_inbound')
@@ -55,4 +57,10 @@ export class RelocInbound {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  @OneToMany(() => BatchInbound, (batch_inbound) => batch_inbound.inventory)
+  batch_inbounds?: BatchInbound[];
+  @ManyToOne(() => BatchInbound, (batch_in) => batch_in.batch_in)
+  @JoinColumn({ name: 'batch_in_id' })
+  batch_in?: BatchInbound;
 }
