@@ -20,6 +20,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
+import { IsArray, ValidateNested } from 'class-validator';
 
 @ApiTags('BatchInbound')
 @ApiBearerAuth('jwt')
@@ -45,6 +46,8 @@ export class BatchInboundController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @IsArray()
+  @ValidateNested({ each: true })
   @Post()
   create(@Body() dto: CreateDto, @Req() req) {
     return this.services.create(dto, req.user.id);

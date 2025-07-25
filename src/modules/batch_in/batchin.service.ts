@@ -170,6 +170,34 @@ export class BatchInboundService {
     }
   }
 
+  async createMany(
+    data: CreateDto[],
+    userId: number,
+  ): Promise<ApiResponse<ResponseDto[]>> {
+    try {
+      const newRecords = data.map((item) =>
+        this.repository.create({
+          ...item,
+          createdBy: userId,
+        }),
+      );
+
+      const result = await this.repository.save(newRecords);
+      const response = plainToInstance(ResponseDto, result);
+
+      return successResponse(
+        response,
+        'Create batch inbound(s) successfully',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to create batch inbound');
+    }
+  }
+
   async update(
     barcode: string,
     updateDto: UpdateDto,
