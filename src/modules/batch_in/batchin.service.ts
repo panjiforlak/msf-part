@@ -47,9 +47,56 @@ export class BatchInboundService {
         skip,
         take: limit,
       });
-
       return paginateResponse(
         result,
+        total,
+        page,
+        limit,
+        'Get all doc shipping susccessfuly',
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Failed to fetch doc shipping');
+    }
+  }
+
+  async findAllPDA(query: ParamsDto): Promise<ApiResponse<BatchInbound[]>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+
+      const [result, total] = await this.repository.findAndCount({
+        where: query.search ? [{ barcode: ILike(`%${query.search}%`) }] : {},
+        withDeleted: false,
+        order: {
+          id: 'DESC',
+        },
+        skip,
+        take: limit,
+        relations: ['inventory'],
+      });
+      const mergedResult = result.map((batch) => {
+        const {
+          inventory: {
+            inventory_code,
+            inventory_internal_code,
+            inventory_name,
+            racks_id,
+          } = {}, // fallback default empty object
+          ...batchData
+        } = batch;
+
+        return {
+          ...batchData,
+          inventory_code,
+          inventory_internal_code,
+          inventory_name,
+          racks_id,
+        };
+      });
+      return paginateResponse(
+        mergedResult,
         total,
         page,
         limit,

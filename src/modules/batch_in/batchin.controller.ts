@@ -33,6 +33,11 @@ export class BatchInboundController {
     return this.services.findAll(query);
   }
 
+  @Get('pda')
+  findAllPDA(@Query() query: ParamsDto) {
+    return this.services.findAllPDA(query);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get(':slug')
   findOne(@Param('slug') slug: string) {

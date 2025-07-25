@@ -1,3 +1,4 @@
+import { Inventory } from '../../inventory/entities/inventory.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -5,6 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 export enum batchin_type {
@@ -71,4 +74,8 @@ export class BatchInbound {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  @ManyToOne(() => Inventory, (inventory) => inventory.batch_inbounds)
+  @JoinColumn({ name: 'inventory_id' })
+  inventory?: Inventory;
 }

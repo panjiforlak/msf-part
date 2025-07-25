@@ -5,8 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { BatchInbound } from '../../batch_in/entities/batchin.entity';
 
 @Entity('inventory')
 export class Inventory {
@@ -77,4 +81,7 @@ export class Inventory {
   @ApiProperty({ required: false })
   @DeleteDateColumn({ name: 'deletedAt' })
   deletedAt: Date;
+
+  @OneToMany(() => BatchInbound, (batch_inbound) => batch_inbound.inventory)
+  batch_inbounds?: BatchInbound[];
 }
