@@ -18,7 +18,7 @@ import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ItemsSpnumLog } from './entities/items_spnum_log.entity';
-import { BatchInboundService } from '../batch_in/batchin.service';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class InventoryService {
@@ -27,6 +27,7 @@ export class InventoryService {
     private repository: Repository<Inventory>,
     @InjectRepository(ItemsSpnumLog)
     private readonly spnumLogRepository: Repository<ItemsSpnumLog>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByItemNumberInternal(
@@ -37,50 +38,140 @@ export class InventoryService {
       withDeleted: false,
     });
   }
-
-  async findAll(query: ParamsDto): Promise<ApiResponse<Inventory[]>> {
+  async findAll(query: ParamsDto): Promise<ApiResponse<any>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
 
-      const [result, total] = await this.repository.findAndCount({
-        where: query.search
-          ? [{ inventory_name: ILike(`%${query.search}%`) }]
-          : {},
-        withDeleted: false,
-        order: {
-          id: 'DESC',
-        },
-        skip,
-        take: limit,
-        // relations: ['components'],
-      });
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'i.id AS id',
+          'c.inventory_type AS inventory_type',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'i.inventory_name AS inventory_name',
+          'c.component_name AS component_name',
+          'COALESCE(SUM(ri.quantity), 0) AS qty_in',
+          'i.quantity AS qty_on_hand',
+        ])
+        .from('inventory', 'i')
+        .leftJoin('components', 'c', 'i.component_id = c.id')
+        .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
+        .leftJoin(
+          'reloc_inbound',
+          'ri',
+          'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
+        )
+        .where('i."deletedAt" IS NULL');
 
-      // const mergedResult = result.map((inventory) => {
-      //   const {
-      //     components: { inventory_type, component_name } = {}, // fallback default empty object
-      //     ...inventoryData
-      //   } = inventory;
+      if (search) {
+        qb.andWhere('LOWER(i.inventory_name) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
 
-      //   return {
-      //     ...inventoryData,
-      //     inventory_type,
-      //     component_name,
-      //   };
-      // });
+      qb.groupBy('i.id')
+        .addGroupBy('c.inventory_type')
+        .addGroupBy('i.inventory_code')
+        .addGroupBy('i.inventory_internal_code')
+        .addGroupBy('i.inventory_name')
+        .addGroupBy('c.component_name')
+        .orderBy('i.id', 'DESC')
+        .offset(skip)
+        .limit(limit);
+
+      const result = await qb.getRawMany();
+
+      // hitung total data tanpa pagination
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .select('COUNT(*)', 'total')
+        .from((subQb) => {
+          return subQb
+            .select('i.id', 'id')
+            .from('inventory', 'i')
+            .leftJoin('components', 'c', 'i.component_id = c.id')
+            .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
+            .leftJoin(
+              'reloc_inbound',
+              'ri',
+              'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
+            )
+            .where('i."deletedAt" IS NULL')
+            .groupBy(
+              'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name',
+            )
+            .andWhere(
+              search ? 'LOWER(i.inventory_name) LIKE :search' : 'TRUE',
+              { search: `%${search}%` },
+            );
+        }, 'sub');
+
+      const countResult = await countQb.getRawOne();
+      const total = parseInt(countResult?.total ?? '0', 10);
+      const parsed = result.map((item) => ({
+        ...item,
+        qty_in: Number(item.qty_in),
+        qty_on_hand: Number(item.qty_on_hand),
+      }));
       return paginateResponse(
-        result,
+        parsed,
         total,
         page,
         limit,
-        'Get all inventory susccessfuly',
+        'Get all inventory successfully',
       );
     } catch (error) {
-      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch inventory');
     }
   }
+  //tidak jadi menggunakan ini
+  // async findAlls(query: ParamsDto): Promise<ApiResponse<Inventory[]>> {
+  //   try {
+  //     const page = parseInt(query.page ?? '1', 10);
+  //     const limit = parseInt(query.limit ?? '10', 10);
+  //     const skip = (page - 1) * limit;
+
+  //     const [result, total] = await this.repository.findAndCount({
+  //       where: query.search
+  //         ? [{ inventory_name: ILike(`%${query.search}%`) }]
+  //         : {},
+  //       withDeleted: false,
+  //       order: {
+  //         id: 'DESC',
+  //       },
+  //       skip,
+  //       take: limit,
+  //       // relations: ['components'],
+  //     });
+
+  //     // const mergedResult = result.map((inventory) => {
+  //     //   const {
+  //     //     components: { inventory_type, component_name } = {}, // fallback default empty object
+  //     //     ...inventoryData
+  //     //   } = inventory;
+
+  //     //   return {
+  //     //     ...inventoryData,
+  //     //     inventory_type,
+  //     //     component_name,
+  //     //   };
+  //     // });
+  //     return paginateResponse(
+  //       result,
+  //       total,
+  //       page,
+  //       limit,
+  //       'Get all inventory susccessfuly',
+  //     );
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new InternalServerErrorException('Failed to fetch inventory');
+  //   }
+  // }
 
   async findById(slug: string): Promise<ApiResponse<any>> {
     try {
