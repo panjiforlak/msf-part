@@ -85,8 +85,4 @@ export class Inventory {
 
   @OneToMany(() => BatchInbound, (batch_inbound) => batch_inbound.inventory)
   batch_inbounds?: BatchInbound[];
-
-  // @ManyToOne(() => Components, (component) => component.inventory)
-  // @JoinColumn({ name: 'component_id' })
-  // components?: Components;
 }

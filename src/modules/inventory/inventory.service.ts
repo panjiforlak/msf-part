@@ -49,6 +49,7 @@ export class InventoryService {
         .createQueryBuilder()
         .select([
           'i.id AS id',
+          'i.uuid AS uuid',
           'c.inventory_type AS inventory_type',
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
@@ -175,27 +176,82 @@ export class InventoryService {
 
   async findById(slug: string): Promise<ApiResponse<any>> {
     try {
-      const result: any = await this.repository.findOne({
-        where: { uuid: slug },
-      });
+      const result = await this.repository
+        .createQueryBuilder('i')
+        .leftJoin('components', 'c', 'c.id = i.component_id') // ← pakai nama tabel dan field eksplisit
+        .leftJoin('storage_area', 'sa', 'sa.id = i.racks_id')
+        .leftJoin('batch_inbound', 'bi', 'bi.inventory_id = i.id')
+        .leftJoin(
+          'reloc_inbound',
+          'ri',
+          'ri.batch_in_id = bi.id AND ri.reloc_to != 0',
+        )
+        .select([
+          'i.id AS id',
+          'i.inventory_name AS inventory_name',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'i.uom AS uom',
+          'i.remarks AS remarks',
+          'c.inventory_type AS inventory_type',
+          'c.component_name AS component_name',
+          'COALESCE(SUM(ri.quantity), 0) AS qty_in',
+          'i.quantity AS qty_onhand',
+          'sa.barcode AS racks',
+        ])
+        .addSelect((subQuery) => {
+          return subQuery
+            .select(
+              `COALESCE(json_agg(json_build_object(
+              'id', b.id, 
+              'arrival_date', b.arrival_date,
+              'batch_number', b.barcode,
+              'quantity', b.quantity,
+              'batch_number', b.barcode
+              ) ORDER BY b.id), '[]')`,
+            )
+            .from('batch_inbound', 'b')
+            .where('b.inventory_id = i.id');
+        }, 'batch_inbound_list') // alias batchnya
+        .addSelect((subQuery) => {
+          return subQuery
+            .select(
+              `COALESCE(json_agg(json_build_object(
+              'id', isl.id,
+              'date', TO_CHAR(isl.updatedAt, 'YYYY-MM-DD HH24:MI:SS'),
+              'part_number_old',isl.inventory_code_old,
+              'part_number_new',isl.inventory_code_new,
+              'changer_name', usr.name
+              ) ORDER BY isl.id), '[]')`,
+            )
+            .from('items_spnum_log', 'isl')
+            .leftJoin('users', 'usr', 'isl.updatedBy=usr.id')
+            .where('isl.item_id = i.id');
+        }, 'logs_change_part_no') // alias batchnya
+        .where('i.uuid = :uuid', { uuid: slug })
+        .andWhere('i."deletedAt" IS NULL')
+        .groupBy('i.id')
+        .addGroupBy('i.inventory_name')
+        .addGroupBy('i.inventory_code')
+        .addGroupBy('i.inventory_internal_code')
+        .addGroupBy('i.uom')
+        .addGroupBy('i.remarks')
+        .addGroupBy('c.inventory_type')
+        .addGroupBy('c.component_name')
+        .addGroupBy('i.quantity')
+        .addGroupBy('sa.barcode')
+        .getRawOne();
 
       if (!result) {
         throwError('Inventory not found', 404);
       }
 
-      const response: any = {
-        id: result.id,
-        uuid: result.uuid,
-        inventory_code: result.inventory_code,
-        inventory_internal_code: result.inventory_internal_code,
-        inventory_name: result.inventory_name,
-      };
-
-      return successResponse(response);
+      return successResponse(result);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
+      console.error(error.stack);
       throw new InternalServerErrorException('Failed to get inventory');
     }
   }

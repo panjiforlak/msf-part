@@ -52,7 +52,4 @@ export class Components {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
-
-  // @OneToMany(() => Inventory, (inventory) => inventory.components)
-  // inventory?: Inventory[];
 }
