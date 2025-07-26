@@ -50,8 +50,19 @@ export class DocShippingService {
         },
         skip,
         take: limit,
+        // relations: ['batch_inbounds'],
       });
+      // const mergedResult = result.map((doc_ship) => {
+      //   const {
+      //     batch_inbounds: { arrival_date } = {}, // fallback default empty object
+      //     ...doc_shipData
+      //   } = doc_ship;
 
+      //   return {
+      //     ...doc_shipData,
+      //     arrival_date,
+      //   };
+      // });
       return paginateResponse(
         result,
         total,
@@ -80,6 +91,7 @@ export class DocShippingService {
         barcode: result.barcode,
         doc_ship_no: result.doc_ship_no,
         doc_ship_photo: result.doc_ship_photo,
+        batch_inbounds: result.batch_inbounds,
         remarks: result.remarks,
       };
 

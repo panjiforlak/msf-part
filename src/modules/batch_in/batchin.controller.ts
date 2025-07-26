@@ -42,7 +42,7 @@ export class BatchInboundController {
   @UseGuards(JwtAuthGuard)
   @Get(':slug')
   findOne(@Param('slug') slug: string) {
-    return this.services.findById(slug);
+    return this.services.findBySlug(slug);
   }
 
   @UseGuards(JwtAuthGuard)

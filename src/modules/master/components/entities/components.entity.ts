@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Inventory } from '../../../inventory/entities/inventory.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum inv_type {
@@ -50,4 +52,7 @@ export class Components {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  // @OneToMany(() => Inventory, (inventory) => inventory.components)
+  // inventory?: Inventory[];
 }

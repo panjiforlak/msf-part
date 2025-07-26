@@ -3,6 +3,7 @@ export class ResponseDto {
   uuid?: string;
   doc_ship_no: string;
   doc_ship_photo: string;
+  arrival_date?: string;
   createdBy: number;
   createdAt: Date;
   updatedBy: number;

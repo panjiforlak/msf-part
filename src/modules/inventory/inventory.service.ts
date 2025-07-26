@@ -18,6 +18,7 @@ import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ItemsSpnumLog } from './entities/items_spnum_log.entity';
+import { BatchInboundService } from '../batch_in/batchin.service';
 
 @Injectable()
 export class InventoryService {
@@ -53,8 +54,21 @@ export class InventoryService {
         },
         skip,
         take: limit,
+        // relations: ['components'],
       });
 
+      // const mergedResult = result.map((inventory) => {
+      //   const {
+      //     components: { inventory_type, component_name } = {}, // fallback default empty object
+      //     ...inventoryData
+      //   } = inventory;
+
+      //   return {
+      //     ...inventoryData,
+      //     inventory_type,
+      //     component_name,
+      //   };
+      // });
       return paginateResponse(
         result,
         total,

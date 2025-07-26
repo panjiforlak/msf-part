@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BatchInbound } from '../../batch_in/entities/batchin.entity';
+import { Components } from '../../master/components/entities/components.entity';
 
 @Entity('inventory')
 export class Inventory {
@@ -84,4 +85,8 @@ export class Inventory {
 
   @OneToMany(() => BatchInbound, (batch_inbound) => batch_inbound.inventory)
   batch_inbounds?: BatchInbound[];
+
+  // @ManyToOne(() => Components, (component) => component.inventory)
+  // @JoinColumn({ name: 'component_id' })
+  // components?: Components;
 }

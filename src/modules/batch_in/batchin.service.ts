@@ -52,11 +52,11 @@ export class BatchInboundService {
         total,
         page,
         limit,
-        'Get all doc shipping susccessfuly',
+        'Get all batch inbound susccessfuly',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch doc shipping');
+      throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
 
@@ -105,22 +105,23 @@ export class BatchInboundService {
         total,
         page,
         limit,
-        'Get all doc shipping susccessfuly',
+        'Get all batch inbound susccessfuly',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch doc shipping');
+      throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
 
-  async findById(slug: string): Promise<ApiResponse<any>> {
+  //for api calling
+  async findById(id: number): Promise<ApiResponse<any>> {
     try {
       const result: any = await this.repository.findOne({
-        where: { barcode: slug },
+        where: { id },
       });
 
       if (!result) {
-        throwError('Doc shipping Area not found', 404);
+        throwError('Batch inbound not found', 404);
       }
 
       const response: any = {
@@ -140,7 +141,38 @@ export class BatchInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to get doc shipping');
+      throw new InternalServerErrorException('Failed to get batch inbound');
+    }
+  }
+
+  async findBySlug(slug: string): Promise<ApiResponse<any>> {
+    try {
+      const result: any = await this.repository.findOne({
+        where: { barcode: slug },
+      });
+
+      if (!result) {
+        throwError('batch inbound not found', 404);
+      }
+
+      const response: any = {
+        id: result.id,
+        barcode: result.barcode,
+        inventory_id: result.inventory_id,
+        doc_ship_id: result.doc_ship_id,
+        supplier_id: result.supplier_id,
+        quantity: result.quantity,
+        price: result.price,
+        arrival_date: result.arrival_date,
+        status_reloc: result.status_reloc,
+      };
+
+      return successResponse(response);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to get batch inbound');
     }
   }
 
