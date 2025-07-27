@@ -49,8 +49,8 @@ export class BatchInboundController {
   @IsArray()
   @ValidateNested({ each: true })
   @Post()
-  create(@Body() dto: CreateDto, @Req() req) {
-    return this.services.create(dto, req.user.id);
+  create(@Body() dto: CreateDto[], @Req() req) {
+    return this.services.createMany(dto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

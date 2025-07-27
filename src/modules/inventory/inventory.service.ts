@@ -55,16 +55,27 @@ export class InventoryService {
           'i.inventory_internal_code AS part_number_internal',
           'i.inventory_name AS inventory_name',
           'c.component_name AS component_name',
-          'COALESCE(SUM(ri.quantity), 0) AS qty_in',
+          'COALESCE(SUM(DISTINCT ri.quantity), 0) AS qty_in',
+          'COALESCE(SUM(DISTINCT ro.quantity), 0) AS qty_out',
           'i.quantity AS qty_on_hand',
         ])
         .from('inventory', 'i')
         .leftJoin('components', 'c', 'i.component_id = c.id')
+
+        // INBOUND
         .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
         .leftJoin(
           'reloc_inbound',
           'ri',
           'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
+        )
+
+        // OUTBOUND
+        .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
+        .leftJoin(
+          'reloc_outbound',
+          'ro',
+          'bo.id = ro.batch_in_id AND ro.reloc_from != 0',
         )
         .where('i."deletedAt" IS NULL');
 
@@ -80,6 +91,7 @@ export class InventoryService {
         .addGroupBy('i.inventory_internal_code')
         .addGroupBy('i.inventory_name')
         .addGroupBy('c.component_name')
+        .addGroupBy('i.quantity')
         .orderBy('i.id', 'DESC')
         .offset(skip)
         .limit(limit);
@@ -91,24 +103,37 @@ export class InventoryService {
         .createQueryBuilder()
         .select('COUNT(*)', 'total')
         .from((subQb) => {
-          return subQb
-            .select('i.id', 'id')
-            .from('inventory', 'i')
-            .leftJoin('components', 'c', 'i.component_id = c.id')
-            .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-            .leftJoin(
-              'reloc_inbound',
-              'ri',
-              'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
-            )
-            .where('i."deletedAt" IS NULL')
-            .groupBy(
-              'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name',
-            )
-            .andWhere(
-              search ? 'LOWER(i.inventory_name) LIKE :search' : 'TRUE',
-              { search: `%${search}%` },
-            );
+          return (
+            subQb
+              .select('i.id', 'id')
+              .from('inventory', 'i')
+              .leftJoin('components', 'c', 'i.component_id = c.id')
+
+              // INBOUND
+              .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
+              .leftJoin(
+                'reloc_inbound',
+                'ri',
+                'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
+              )
+
+              // OUTBOUND
+              .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
+              .leftJoin(
+                'reloc_outbound',
+                'ro',
+                'bo.id = ro.batch_in_id AND ro.reloc_from != 0',
+              )
+
+              .where('i."deletedAt" IS NULL')
+              .andWhere(
+                search ? 'LOWER(i.inventory_name) LIKE :search' : 'TRUE',
+                { search: `%${search}%` },
+              )
+              .groupBy(
+                'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name, i.quantity',
+              )
+          );
         }, 'sub');
 
       const countResult = await countQb.getRawOne();
@@ -116,6 +141,7 @@ export class InventoryService {
       const parsed = result.map((item) => ({
         ...item,
         qty_in: Number(item.qty_in),
+        qty_out: Number(item.qty_out),
         qty_on_hand: Number(item.qty_on_hand),
       }));
       return paginateResponse(
@@ -126,6 +152,7 @@ export class InventoryService {
         'Get all inventory successfully',
       );
     } catch (error) {
+      console.error('[InventoryService][findAll] Error:', error);
       throw new InternalServerErrorException('Failed to fetch inventory');
     }
   }
@@ -186,6 +213,12 @@ export class InventoryService {
           'ri',
           'ri.batch_in_id = bi.id AND ri.reloc_to != 0',
         )
+        .leftJoin('batch_outbound', 'bo', 'bo.inventory_id = i.id')
+        .leftJoin(
+          'reloc_outbound',
+          'ro',
+          'ro.batch_in_id = bo.id AND ro.reloc_to != 0',
+        )
         .select([
           'i.id AS id',
           'i.inventory_name AS inventory_name',
@@ -195,7 +228,8 @@ export class InventoryService {
           'i.remarks AS remarks',
           'c.inventory_type AS inventory_type',
           'c.component_name AS component_name',
-          'COALESCE(SUM(ri.quantity), 0) AS qty_in',
+          'CAST(COALESCE(SUM(ri.quantity), 0) AS INTEGER) AS qty_in',
+          'CAST(COALESCE(SUM(ro.quantity), 0) AS INTEGER) AS qty_out',
           'i.quantity AS qty_onhand',
           'sa.barcode AS racks',
         ])
@@ -212,7 +246,7 @@ export class InventoryService {
             )
             .from('batch_inbound', 'b')
             .where('b.inventory_id = i.id');
-        }, 'batch_inbound_list') // alias batchnya
+        }, 'batch_inbound_list') // alias
         .addSelect((subQuery) => {
           return subQuery
             .select(
@@ -227,7 +261,7 @@ export class InventoryService {
             .from('items_spnum_log', 'isl')
             .leftJoin('users', 'usr', 'isl.updatedBy=usr.id')
             .where('isl.item_id = i.id');
-        }, 'logs_change_part_no') // alias batchnya
+        }, 'logs_change_part_no') // alias
         .where('i.uuid = :uuid', { uuid: slug })
         .andWhere('i."deletedAt" IS NULL')
         .groupBy('i.id')

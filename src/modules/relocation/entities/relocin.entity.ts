@@ -1,5 +1,4 @@
-import { BatchInbound } from 'src/modules/batch_in/entities/batchin.entity';
-import { Inventory } from '../../inventory/entities/inventory.entity';
+import { BatchInbound } from '../../batch_in/entities/batchin.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
