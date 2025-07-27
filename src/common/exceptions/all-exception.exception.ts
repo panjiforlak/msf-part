@@ -1,20 +1,25 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   ExceptionFilter,
   Catch,
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    const isDev =
+      process.env.SHOW_ERROR_STACK === 'true' ||
+      process.env.NODE_ENV === 'development';
 
     const status =
       exception instanceof HttpException
@@ -31,7 +36,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? errorResponse
         : (errorResponse as any).message || 'Unknown error';
 
-    response.status(status).json({
+    const resBody: any = {
       statusCode: status,
       message,
       data: {
@@ -39,6 +44,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
         path: request.url,
         timestamp: new Date().toISOString(),
       },
-    });
+    };
+
+    if (isDev) {
+      resBody.stack = (exception as any).stack;
+      this.logger.error(
+        `[${request.method}] ${request.url} - ${message}`,
+        (exception as any).stack,
+      );
+    }
+
+    response.status(status).json(resBody);
   }
 }
