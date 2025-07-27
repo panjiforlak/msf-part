@@ -17,6 +17,11 @@ export class CreateStorageAreaDto {
   remarks?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(25)
+  storage_code?: string;
+
+  @IsOptional()
   @IsEnum(StorageType)
   storage_type?: StorageType;
 

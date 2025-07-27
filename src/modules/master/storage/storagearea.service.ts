@@ -63,10 +63,10 @@ export class StorageareaService {
     }
   }
 
-  async findById(slug: string): Promise<ApiResponse<any>> {
+  async findById(barcode: string): Promise<ApiResponse<any>> {
     try {
       const result: any = await this.repository.findOne({
-        where: { barcode: slug },
+        where: { barcode: barcode },
       });
 
       if (!result) {
@@ -76,6 +76,7 @@ export class StorageareaService {
       const response: any = {
         id: result.id,
         barcode: result.barcode,
+        storage_code: result.storage_code,
         storage_type: result.storage_type,
         storage_availability: result.storage_availability,
         status: result.status,

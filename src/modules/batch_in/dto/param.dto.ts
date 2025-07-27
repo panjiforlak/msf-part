@@ -1,4 +1,5 @@
-import { IsNumberString, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class ParamsDto {
   @IsOptional()
@@ -9,6 +10,11 @@ export class ParamsDto {
   @IsNumberString()
   limit?: string;
 
+  @ApiPropertyOptional({
+    description: 'Search barcodenya',
+  })
+  @ApiProperty({ example: 'example : IUuihSZuih' })
   @IsOptional()
+  @IsString()
   search?: string;
 }

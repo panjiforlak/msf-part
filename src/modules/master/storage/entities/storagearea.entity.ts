@@ -32,6 +32,9 @@ export class Storagearea {
   })
   barcode: string;
 
+  @Column({ type: 'varchar', length: 25, nullable: true, default: null })
+  storage_code: string;
+
   @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   remarks: string;
 

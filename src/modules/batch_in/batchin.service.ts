@@ -13,7 +13,11 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
-import { CreateBatchInDto } from './dto/create.dto';
+import {
+  CreateBatchInDto,
+  CreatePDABatchInDto,
+  StorageTypeEnum,
+} from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -71,27 +75,37 @@ export class BatchInboundService {
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
+      const search = query.search?.toLowerCase() ?? '';
+
       const qb = this.dataSource
         .createQueryBuilder()
         .select([
-          'bi.id AS id',
+          'bi.id AS batch_in_id',
           'bi.barcode AS batch',
+          'bi.inventory_id AS inventory_id',
           'i.inventory_name AS part_name',
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
           'bi.quantity AS quantity',
           'sa.barcode AS rack_destination',
           'bi.barcode AS barcode',
-          'bi."createdAt" AS createdAt',
+          `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi."picker_id" AS picker_id',
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
         .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
         .where('bi.picker_id = :pickerId', { pickerId: picker_id })
-        .andWhere('bi."deletedAt" IS NULL')
-        .orderBy('bi.id', 'ASC')
-        .offset(skip)
-        .limit(limit);
+        .andWhere('bi."deletedAt" IS NULL');
+
+      // searchnya neeeehhh broh
+      if (search) {
+        qb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      qb.orderBy('bi.id', 'ASC').offset(skip).limit(limit);
 
       const [result, total] = await Promise.all([
         qb.getRawMany(),
@@ -100,6 +114,10 @@ export class BatchInboundService {
           .from('batch_inbound', 'bi')
           .where('bi.picker_id = :pickerId', { pickerId: picker_id })
           .andWhere('bi."deletedAt" IS NULL')
+          .andWhere(
+            search ? 'LOWER(bi.barcode) LIKE :search' : 'TRUE',
+            search ? { search: `%${search}%` } : {},
+          )
           .getCount(),
       ]);
 
@@ -230,6 +248,69 @@ export class BatchInboundService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to create batch inbound');
+    }
+  }
+
+  async createPDA(
+    data: CreatePDABatchInDto,
+    userId: number,
+  ): Promise<ApiResponse<any>> {
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        // 1. INSERT ke inventory detail storage
+        const insertResult = await manager
+          .createQueryBuilder()
+          .insert()
+          .into('inventory_detail_storage')
+          .values({
+            batch_in_id: data.batch_in_id,
+            storage_id: data.storage_id,
+            quantity: data.quantity,
+            createdBy: userId, // picker
+          })
+          .execute();
+
+        const batchInboundId = insertResult.identifiers[0].id;
+
+        // 2. INSERT ke relocation inbound
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into('reloc_inbound')
+          .values({
+            batch_in_id: data.batch_in_id,
+            reloc_from: 1, // 1 = inbound
+            reloc_to: data.storage_id,
+            quantity: data.quantity,
+            reloc_date: new Date(),
+            created_by: userId, // picker
+          })
+          .execute();
+
+        // 3. UPDATE inventory.quantity klo storage type == racks
+        if (data.storage_type === StorageTypeEnum.RACKS) {
+          await manager
+            .createQueryBuilder()
+            .update('inventory')
+            .set({
+              quantity: () => `"quantity" + ${data.quantity}`,
+              racks_id: data.storage_id,
+            })
+            .where('id = :id', { id: data.inventory_id })
+            .execute();
+        }
+      });
+
+      return successResponse(
+        null,
+        'Insert batch + log + update inventory success',
+        201,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(
+        'Failed to execute transactional insert/update',
+      );
     }
   }
 

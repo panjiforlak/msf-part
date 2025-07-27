@@ -29,10 +29,11 @@ export class StorageareaController {
     return this.services.findAll(query);
   }
 
+  @ApiTags('PDA Inbounds')
   @UseGuards(JwtAuthGuard)
-  @Get(':slug')
-  findOne(@Param('slug') slug: string) {
-    return this.services.findById(slug);
+  @Get(':barcode')
+  findOne(@Param('barcode') barcode: string) {
+    return this.services.findById(barcode);
   }
 
   @UseGuards(JwtAuthGuard)

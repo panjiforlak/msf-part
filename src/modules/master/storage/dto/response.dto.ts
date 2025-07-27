@@ -4,6 +4,7 @@ import { StorageStatus, StorageType } from '../entities/storagearea.entity';
 export class ResponseDto {
   id: number;
   barcode?: string;
+  storage_code: string;
   remarks?: string;
   storage_type: StorageType;
   storage_availability: boolean;

@@ -16,8 +16,8 @@ import {
 } from '@nestjs/common';
 import { BatchInboundService } from './batchin.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateBatchInDto } from './dto/create.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreateBatchInDto, CreatePDABatchInDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { IsArray, ValidateNested } from 'class-validator';
@@ -33,14 +33,25 @@ export class BatchInboundController {
   findAll(@Query() query: ParamsDto) {
     return this.services.findAll(query);
   }
-
-  @ApiTags('PDA')
+  // StartPDA Inbound
+  @ApiTags('PDA Inbounds')
+  @ApiOperation({
+    summary: 'Saat Scan inventory, tambahkan query param search={barcodenya}',
+  })
   @UseGuards(JwtAuthGuard)
   @Get('pda/:pickerId')
   findAllPDA(@Param('pickerId') pickerId: number, @Query() query: ParamsDto) {
     return this.services.findAllPDA(pickerId, query);
   }
 
+  @ApiTags('PDA Inbounds')
+  @ApiOperation({ summary: 'Saat Save untuk relocation item to RACKS or BOX' })
+  @UseGuards(JwtAuthGuard)
+  @Post('pda')
+  createPDAInbound(@Body() dto: CreatePDABatchInDto, @Req() req) {
+    return this.services.createPDA(dto, req.user.id);
+  }
+  // END PDA Inbound
   @UseGuards(JwtAuthGuard)
   @Get(':slug')
   findOne(@Param('slug') slug: string) {

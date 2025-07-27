@@ -5,6 +5,7 @@ import {
   MaxLength,
   IsEnum,
   IsDate,
+  IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -54,4 +55,36 @@ export class CreateBatchInDto {
   @IsOptional()
   @IsNumber()
   updatedBy?: number;
+}
+
+export enum StorageTypeEnum {
+  RACKS = 'racks',
+  BOX = 'box',
+}
+
+export class CreatePDABatchInDto {
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  batch_in_id: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  storage_id: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  quantity: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  inventory_id: number;
+
+  @ApiProperty()
+  @IsEnum(StorageTypeEnum)
+  @IsNotEmpty()
+  storage_type: StorageTypeEnum;
 }
