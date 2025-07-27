@@ -9,7 +9,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { wa_status, wa_type } from '../entities/workingarea.entity';
 
-export class CreateDto {
+export class CreateWODto {
   @ApiProperty({ example: 'WAC|DJUIEW2309E' })
   @IsOptional()
   @IsString()

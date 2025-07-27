@@ -13,7 +13,7 @@ import {
 import { StorageareaService } from './storagearea.service';
 import { JwtAuthGuard } from '../../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateDto } from './dto/create.dto';
+import { CreateStorageAreaDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 
@@ -37,7 +37,7 @@ export class StorageareaController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateDto, @Req() req) {
+  create(@Body() dto: CreateStorageAreaDto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 

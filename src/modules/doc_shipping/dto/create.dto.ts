@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateDto {
+export class CreateDocShipDto {
   @ApiProperty()
   @IsString()
   @MaxLength(35)

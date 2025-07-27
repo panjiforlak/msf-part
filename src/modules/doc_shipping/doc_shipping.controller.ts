@@ -17,7 +17,7 @@ import {
 import { DocShippingService } from './doc_shipping.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateDto } from './dto/create.dto';
+import { CreateDocShipDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
@@ -50,7 +50,7 @@ export class DocShippingController {
   @UseInterceptors(MemoryFileInterceptor())
   async create(
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: CreateDto,
+    @Body() dto: CreateDocShipDto,
     @Req() req,
   ) {
     const uploaded = await this.s3services.uploadFile(file, 'doc-shipping');

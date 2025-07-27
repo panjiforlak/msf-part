@@ -13,7 +13,7 @@ import {
 import { RelocInboundService } from './relocin.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateDto } from './dto/create.dto';
+import { CreateRelocInDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { IsArray, ValidateNested } from 'class-validator';
@@ -45,7 +45,7 @@ export class RelocInboundController {
   @IsArray()
   @ValidateNested({ each: true })
   @Post()
-  create(@Body() dto: CreateDto, @Req() req) {
+  create(@Body() dto: CreateRelocInDto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 

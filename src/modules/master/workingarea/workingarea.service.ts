@@ -14,7 +14,7 @@ import {
 import { paginateResponse } from '../../../common/helpers/public.helper';
 import * as bcrypt from 'bcrypt';
 
-import { CreateDto } from './dto/create.dto';
+import { CreateWODto } from './dto/create.dto';
 import { plainToInstance } from 'class-transformer';
 import { ParamsDto } from './dto/param.dto';
 import { ResponseDto } from './dto/response.dto';
@@ -100,7 +100,7 @@ export class WorkingareaService {
   }
 
   async create(
-    data: CreateDto,
+    data: CreateWODto,
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {

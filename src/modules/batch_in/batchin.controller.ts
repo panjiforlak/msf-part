@@ -17,7 +17,7 @@ import {
 import { BatchInboundService } from './batchin.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateDto } from './dto/create.dto';
+import { CreateBatchInDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { IsArray, ValidateNested } from 'class-validator';
@@ -34,6 +34,8 @@ export class BatchInboundController {
     return this.services.findAll(query);
   }
 
+  @ApiTags('PDA')
+  @UseGuards(JwtAuthGuard)
   @Get('pda/:pickerId')
   findAllPDA(@Param('pickerId') pickerId: number, @Query() query: ParamsDto) {
     return this.services.findAllPDA(pickerId, query);
@@ -49,7 +51,7 @@ export class BatchInboundController {
   @IsArray()
   @ValidateNested({ each: true })
   @Post()
-  create(@Body() dto: CreateDto[], @Req() req) {
+  create(@Body() dto: CreateBatchInDto[], @Req() req) {
     return this.services.createMany(dto, req.user.id);
   }
 

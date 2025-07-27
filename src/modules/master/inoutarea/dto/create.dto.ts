@@ -10,7 +10,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { inout_type } from '../entities/inout.entity';
 
-export class CreateDto {
+export class CreateInOutAreaDto {
   @ApiProperty()
   @IsOptional()
   @IsString()

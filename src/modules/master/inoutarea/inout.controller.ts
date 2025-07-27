@@ -13,7 +13,7 @@ import {
 import { InOutAreaService } from './inout.service';
 import { JwtAuthGuard } from '../../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateDto } from './dto/create.dto';
+import { CreateInOutAreaDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 
@@ -37,7 +37,7 @@ export class InOutAreaController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateDto, @Req() req) {
+  create(@Body() dto: CreateInOutAreaDto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 

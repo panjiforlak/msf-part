@@ -18,7 +18,7 @@ import {
   QueryParamDto,
 } from './dto.backup/workingarea.dto';
 
-import { CreateDto } from './dto/create.dto';
+import { CreateWODto } from './dto/create.dto';
 
 @ApiTags('Workingarea')
 @ApiBearerAuth('jwt')
@@ -40,13 +40,13 @@ export class WorkingareaController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateDto, @Req() req) {
+  create(@Body() dto: CreateWODto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 
   // @UseGuards(JwtAuthGuard)
   // @Put(':id')
-  // update(@Param('id') id: number, @Body() dto: CreateDto, @Req() req) {
+  // update(@Param('id') id: number, @Body() dto: CreateWODto, @Req() req) {
   //   return this.services.update(id, dto, req.user.id);
   // }
 

@@ -10,7 +10,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { batchin_type } from '../entities/batchin.entity';
 
-export class CreateDto {
+export class CreateBatchInDto {
   @ApiProperty()
   @IsNumber()
   inventory_id: number;

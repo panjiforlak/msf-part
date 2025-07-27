@@ -13,7 +13,7 @@ import {
 } from '../../../common/helpers/response.helper';
 import { paginateResponse } from '../../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
-import { CreateDto } from './dto/create.dto';
+import { CreateStorageAreaDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -92,7 +92,7 @@ export class StorageareaService {
   }
 
   async create(
-    data: CreateDto,
+    data: CreateStorageAreaDto,
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {

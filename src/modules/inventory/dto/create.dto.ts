@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateDto {
+export class CreateInventoryDto {
   @ApiPropertyOptional({
     description: 'Nomor item eksternal',
     example: 'IN-1HGBH41JXMN1918',

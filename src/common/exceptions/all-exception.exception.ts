@@ -17,10 +17,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const isDev =
-      process.env.SHOW_ERROR_STACK === 'true' ||
-      process.env.NODE_ENV === 'development';
-
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
@@ -46,8 +42,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       },
     };
 
-    if (isDev) {
+    if (process.env.SHOW_ERROR_STACK_ON_BODY === 'true')
       resBody.stack = (exception as any).stack;
+    if (process.env.SHOW_ERROR_STACK_ON_LOG === 'true') {
       this.logger.error(
         `[${request.method}] ${request.url} - ${message}`,
         (exception as any).stack,

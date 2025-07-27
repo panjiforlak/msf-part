@@ -9,7 +9,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class CreateDto {
+export class CreateRelocInDto {
   @ApiProperty()
   @IsNumber()
   inventory_id: number;

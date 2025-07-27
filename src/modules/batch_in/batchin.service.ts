@@ -13,16 +13,18 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
-import { CreateDto } from './dto/create.dto';
+import { CreateBatchInDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class BatchInboundService {
   constructor(
     @InjectRepository(BatchInbound)
     private repository: Repository<BatchInbound>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByDocNo(barcode: string): Promise<BatchInbound | null> {
@@ -63,52 +65,53 @@ export class BatchInboundService {
   async findAllPDA(
     picker_id: number,
     query: ParamsDto,
-  ): Promise<ApiResponse<BatchInbound[]>> {
+  ): Promise<ApiResponse<any>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
-      const [result, total] = await this.repository.findAndCount({
-        where: query.search
-          ? [{ barcode: ILike(`%${query.search}%`) }]
-          : { picker_id },
-        withDeleted: false,
-        order: {
-          id: 'DESC',
-        },
-        skip,
-        take: limit,
-        relations: ['inventory'],
-      });
-      const mergedResult = result.map((batch) => {
-        const {
-          inventory: {
-            inventory_code,
-            inventory_internal_code,
-            inventory_name,
-            racks_id,
-          } = {}, // fallback default empty object
-          ...batchData
-        } = batch;
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'bi.id AS id',
+          'bi.barcode AS batch',
+          'i.inventory_name AS part_name',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'bi.quantity AS quantity',
+          'sa.barcode AS rack_destination',
+          'bi.barcode AS barcode',
+          'bi."createdAt" AS createdAt',
+        ])
+        .from('batch_inbound', 'bi')
+        .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
+        .where('bi.picker_id = :pickerId', { pickerId: picker_id })
+        .andWhere('bi."deletedAt" IS NULL')
+        .orderBy('bi.id', 'ASC')
+        .offset(skip)
+        .limit(limit);
 
-        return {
-          ...batchData,
-          inventory_code,
-          inventory_internal_code,
-          inventory_name,
-          racks_id,
-        };
-      });
+      const [result, total] = await Promise.all([
+        qb.getRawMany(),
+        this.dataSource
+          .createQueryBuilder()
+          .from('batch_inbound', 'bi')
+          .where('bi.picker_id = :pickerId', { pickerId: picker_id })
+          .andWhere('bi."deletedAt" IS NULL')
+          .getCount(),
+      ]);
+
       return paginateResponse(
-        mergedResult,
+        result,
         total,
         page,
         limit,
-        'Get all batch inbound susccessfuly',
+        'Get all batch inbound successfully',
       );
     } catch (error) {
-      if (error instanceof HttpException) throw error;
+      console.error(error);
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
@@ -177,7 +180,7 @@ export class BatchInboundService {
   }
 
   async create(
-    data: CreateDto,
+    data: CreateBatchInDto,
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {
@@ -203,7 +206,7 @@ export class BatchInboundService {
   }
 
   async createMany(
-    data: CreateDto[],
+    data: CreateBatchInDto[],
     userId: number,
   ): Promise<ApiResponse<ResponseDto[]>> {
     try {

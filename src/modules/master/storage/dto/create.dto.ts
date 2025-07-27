@@ -10,7 +10,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StorageStatus, StorageType } from '../entities/storagearea.entity';
 
-export class CreateDto {
+export class CreateStorageAreaDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
