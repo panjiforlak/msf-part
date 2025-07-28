@@ -79,4 +79,4 @@ export class CreateWorkOrderDto {
   @ValidateNested({ each: true })
   @Type(() => SparepartDto)
   sparepart_list: SparepartDto[];
-} 
+}

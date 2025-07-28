@@ -84,4 +84,4 @@ export class WorkOrderResponseDto {
 
   @ApiProperty()
   deletedAt: Date;
-} 
+}

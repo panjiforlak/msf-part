@@ -16,4 +16,4 @@ export class ParamsDto {
   @IsOptional()
   @IsString()
   search?: string;
-} 
+}

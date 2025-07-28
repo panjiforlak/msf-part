@@ -66,4 +66,4 @@ export class RelocOutbound {
   // @ApiProperty({ required: false })
   // @DeleteDateColumn({ name: 'deleted_at' })
   // deletedAt: Date;
-} 
+}

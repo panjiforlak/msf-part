@@ -4,7 +4,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { OrderForm } from './entities/order_form.entity';
+import { OrderForm, WorkOrderStatus } from './entities/order_form.entity';
 import { BatchOutbound, batchout_type } from './entities/batch_outbound.entity';
 import { RelocOutbound } from './entities/reloc_outbound.entity';
 import { ILike, Repository } from 'typeorm';
@@ -19,6 +19,7 @@ import { CreateWorkOrderDto } from './dto/create.dto';
 import { UpdateWorkOrderDto } from './dto/update.dto';
 import { WorkOrderResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
+import { ApprovalDto, ApprovalStatus } from './dto/approval.dto';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -33,7 +34,9 @@ export class WorkOrderService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(query: ParamsDto): Promise<ApiResponse<WorkOrderResponseDto[]>> {
+  async findAll(
+    query: ParamsDto,
+  ): Promise<ApiResponse<WorkOrderResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -48,10 +51,10 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
-            'COALESCE(v.vin_number, \'N/A\') AS vin_number',
-            'COALESCE(CONCAT(d.first_name, \' \', d.last_name), \'N/A\') AS driver',
-            'COALESCE(CONCAT(m.first_name, \' \', m.last_name), \'N/A\') AS mechanic',
-            'COALESCE(CONCAT(r.first_name, \' \', r.last_name), \'N/A\') AS request',
+            "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'N/A') AS driver",
+            "COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'N/A') AS mechanic",
+            "COALESCE(CONCAT(r.first_name, ' ', r.last_name), 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
             'of.start_date AS start_date',
@@ -70,10 +73,10 @@ export class WorkOrderService {
           .leftJoin('employee', 'd', 'of.driver_id = d.id')
           .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
           .leftJoin('employee', 'r', 'of.request_id = r.id');
-          // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
+        // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
-          qb.andWhere('LOWER(COALESCE(v.vin_number, \'\')) LIKE :search', {
+          qb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
             search: `%${query.search.toLowerCase()}%`,
           });
         }
@@ -83,7 +86,7 @@ export class WorkOrderService {
           .offset(skip)
           .limit(limit)
           .getRawMany();
-        
+
         // Create separate query for count
         const countQb = this.dataSource
           .createQueryBuilder()
@@ -93,20 +96,22 @@ export class WorkOrderService {
           .leftJoin('employee', 'd', 'of.driver_id = d.id')
           .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
           .leftJoin('employee', 'r', 'of.request_id = r.id');
-          // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
+        // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
-          countQb.andWhere('LOWER(COALESCE(v.vin_number, \'\')) LIKE :search', {
+          countQb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
             search: `%${query.search.toLowerCase()}%`,
           });
         }
 
         const totalResult = await countQb.getRawOne();
         total = parseInt(totalResult?.count || '0');
-
       } catch (dbError) {
         // If there's any database error (table doesn't exist, etc.), just return empty result
-        console.log('Database error in findAll, returning empty result:', dbError.message);
+        console.log(
+          'Database error in findAll, returning empty result:',
+          dbError.message,
+        );
         result = [];
         total = 0;
       }
@@ -116,7 +121,9 @@ export class WorkOrderService {
         total,
         page,
         limit,
-        result.length > 0 ? 'Get all work orders successfully' : 'No work orders found',
+        result.length > 0
+          ? 'Get all work orders successfully'
+          : 'No work orders found',
       );
     } catch (error) {
       console.error('Error in findAll:', error);
@@ -141,10 +148,10 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
-            'COALESCE(v.vin_number, \'N/A\') AS vin_number',
-            'COALESCE(CONCAT(d.first_name, \' \', d.last_name), \'N/A\') AS driver',
-            'COALESCE(CONCAT(m.first_name, \' \', m.last_name), \'N/A\') AS mechanic',
-            'COALESCE(CONCAT(r.first_name, \' \', r.last_name), \'N/A\') AS request',
+            "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'N/A') AS driver",
+            "COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'N/A') AS mechanic",
+            "COALESCE(CONCAT(r.first_name, ' ', r.last_name), 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
             'of.start_date AS start_date',
@@ -164,35 +171,37 @@ export class WorkOrderService {
           .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
           .leftJoin('employee', 'r', 'of.request_id = r.id')
           .where('of.id = :id', { id });
-          // .andWhere('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
+        // .andWhere('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         orderForm = await qb.getRawOne();
 
         if (orderForm) {
-                      // Get sparepart list
-            sparepartList = await this.dataSource
-              .createQueryBuilder()
-              .select([
-                'bo.id AS id',
-                'bo.inventory_id AS part_name',
-                'ro.reloc_to AS destination',
-                'bo.quantity AS quantity',
-                'of.start_date AS start_date',
-                'i.inventory_internal_code AS part_number',
-                'i.inventory_name AS part_name_label',
-                'of.remark AS remark',
-                '\'Ready\' AS status'
-              ])
-              .from('batch_outbound', 'bo')
-              .leftJoin('reloc_outbound', 'ro', 'bo.id = ro.batch_out_id')
-              .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
-              .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
-              .where('bo.order_form_id = :orderId', { orderId: orderForm.id })
-              .getRawMany();
+          // Get sparepart list
+          sparepartList = await this.dataSource
+            .createQueryBuilder()
+            .select([
+              'bo.id AS id',
+              'bo.inventory_id AS part_name',
+              'ro.reloc_to AS destination',
+              'bo.quantity AS quantity',
+              'of.start_date AS start_date',
+              'i.inventory_internal_code AS part_number',
+              'i.inventory_name AS part_name_label',
+              'of.remark AS remark',
+              "'Ready' AS status",
+            ])
+            .from('batch_outbound', 'bo')
+            .leftJoin('reloc_outbound', 'ro', 'bo.id = ro.batch_out_id')
+            .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
+            .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
+            .where('bo.order_form_id = :orderId', { orderId: orderForm.id })
+            .getRawMany();
         }
-
       } catch (dbError) {
-        console.log('Database error in findOne, returning not found:', dbError.message);
+        console.log(
+          'Database error in findOne, returning not found:',
+          dbError.message,
+        );
         orderForm = null;
         sparepartList = [];
       }
@@ -294,22 +303,32 @@ export class WorkOrderService {
         }
       });
 
-      return successResponse(savedOrderForm, 'Work order created successfully', 201);
+      return successResponse(
+        savedOrderForm,
+        'Work order created successfully',
+        201,
+      );
     } catch (error) {
       console.error('Error in create work order:', error);
-      
+
       // Check for specific database errors
       if (error.code === '23505') {
         // Unique constraint violation
-        throw new HttpException('Work order with this data already exists', 400);
+        throw new HttpException(
+          'Work order with this data already exists',
+          400,
+        );
       } else if (error.code === '23503') {
         // Foreign key constraint violation
-        throw new HttpException('Invalid reference data (vehicle, employee, or inventory not found)', 400);
+        throw new HttpException(
+          'Invalid reference data (vehicle, employee, or inventory not found)',
+          400,
+        );
       } else if (error.code === '22P02') {
         // Invalid text representation
         throw new HttpException('Invalid data format provided', 400);
       }
-      
+
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create work order');
     }
@@ -349,9 +368,12 @@ export class WorkOrderService {
             .createQueryBuilder()
             .delete()
             .from('reloc_outbound')
-            .where('batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)', {
-              orderId: orderForm!.id,
-            })
+            .where(
+              'batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)',
+              {
+                orderId: orderForm!.id,
+              },
+            )
             .execute();
 
           // Delete existing batch outbound
@@ -390,7 +412,8 @@ export class WorkOrderService {
               reloc_from: inventory?.racks_id || 0,
               reloc_to: sparepart.destination,
               quantity: sparepart.quantity,
-              reloc_date: updateWorkOrderDto.start_date || orderForm!.start_date,
+              reloc_date:
+                updateWorkOrderDto.start_date || orderForm!.start_date,
               // createdBy: userId, // Commented out since createdBy doesn't exist
             });
 
@@ -399,14 +422,17 @@ export class WorkOrderService {
         }
       });
 
-      return successResponse({} as WorkOrderResponseDto, 'Work order updated successfully');
+      return successResponse(
+        {} as WorkOrderResponseDto,
+        'Work order updated successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to update work order');
     }
   }
 
-    async remove(id: number, userId: number): Promise<ApiResponse<null>> {
+  async remove(id: number, userId: number): Promise<ApiResponse<null>> {
     try {
       const orderForm = await this.orderFormRepository.findOne({
         where: { id },
@@ -423,9 +449,12 @@ export class WorkOrderService {
           .createQueryBuilder()
           .delete()
           .from('reloc_outbound')
-          .where('batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)', {
-            orderId: orderForm!.id,
-          })
+          .where(
+            'batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)',
+            {
+              orderId: orderForm!.id,
+            },
+          )
           .execute();
 
         // 2. Delete batch outbound
@@ -446,6 +475,45 @@ export class WorkOrderService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to delete work order');
+    }
+  }
+
+  async approval(
+    id: number,
+    approvalDto: ApprovalDto,
+    userId: number,
+  ): Promise<ApiResponse<WorkOrderResponseDto>> {
+    try {
+      const orderForm = await this.orderFormRepository.findOne({
+        where: { id },
+        withDeleted: false,
+      });
+
+      if (!orderForm) {
+        throwError('Work order not found', 404);
+      }
+
+      // Jika status approval, update status menjadi 'in_progress'
+      if (approvalDto.status === ApprovalStatus.APPROVAL) {
+        await this.orderFormRepository.update(id, {
+          status: WorkOrderStatus.IN_PROGRESS,
+        });
+
+        return successResponse(
+          {} as WorkOrderResponseDto,
+          'Work order approved successfully',
+        );
+      } else {
+        // Jika reject, tidak mengupdate data
+        return successResponse(
+          {} as WorkOrderResponseDto,
+          'Work order rejected',
+        );
+      }
+    } catch (error) {
+      console.error('Approval error:', error);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(error.message || 'Failed to process approval');
     }
   }
 
@@ -495,27 +563,34 @@ export class WorkOrderService {
         .limit(1)
         .getRawOne();
 
-      return successResponse({
-        order_form: {
-          exists: !!orderFormExists,
-          columns: orderFormColumns
+      return successResponse(
+        {
+          order_form: {
+            exists: !!orderFormExists,
+            columns: orderFormColumns,
+          },
+          batch_outbound: {
+            exists: !!batchOutboundExists,
+            columns: batchOutboundColumns,
+          },
+          reloc_outbound: {
+            exists: !!relocOutboundExists,
+            columns: relocOutboundColumns,
+          },
+          message: 'Database structure analysis completed',
         },
-        batch_outbound: {
-          exists: !!batchOutboundExists,
-          columns: batchOutboundColumns
-        },
-        reloc_outbound: {
-          exists: !!relocOutboundExists,
-          columns: relocOutboundColumns
-        },
-        message: 'Database structure analysis completed'
-      }, 'Database structure analysis successful');
+        'Database structure analysis successful',
+      );
     } catch (error) {
       console.error('Error in testConnection:', error);
-      return successResponse({
-        error: error.message,
-        message: 'Database structure analysis failed'
-      }, 'Database structure analysis failed', 500);
+      return successResponse(
+        {
+          error: error.message,
+          message: 'Database structure analysis failed',
+        },
+        'Database structure analysis failed',
+        500,
+      );
     }
   }
-} 
+}

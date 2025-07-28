@@ -13,7 +13,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum WorkOrderStatus {
   PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
+  IN_PROGRESS = 'on progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
@@ -96,4 +96,4 @@ export class OrderForm {
   // @ApiProperty()
   // @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   // deletedAt: Date;
-} 
+}
