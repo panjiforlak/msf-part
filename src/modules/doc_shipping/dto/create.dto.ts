@@ -15,16 +15,20 @@ export class CreateDocShipDto {
   @MaxLength(35)
   doc_ship_no?: string;
 
+  @ApiProperty({
+    type: 'string',
+    format: 'binary', // <-- ini WAJIB untuk file di Swagger UI
+  })
+  file: any;
+
   // @ApiProperty()
   // @IsString()
   // @MaxLength(255)
   // doc_ship_photo?: string;
 
-  @ApiProperty()
   @IsOptional()
   createdBy?: number;
 
-  @ApiProperty()
   @IsOptional()
   updatedBy?: number;
 }

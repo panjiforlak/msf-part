@@ -46,12 +46,10 @@ export class CreateBatchInDto {
   @IsEnum(batchin_type)
   status_reloc?: batchin_type;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
   createdBy?: number;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
   updatedBy?: number;

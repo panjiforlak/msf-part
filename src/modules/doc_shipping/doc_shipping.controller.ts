@@ -16,7 +16,12 @@ import {
 } from '@nestjs/common';
 import { DocShippingService } from './doc_shipping.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateDocShipDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -47,6 +52,8 @@ export class DocShippingController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create Document Shipping' })
   @UseInterceptors(MemoryFileInterceptor())
   async create(
     @UploadedFile() file: Express.Multer.File,

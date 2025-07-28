@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { BatchInboundService } from './batchin.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateBatchInDto, CreatePDABatchInDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -60,6 +60,11 @@ export class BatchInboundController {
 
   @UseGuards(JwtAuthGuard)
   @IsArray()
+  @ApiBody({
+    type: CreateBatchInDto,
+    isArray: true,
+  })
+  @ApiOperation({ summary: 'Create Batch Inbound' })
   @ValidateNested({ each: true })
   @Post()
   create(@Body() dto: CreateBatchInDto[], @Req() req) {
