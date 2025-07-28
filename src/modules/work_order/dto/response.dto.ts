@@ -28,6 +28,9 @@ export class SparepartResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiProperty()
+  racks_name: string;
 }
 
 export class WorkOrderResponseDto {

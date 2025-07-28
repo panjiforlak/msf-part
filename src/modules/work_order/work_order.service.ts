@@ -190,11 +190,13 @@ export class WorkOrderService {
               'i.inventory_name AS part_name_label',
               'of.remark AS remark',
               "'Ready' AS status",
+              "COALESCE(sa.barcode, 'N/A') AS racks_name",
             ])
             .from('batch_outbound', 'bo')
             .leftJoin('reloc_outbound', 'ro', 'bo.id = ro.batch_out_id')
             .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
             .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
+            .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
             .where('bo.order_form_id = :orderId', { orderId: orderForm.id })
             .getRawMany();
         }
