@@ -177,9 +177,16 @@ export class WorkOrderService {
                 'bo.inventory_id AS part_name',
                 'ro.reloc_to AS destination',
                 'bo.quantity AS quantity',
+                'of.start_date AS start_date',
+                'i.inventory_internal_code AS part_number',
+                'i.inventory_name AS part_name_label',
+                'of.remark AS remark',
+                '\'Ready\' AS status'
               ])
               .from('batch_outbound', 'bo')
               .leftJoin('reloc_outbound', 'ro', 'bo.id = ro.batch_out_id')
+              .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
+              .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
               .where('bo.order_form_id = :orderId', { orderId: orderForm.id })
               .getRawMany();
         }

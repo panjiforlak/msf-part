@@ -13,6 +13,21 @@ export class SparepartResponseDto {
 
   @ApiProperty()
   quantity: number;
+
+  @ApiProperty()
+  start_date: Date;
+
+  @ApiProperty()
+  part_number: string;
+
+  @ApiProperty()
+  part_name_label: string;
+
+  @ApiProperty()
+  remark: string;
+
+  @ApiProperty()
+  status: string;
 }
 
 export class WorkOrderResponseDto {
