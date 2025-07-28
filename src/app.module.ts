@@ -17,6 +17,7 @@ import { DocShippingModule } from './modules/doc_shipping/doc_shipping.module';
 import { BatchInboundModule } from './modules/batch_in/batchin.module';
 import { RelocInboundModule } from './modules/relocation_in/relocin.module';
 import { ComponentsModule } from './modules/master/components/components.module';
+import { WorkOrderModule } from './modules/work_order/work_order.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ComponentsModule } from './modules/master/components/components.module'
     BatchInboundModule,
     RelocInboundModule,
     ComponentsModule,
+    WorkOrderModule,
   ],
 })
 export class AppModule {}

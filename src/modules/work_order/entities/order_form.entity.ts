@@ -1,0 +1,99 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+
+export enum WorkOrderStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+@Entity('order_form')
+export class OrderForm {
+  @ApiProperty()
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  // @ApiProperty()
+  // @Column({ type: 'uuid', default: () => 'gen_random_uuid()', unique: true })
+  // uuid: string;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  vehicle_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  admin_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  driver_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  mechanic_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  request_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'varchar', length: 255 })
+  departement: string;
+
+  @ApiProperty()
+  @Column({ type: 'text' })
+  remark: string;
+
+  @ApiProperty()
+  @Column({ type: 'timestamptz' })
+  start_date: Date;
+
+  @ApiProperty()
+  @Column({ type: 'timestamptz' })
+  end_date: Date;
+
+  @ApiProperty({ enum: WorkOrderStatus })
+  @Column({
+    type: 'enum',
+    enum: WorkOrderStatus,
+    default: WorkOrderStatus.PENDING,
+  })
+  status: WorkOrderStatus;
+
+  // Audit fields commented out - will be added back once database structure is confirmed
+  // @ApiProperty()
+  // @Column({ name: 'created_by', type: 'int', default: 0 })
+  // createdBy: number;
+
+  // @ApiProperty()
+  // @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  // createdAt: Date;
+
+  // @ApiProperty()
+  // @Column({ name: 'updated_by', type: 'int', default: 0 })
+  // updatedBy: number;
+
+  // @ApiProperty()
+  // @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', nullable: true })
+  // updatedAt: Date;
+
+  // @ApiProperty()
+  // @Column({ name: 'deleted_by', type: 'int', default: 0 })
+  // deletedBy: number;
+
+  // @ApiProperty()
+  // @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  // deletedAt: Date;
+} 
