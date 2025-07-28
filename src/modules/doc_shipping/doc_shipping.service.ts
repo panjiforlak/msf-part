@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DocShipping } from './entities/doc_shipping.entity';
-import { ILike, Not, Repository } from 'typeorm';
+import { DataSource, ILike, Not, Repository } from 'typeorm';
 import {
   ApiResponse,
   successResponse,
@@ -25,6 +25,7 @@ export class DocShippingService {
     @InjectRepository(DocShipping)
     private repository: Repository<DocShipping>,
     private readonly s3service: S3Service,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByDocNo(doc_ship_no: string): Promise<DocShipping | null> {
@@ -109,32 +110,59 @@ export class DocShippingService {
     userId: number,
     uploadedFile: { key: string; url: string },
   ): Promise<ApiResponse<ResponseDto>> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
+      // Cek duplikat
       const existing = await this.findByDocNo(data.doc_ship_no ?? '');
       if (existing) {
         throwError(`Doc No ${data.doc_ship_no} already exists`, 409);
       }
-      console.log(uploadedFile);
-      const newBody = this.repository.create({
+
+      // Simpan doc_shipping
+      const newDocShipping = this.repository.create({
         ...data,
         doc_ship_photo: uploadedFile.url,
         createdBy: userId,
       });
+      const savedDocShip = await queryRunner.manager.save(newDocShipping);
 
-      const result = await this.repository.save(newBody);
-      const response = plainToInstance(ResponseDto, result);
+      // Simpan semua batch_inbound, sambil bawa doc_ship_id
+      const batchData = data.items.map((item) => ({
+        inventory_id: item.inventory_id,
+        quantity: item.quantity,
+        price: item.price,
+        supplier_id: item.supplier_id,
+        arrival_date: item.arrival_date,
+        status_reloc: item.status_reloc,
+        doc_ship_id: savedDocShip.id,
+        created_by: userId,
+      }));
 
+      await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into('batch_inbound')
+        .values(batchData)
+        .execute();
+
+      await queryRunner.commitTransaction();
+
+      const response = plainToInstance(ResponseDto, savedDocShip);
       return successResponse(
         response,
         'Create new doc shipping successfully',
         201,
       );
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      console.log(error.stack);
+      await queryRunner.rollbackTransaction();
+      console.error(error.stack);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create doc shipping');
+    } finally {
+      await queryRunner.release();
     }
   }
 
