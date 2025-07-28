@@ -139,6 +139,7 @@ export class DocShippingService {
         quantity: item.quantity,
         price: item.price,
         supplier_id: item.supplier_id,
+        picker_id: item.picker_id,
         arrival_date: item.arrival_date,
         status_reloc: item.status_reloc,
         doc_ship_id: savedDocShip.id,

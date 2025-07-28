@@ -34,7 +34,13 @@ export class S3Service {
         Bucket: s3Config.bucket,
         Key: key,
         Body: file.buffer,
+        ACL: 'public-read',
         ContentType: file.mimetype,
+        Metadata: {
+          originalName: file.originalname,
+          uploadedAt: new Date().toISOString(),
+          provider: s3Config.provider,
+        },
       }),
     );
 
