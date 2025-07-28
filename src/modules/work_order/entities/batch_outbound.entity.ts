@@ -32,6 +32,15 @@ export class BatchOutbound {
   barcode: string;
 
   @ApiProperty()
+  @Column({
+    type: 'text',
+    unique: true,
+    nullable: false,
+    default: () => "encode(gen_random_bytes(6), 'hex')",
+  })
+  uuid: string;
+
+  @ApiProperty()
   @Column({ type: 'int', default: 0 })
   inventory_id: number;
 
@@ -55,28 +64,27 @@ export class BatchOutbound {
   @Column({ type: 'text', nullable: true })
   remarks: string;
 
-  // Audit fields commented out - will be added back once database structure is confirmed
-  // @ApiProperty()
-  // @Column({ name: 'created_by', type: 'int', default: 0 })
-  // createdBy: number;
+  @ApiProperty()
+  @Column({ name: 'createdBy', type: 'int', default: 0 })
+  createdBy: number;
 
-  // @ApiProperty()
-  // @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  // createdAt: Date;
+  @ApiProperty()
+  @CreateDateColumn({ name: 'createdAt', type: 'timestamptz' })
+  createdAt: Date;
 
-  // @ApiProperty()
-  // @Column({ name: 'updated_by', type: 'int', default: 0 })
-  // updatedBy: number;
+  @ApiProperty()
+  @Column({ name: 'updatedBy', type: 'int', default: 0 })
+  updatedBy: number;
 
-  // @ApiProperty()
-  // @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', nullable: true })
-  // updatedAt: Date;
+  @ApiProperty()
+  @UpdateDateColumn({ name: 'updatedAt', type: 'timestamptz', nullable: true })
+  updatedAt: Date;
 
-  // @ApiProperty()
-  // @Column({ name: 'deleted_by', type: 'int', default: 0 })
-  // deletedBy: number;
+  @ApiProperty()
+  @Column({ name: 'deletedBy', type: 'int', default: 0 })
+  deletedBy: number;
 
-  // @ApiProperty()
-  // @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
-  // deletedAt: Date;
+  @ApiProperty()
+  @DeleteDateColumn({ name: 'deletedAt', type: 'timestamptz', nullable: true })
+  deletedAt: Date;
 }

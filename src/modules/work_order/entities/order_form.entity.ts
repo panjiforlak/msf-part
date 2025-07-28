@@ -72,28 +72,27 @@ export class OrderForm {
   })
   status: WorkOrderStatus;
 
-  // Audit fields commented out - will be added back once database structure is confirmed
-  // @ApiProperty()
-  // @Column({ name: 'created_by', type: 'int', default: 0 })
-  // createdBy: number;
+  @ApiProperty()
+  @Column({ name: 'createdby', type: 'int', default: 0 })
+  createdBy: number;
 
-  // @ApiProperty()
-  // @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  // createdAt: Date;
+  @ApiProperty()
+  @CreateDateColumn({ name: 'createdat', type: 'timestamptz' })
+  createdAt: Date;
 
-  // @ApiProperty()
-  // @Column({ name: 'updated_by', type: 'int', default: 0 })
-  // updatedBy: number;
+  @ApiProperty()
+  @Column({ name: 'updatedby', type: 'int', default: 0 })
+  updatedBy: number;
 
-  // @ApiProperty()
-  // @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', nullable: true })
-  // updatedAt: Date;
+  @ApiProperty()
+  @UpdateDateColumn({ name: 'updatedat', type: 'timestamptz', nullable: true })
+  updatedAt: Date;
 
-  // @ApiProperty()
-  // @Column({ name: 'deleted_by', type: 'int', default: 0 })
-  // deletedBy: number;
+  @ApiProperty()
+  @Column({ name: 'deletedby', type: 'int', default: 0 })
+  deletedBy: number;
 
-  // @ApiProperty()
-  // @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
-  // deletedAt: Date;
+  @ApiProperty()
+  @DeleteDateColumn({ name: 'deletedat', type: 'timestamptz', nullable: true })
+  deletedAt: Date;
 }

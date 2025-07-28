@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OrderForm, WorkOrderStatus } from './entities/order_form.entity';
 import { BatchOutbound, batchout_type } from './entities/batch_outbound.entity';
 import { RelocOutbound } from './entities/reloc_outbound.entity';
+import { BatchInbound } from '../batch_in/entities/batchin.entity';
 import { ILike, Repository } from 'typeorm';
 import {
   ApiResponse,
@@ -32,6 +33,8 @@ export class WorkOrderService {
     private batchOutboundRepository: Repository<BatchOutbound>,
     @InjectRepository(RelocOutbound)
     private relocOutboundRepository: Repository<RelocOutbound>,
+    @InjectRepository(BatchInbound)
+    private batchInboundRepository: Repository<BatchInbound>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -149,35 +152,23 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
-            "COALESCE(v.vin_number, 'N/A') AS vin_number",
-            "COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'N/A') AS driver",
-            "COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'N/A') AS mechanic",
-            "COALESCE(CONCAT(r.first_name, ' ', r.last_name), 'N/A') AS request",
+            'of.vehicle_id AS vin_number',
+            'of.driver_id AS driver',
+            'of.mechanic_id AS mechanic',
+            'of.request_id AS request',
             'of.departement AS departement',
             'of.remark AS remark',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
-            // Audit fields commented out
-            // 'of."createdBy" AS "createdBy"',
-            // 'of."createdAt" AS "createdAt"',
-            // 'of."updatedBy" AS "updatedBy"',
-            // 'of."updatedAt" AS "updatedAt"',
-            // 'of."deletedBy" AS "deletedBy"',
-            // 'of."deletedAt" AS "deletedAt"',
           ])
           .from('order_form', 'of')
-          .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
-          .leftJoin('employee', 'd', 'of.driver_id = d.id')
-          .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
-          .leftJoin('employee', 'r', 'of.request_id = r.id')
           .where('of.id = :id', { id });
-        // .andWhere('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         orderForm = await qb.getRawOne();
 
         if (orderForm) {
-          // Get sparepart list
+          // Get sparepart list - menggunakan batch_outbound untuk mendapatkan sparepart yang terkait dengan work order
           sparepartList = await this.dataSource
             .createQueryBuilder()
             .select([
@@ -193,7 +184,11 @@ export class WorkOrderService {
               "COALESCE(sa.barcode, 'N/A') AS racks_name",
             ])
             .from('batch_outbound', 'bo')
-            .leftJoin('reloc_outbound', 'ro', 'bo.id = ro.batch_out_id')
+            .leftJoin(
+              'reloc_outbound',
+              'ro',
+              'ro.batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id = bo.inventory_id)',
+            )
             .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
             .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
             .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
@@ -251,7 +246,7 @@ export class WorkOrderService {
             start_date: new Date(createWorkOrderDto.start_date),
             end_date: new Date(createWorkOrderDto.end_date),
             status: createWorkOrderDto.status,
-            // createdBy: userId, // Commented out since createdBy doesn't exist
+            createdBy: userId,
           });
 
           console.log('Order form created:', orderForm);
@@ -267,14 +262,51 @@ export class WorkOrderService {
               order_form_id: savedOrderForm.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
-              // createdBy: userId, // Commented out since createdBy doesn't exist
+              createdBy: userId,
             });
 
             console.log('Batch outbound created:', batchOutbound);
             const savedBatchOutbound = await manager.save(batchOutbound);
             console.log('Batch outbound saved:', savedBatchOutbound);
 
-            // 3. Get racks_id from inventory
+            // 3. Get batch_inbound data berdasarkan inventory_id
+            console.log(
+              'Searching for batch_inbound with inventory_id:',
+              sparepart.part_name,
+              'type:',
+              typeof sparepart.part_name,
+            );
+
+            // First, let's check if there are any batch_inbound records at all
+            const allBatchInbounds = await manager
+              .createQueryBuilder()
+              .select('bi.id, bi.inventory_id')
+              .from('batch_inbound', 'bi')
+              .limit(10)
+              .getRawMany();
+
+            console.log(
+              'All batch_inbound records (first 10):',
+              allBatchInbounds,
+            );
+            
+            const batchInbounds = await manager
+              .createQueryBuilder()
+              .select('bi.id, bi.inventory_id')
+              .from('batch_inbound', 'bi')
+              .where('bi.inventory_id = :inventoryId', {
+                inventoryId: sparepart.part_name,
+              })
+              .getRawMany();
+
+            console.log(
+              'Batch inbounds found for inventory_id',
+              sparepart.part_name,
+              ':',
+              batchInbounds,
+            );
+
+            // 4. Get racks_id from inventory
             const inventory = await manager
               .createQueryBuilder()
               .select('i.racks_id')
@@ -284,19 +316,53 @@ export class WorkOrderService {
 
             console.log('Inventory found:', inventory);
 
-            // 4. Create reloc outbound
-            const relocOutbound = manager.create(RelocOutbound, {
-              batch_out_id: savedBatchOutbound.id,
-              reloc_from: inventory?.racks_id || 0,
-              reloc_to: sparepart.destination,
-              quantity: sparepart.quantity,
-              reloc_date: new Date(createWorkOrderDto.start_date),
-              // createdBy: userId, // Commented out since createdBy doesn't exist
-            });
+            // 5. Create reloc outbound untuk setiap batch_inbound
+            // Jika ada banyak batch_inbound dengan inventory_id yang sama,
+            // maka akan dibuat banyak row di reloc_outbound
+            if (batchInbounds && batchInbounds.length > 0) {
+              console.log(
+                'Creating reloc outbound for',
+                batchInbounds.length,
+                'batch_inbound records',
+              );
+              for (const batchInbound of batchInbounds) {
+                const relocOutboundData = {
+                  batch_in_id: batchInbound.id,
+                  reloc_from: inventory?.racks_id || 0,
+                  reloc_to: sparepart.destination,
+                  quantity: sparepart.quantity,
+                  reloc_date: new Date(createWorkOrderDto.start_date),
+                  createdBy: userId,
+                };
 
-            console.log('Reloc outbound created:', relocOutbound);
-            await manager.save(relocOutbound);
-            console.log('Reloc outbound saved successfully');
+                console.log(
+                  'Reloc outbound data to be created:',
+                  relocOutboundData,
+                );
+
+                const relocOutbound = manager.create(
+                  RelocOutbound,
+                  relocOutboundData,
+                );
+
+                console.log(
+                  'Reloc outbound created for batch_in_id:',
+                  batchInbound.id,
+                );
+                const savedRelocOutbound = await manager.save(relocOutbound);
+                console.log(
+                  'Reloc outbound saved successfully for batch_in_id:',
+                  batchInbound.id,
+                  'with ID:',
+                  savedRelocOutbound.id,
+                );
+              }
+            } else {
+              console.log(
+                'No batch_inbound found for inventory_id:',
+                sparepart.part_name,
+              );
+            }
           }
 
           console.log('Transaction completed successfully');
@@ -372,7 +438,7 @@ export class WorkOrderService {
             .delete()
             .from('reloc_outbound')
             .where(
-              'batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)',
+              'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
               {
                 orderId: orderForm!.id,
               },
@@ -401,6 +467,16 @@ export class WorkOrderService {
 
             const savedBatchOutbound = await manager.save(batchOutbound);
 
+            // Get batch_inbound data berdasarkan inventory_id
+            const batchInbounds = await manager
+              .createQueryBuilder()
+              .select('bi.id, bi.inventory_id')
+              .from('batch_inbound', 'bi')
+              .where('bi.inventory_id = :inventoryId', {
+                inventoryId: sparepart.part_name,
+              })
+              .getMany();
+
             // Get racks_id from inventory
             const inventory = await manager
               .createQueryBuilder()
@@ -409,18 +485,19 @@ export class WorkOrderService {
               .where('i.id = :id', { id: sparepart.part_name })
               .getOne();
 
-            // Create reloc outbound
-            const relocOutbound = manager.create(RelocOutbound, {
-              batch_out_id: savedBatchOutbound.id,
-              reloc_from: inventory?.racks_id || 0,
-              reloc_to: sparepart.destination,
-              quantity: sparepart.quantity,
-              reloc_date:
-                updateWorkOrderDto.start_date || orderForm!.start_date,
-              // createdBy: userId, // Commented out since createdBy doesn't exist
-            });
+            // Create reloc outbound untuk setiap batch_inbound
+            if (batchInbounds && batchInbounds.length > 0) {
+              for (const batchInbound of batchInbounds) {
+                const relocOutbound = manager.create(RelocOutbound, {
+                  batch_in_id: batchInbound.id,
+                  reloc_from: inventory?.racks_id || 0,
+                  reloc_to: sparepart.destination,
+                  quantity: sparepart.quantity,
+                });
 
-            await manager.save(relocOutbound);
+                await manager.save(relocOutbound);
+              }
+            }
           }
         }
       });
@@ -453,7 +530,7 @@ export class WorkOrderService {
           .delete()
           .from('reloc_outbound')
           .where(
-            'batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)',
+            'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
             {
               orderId: orderForm!.id,
             },
@@ -506,7 +583,7 @@ export class WorkOrderService {
         if (approvalDto.remark) {
           await this.batchOutboundRepository.update(
             { order_form_id: id },
-            { remarks: approvalDto.remark }
+            { remarks: approvalDto.remark },
           );
         }
 
@@ -524,7 +601,9 @@ export class WorkOrderService {
     } catch (error) {
       console.error('Approval error:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(error.message || 'Failed to process approval');
+      throw new InternalServerErrorException(
+        error.message || 'Failed to process approval',
+      );
     }
   }
 
@@ -561,9 +640,12 @@ export class WorkOrderService {
         .createQueryBuilder()
         .update('reloc_outbound')
         .set({ picker_id: assignPickerDto.picker_id })
-        .where('batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)', {
-          orderId: id,
-        })
+        .where(
+          'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
+          {
+            orderId: id,
+          },
+        )
         .execute();
 
       return successResponse(
@@ -573,7 +655,9 @@ export class WorkOrderService {
     } catch (error) {
       console.error('Assign picker error:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(error.message || 'Failed to assign picker');
+      throw new InternalServerErrorException(
+        error.message || 'Failed to assign picker',
+      );
     }
   }
 
@@ -601,6 +685,13 @@ export class WorkOrderService {
         .where('c.table_name = :tableName', { tableName: 'reloc_outbound' })
         .getRawMany();
 
+      const batchInboundColumns = await this.dataSource
+        .createQueryBuilder()
+        .select('column_name, data_type, is_nullable')
+        .from('information_schema.columns', 'c')
+        .where('c.table_name = :tableName', { tableName: 'batch_inbound' })
+        .getRawMany();
+
       // Test if tables exist
       const orderFormExists = await this.dataSource
         .createQueryBuilder()
@@ -623,6 +714,41 @@ export class WorkOrderService {
         .limit(1)
         .getRawOne();
 
+      const batchInboundExists = await this.dataSource
+        .createQueryBuilder()
+        .select('1')
+        .from('batch_inbound', 'bi')
+        .limit(1)
+        .getRawOne();
+
+      // Get sample data from batch_inbound
+      const batchInboundSample = await this.dataSource
+        .createQueryBuilder()
+        .select('bi.id, bi.inventory_id, bi.quantity')
+        .from('batch_inbound', 'bi')
+        .limit(5)
+        .getRawMany();
+
+      // Get sample data from batch_outbound for work order 20
+      const batchOutboundSample = await this.dataSource
+        .createQueryBuilder()
+        .select('bo.id, bo.inventory_id, bo.order_form_id, bo.quantity')
+        .from('batch_outbound', 'bo')
+        .where('bo.order_form_id = 20')
+        .getRawMany();
+
+      // Get sample data from reloc_outbound for work order 20
+      const relocOutboundSample = await this.dataSource
+        .createQueryBuilder()
+        .select(
+          'ro.id, ro.batch_in_id, ro.reloc_from, ro.reloc_to, ro.quantity',
+        )
+        .from('reloc_outbound', 'ro')
+        .where(
+          'ro.batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = 20))',
+        )
+        .getRawMany();
+
       return successResponse(
         {
           order_form: {
@@ -632,10 +758,17 @@ export class WorkOrderService {
           batch_outbound: {
             exists: !!batchOutboundExists,
             columns: batchOutboundColumns,
+            sample_data_for_wo_20: batchOutboundSample,
           },
           reloc_outbound: {
             exists: !!relocOutboundExists,
             columns: relocOutboundColumns,
+            sample_data_for_wo_20: relocOutboundSample,
+          },
+          batch_inbound: {
+            exists: !!batchInboundExists,
+            columns: batchInboundColumns,
+            sample_data: batchInboundSample,
           },
           message: 'Database structure analysis completed',
         },

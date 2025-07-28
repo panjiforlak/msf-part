@@ -28,7 +28,7 @@ export class RelocOutbound {
 
   @ApiProperty()
   @Column({ type: 'int', default: 0 })
-  batch_out_id: number;
+  batch_in_id: number;
 
   @ApiProperty()
   @Column({ type: 'int', default: 0 })
@@ -46,28 +46,31 @@ export class RelocOutbound {
   @Column({ type: 'int', nullable: true })
   picker_id: number;
 
-  // Audit fields commented out - will be added back once database structure is confirmed
-  // @ApiProperty({ required: false })
-  // @Column({ name: 'created_by', type: 'int', nullable: true, default: 0 })
-  // createdBy: number;
+  @ApiProperty()
+  @Column({ type: 'timestamptz', nullable: true })
+  reloc_date: Date;
 
-  // @ApiProperty()
-  // @CreateDateColumn({ name: 'created_at' })
-  // createdAt: Date;
+  @ApiProperty({ required: false })
+  @Column({ name: 'createdBy', type: 'int', nullable: true, default: 0 })
+  createdBy: number;
 
-  // @ApiProperty({ required: false })
-  // @Column({ name: 'updated_by', type: 'int', nullable: true, default: 0 })
-  // updatedBy: number;
+  @ApiProperty()
+  @CreateDateColumn({ name: 'createdAt' })
+  createdAt: Date;
 
-  // @ApiProperty({ required: false })
-  // @UpdateDateColumn({ name: 'updated_at' })
-  // updatedAt: Date;
+  @ApiProperty({ required: false })
+  @Column({ name: 'updatedBy', type: 'int', nullable: true, default: 0 })
+  updatedBy: number;
 
-  // @ApiProperty({ required: false })
-  // @Column({ name: 'deleted_by', type: 'int', nullable: true, default: 0 })
-  // deletedBy: number;
+  @ApiProperty({ required: false })
+  @UpdateDateColumn({ name: 'updatedAt' })
+  updatedAt: Date;
 
-  // @ApiProperty({ required: false })
-  // @DeleteDateColumn({ name: 'deleted_at' })
-  // deletedAt: Date;
+  @ApiProperty({ required: false })
+  @Column({ name: 'deletedBy', type: 'int', nullable: true, default: 0 })
+  deletedBy: number;
+
+  @ApiProperty({ required: false })
+  @DeleteDateColumn({ name: 'deletedAt' })
+  deletedAt: Date;
 }
