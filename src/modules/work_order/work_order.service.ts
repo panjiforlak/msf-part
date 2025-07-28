@@ -499,6 +499,14 @@ export class WorkOrderService {
           status: WorkOrderStatus.IN_PROGRESS,
         });
 
+        // Update remarks di tabel batch_outbound jika ada remark
+        if (approvalDto.remark) {
+          await this.batchOutboundRepository.update(
+            { order_form_id: id },
+            { remarks: approvalDto.remark }
+          );
+        }
+
         return successResponse(
           {} as WorkOrderResponseDto,
           'Work order approved successfully',

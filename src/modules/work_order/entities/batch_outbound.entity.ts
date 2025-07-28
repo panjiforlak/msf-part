@@ -51,6 +51,10 @@ export class BatchOutbound {
   })
   status: batchout_type;
 
+  @ApiProperty()
+  @Column({ type: 'text', nullable: true })
+  remarks: string;
+
   // Audit fields commented out - will be added back once database structure is confirmed
   // @ApiProperty()
   // @Column({ name: 'created_by', type: 'int', default: 0 })

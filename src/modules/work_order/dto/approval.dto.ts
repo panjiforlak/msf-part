@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export enum ApprovalStatus {
   APPROVAL = 'approval',
@@ -17,4 +17,13 @@ export class ApprovalDto {
     message: 'Status harus berupa approval atau reject',
   })
   status: ApprovalStatus;
+
+  @ApiProperty({
+    description: 'Catatan/remark untuk approval',
+    example: 'Sparepart sudah tersedia dan siap diproses',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Remark harus berupa string' })
+  remark?: string;
 }
