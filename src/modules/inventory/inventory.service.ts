@@ -55,8 +55,10 @@ export class InventoryService {
           'i.inventory_internal_code AS part_number_internal',
           'i.inventory_name AS inventory_name',
           'c.component_name AS component_name',
-          'COALESCE(SUM(DISTINCT ri.quantity), 0) AS qty_in',
-          'COALESCE(SUM(DISTINCT ro.quantity), 0) AS qty_out',
+          // 'COALESCE(SUM(DISTINCT ri.quantity), 0) AS qty_in',
+          'COALESCE(SUM(CASE WHEN ri.quantity >= 0 THEN ri.quantity ELSE 0 END), 0) AS qty_in',
+          'COALESCE(SUM(CASE WHEN ri.quantity < 0 THEN ri.quantity ELSE 0 END), 0) AS qty_out',
+          // 'COALESCE(SUM(DISTINCT ro.quantity), 0) AS qty_out',
           'i.quantity AS qty_on_hand',
         ])
         .from('inventory', 'i')
@@ -64,20 +66,12 @@ export class InventoryService {
 
         // INBOUND
         .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-        .leftJoin(
-          'reloc_inbound',
-          'ri',
-          'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
-        )
+        .leftJoin('detail_inventory_storage', 'ri', 'bi.id = ri.batch_in_id ');
 
-        // OUTBOUND
-        .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
-        .leftJoin(
-          'reloc_outbound',
-          'ro',
-          'bo.id = ro.batch_in_id AND ro.reloc_from != 0',
-        )
-        .where('i."deletedAt" IS NULL');
+      // // OUTBOUND
+      // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
+      // .leftJoin('detail_inventory_storage', 'ro', 'bo.id = ro.batch_in_id ')
+      // .where('i."deletedAt" IS NULL');
 
       if (search) {
         qb.andWhere('LOWER(i.inventory_name) LIKE :search', {
@@ -112,18 +106,18 @@ export class InventoryService {
               // INBOUND
               .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
               .leftJoin(
-                'reloc_inbound',
+                'detail_inventory_storage',
                 'ri',
-                'bi.id = ri.batch_in_id AND ri.reloc_to != 0',
+                'bi.id = ri.batch_in_id',
               )
 
-              // OUTBOUND
-              .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
-              .leftJoin(
-                'reloc_outbound',
-                'ro',
-                'bo.id = ro.batch_in_id AND ro.reloc_from != 0',
-              )
+              // // OUTBOUND
+              // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
+              // .leftJoin(
+              //   'detail_inventory_storage',
+              //   'ro',
+              //   'bo.id = ro.batch_in_id ',
+              // )
 
               .where('i."deletedAt" IS NULL')
               .andWhere(

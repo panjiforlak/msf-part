@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNumber,
@@ -6,9 +7,10 @@ import {
   IsString,
   Length,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateDocShipDto {
   @ApiProperty()
@@ -29,19 +31,26 @@ export class CreateDocShipDto {
       "inventory_id": 1,
       "quantity": 100,
       "supplier_id": 1,
+      "picker_id": 1,
+      "lifetime": 2,
       "price": 15000,
       "arrival_date": "2025-07-28",
       "status_reloc": "inbound"
     }]`,
   })
-  @IsString()
   @Transform(({ value }) => {
-    try {
-      return JSON.parse(value); // ubah string menjadi array of object
-    } catch {
-      return [];
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
     }
+    return value;
   })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BatchInboundItemDto)
   items: BatchInboundItemDto[];
   // @ApiProperty()
   // @IsString()
@@ -67,6 +76,12 @@ export class BatchInboundItemDto {
 
   @ApiProperty()
   price: number;
+
+  @ApiProperty()
+  picker_id: number;
+
+  @ApiProperty()
+  life_time: number;
 
   @ApiProperty()
   arrival_date: string; // format YYYY-MM-DD

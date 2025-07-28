@@ -28,6 +28,7 @@ import { ParamsDto } from './dto/param.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
 import { MemoryFileInterceptor } from 'src/common/interceptors/logger.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { throwError } from 'src/common/helpers/response.helper';
 
 @ApiTags('DocShipping')
 @ApiBearerAuth('jwt')
@@ -60,6 +61,13 @@ export class DocShippingController {
     @Body() dto: CreateDocShipDto,
     @Req() req,
   ) {
+    if (typeof dto.items === 'string') {
+      try {
+        dto.items = JSON.parse(dto.items);
+      } catch (err) {
+        throwError('Invalid format for items (should be JSON array)', 400);
+      }
+    }
     const uploaded = await this.s3services.uploadFile(file, 'doc-shipping');
     return this.services.create(dto, req.user.id, uploaded);
   }

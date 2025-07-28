@@ -121,6 +121,10 @@ export class DocShippingService {
         throwError(`Doc No ${data.doc_ship_no} already exists`, 409);
       }
 
+      if (!Array.isArray(data.items)) {
+        throwError('items must be an array', 400);
+      }
+
       // Simpan doc_shipping
       const newDocShipping = this.repository.create({
         ...data,

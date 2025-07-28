@@ -58,6 +58,7 @@ export class BatchInboundService {
           'i.inventory_name AS part_name',
           'bi.quantity AS quantity',
           'bi.barcode AS barcode',
+          'bi.lifetime AS lifetime',
           'bi.picker_id AS picker_id',
           'u.name AS picker_name',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
@@ -129,7 +130,7 @@ export class BatchInboundService {
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
           'bi.quantity AS quantity',
-          'sa.barcode AS rack_destination',
+          'sa.storage_code AS rack_destination',
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
@@ -328,17 +329,15 @@ export class BatchInboundService {
           .execute();
 
         // 3. UPDATE inventory.quantity klo storage type == racks
-        if (data.storage_type === StorageTypeEnum.RACKS) {
-          await manager
-            .createQueryBuilder()
-            .update('inventory')
-            .set({
-              quantity: () => `"quantity" + ${data.quantity}`,
-              racks_id: data.storage_id,
-            })
-            .where('id = :id', { id: data.inventory_id })
-            .execute();
-        }
+        await manager
+          .createQueryBuilder()
+          .update('inventory')
+          .set({
+            quantity: () => `"quantity" + ${data.quantity}`,
+            racks_id: data.storage_id,
+          })
+          .where('id = :id', { id: data.inventory_id })
+          .execute();
       });
 
       return successResponse(
