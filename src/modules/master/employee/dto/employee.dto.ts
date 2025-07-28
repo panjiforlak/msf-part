@@ -24,6 +24,9 @@ export class GetEmployeeQueryDto {
 
   @Expose()
   sallary: string;
+
+  @Expose()
+  status: string;
 }
 
 export class QueryParamDto {
