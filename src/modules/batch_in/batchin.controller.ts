@@ -33,6 +33,7 @@ export class BatchInboundController {
   findAll(@Query() query: ParamsDto) {
     return this.services.findAll(query);
   }
+
   // StartPDA Inbound
   @ApiTags('PDA Inbounds')
   @ApiOperation({
@@ -52,6 +53,7 @@ export class BatchInboundController {
     return this.services.createPDA(dto, req.user.id);
   }
   // END PDA Inbound
+
   @UseGuards(JwtAuthGuard)
   @Get(':slug')
   findOne(@Param('slug') slug: string) {

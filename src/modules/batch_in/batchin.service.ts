@@ -44,24 +44,63 @@ export class BatchInboundService {
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
-      const [result, total] = await this.repository.findAndCount({
-        where: query.search ? [{ barcode: ILike(`%${query.search}%`) }] : {},
-        withDeleted: false,
-        order: {
-          id: 'DESC',
-        },
-        skip,
-        take: limit,
-      });
+      const search = query.search?.toLowerCase() ?? '';
+
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'bi.id AS batch_in_id',
+          'bi.barcode AS batch',
+          `TO_CHAR(bi."arrival_date", 'YYYY-MM-DD HH24:MI') AS "arrival_date"`,
+          'bi.price AS price',
+          'ds.uuid AS doc_ship',
+          'bi.inventory_id AS inventory_id',
+          'i.inventory_name AS part_name',
+          'bi.quantity AS quantity',
+          'bi.barcode AS barcode',
+          `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi."picker_id" AS picker_id',
+        ])
+        .from('batch_inbound', 'bi')
+        .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+        .leftJoin('doc_shipping', 'ds', 'bi.doc_ship_id = ds.id')
+        .where('bi."deletedAt" IS NULL');
+
+      if (search) {
+        qb.andWhere(
+          `(LOWER(bi.barcode) LIKE :search OR CAST(ds.uuid AS TEXT) ILIKE :search)`,
+          { search: `%${search}%` },
+        );
+      }
+
+      qb.orderBy('bi.id', 'DESC').offset(skip).limit(limit);
+
+      const [result, total] = await Promise.all([
+        qb.getRawMany(),
+        this.dataSource
+          .createQueryBuilder()
+          .from('batch_inbound', 'bi')
+          .leftJoin('doc_shipping', 'ds', 'bi.doc_ship_id = ds.id')
+          .where('bi."deletedAt" IS NULL')
+          .andWhere(
+            search
+              ? `(LOWER(bi.barcode) LIKE :search OR CAST(ds.uuid AS TEXT) ILIKE :search)`
+              : 'TRUE',
+            search ? { search: `%${search}%` } : {},
+          )
+          .getCount(),
+      ]);
+
       return paginateResponse(
         result,
         total,
         page,
         limit,
-        'Get all batch inbound susccessfuly',
+        'Get all batch inbound successfully',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      console.log(error.stack);
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
