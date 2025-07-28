@@ -1,10 +1,22 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { MasterModule } from './modules/master/master.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { VehicleModule } from './modules/master/vehicles/vehicle.module';
+import { EmployeeModule } from './modules/master/employee/employee.module';
+import { SuppliersModule } from './modules/master/suppliers/suppliers.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { WorkingareaModule } from './modules/master/workingarea/workingarea.module';
+import { StorageareaModule } from './modules/master/storage/storagearea.module';
+import { InOutAreaModule } from './modules/master/inoutarea/inout.module';
+import { DocShippingModule } from './modules/doc_shipping/doc_shipping.module';
+import { BatchInboundModule } from './modules/batch_in/batchin.module';
+import { RelocInboundModule } from './modules/relocation_in/relocin.module';
+import { ComponentsModule } from './modules/master/components/components.module';
 
 @Module({
   imports: [
@@ -23,8 +35,22 @@ import { AuthModule } from './modules/auth/auth.module';
         synchronize: false,
       }),
     }),
-    UsersModule,
     AuthModule,
+    UsersModule,
+    RolesModule,
+    MasterModule,
+    SettingsModule,
+    VehicleModule,
+    EmployeeModule,
+    SuppliersModule,
+    InventoryModule,
+    WorkingareaModule,
+    StorageareaModule,
+    InOutAreaModule,
+    DocShippingModule,
+    BatchInboundModule,
+    RelocInboundModule,
+    ComponentsModule,
   ],
 })
 export class AppModule {}

@@ -14,7 +14,9 @@ export class S3Service {
 
   constructor() {
     this.s3 = new S3Client({
+      endpoint: s3Config.endPoint, // http://iti.ddns.net:9508
       region: s3Config.region,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: s3Config.accessKeyId,
         secretAccessKey: s3Config.secretAccessKey,
@@ -25,9 +27,8 @@ export class S3Service {
   async uploadFile(
     file: Express.Multer.File,
     folder = 'uploads',
-  ): Promise<string> {
+  ): Promise<{ key: string; url: string }> {
     const key = `${folder}/${uuidv4()}${extname(file.originalname)}`;
-
     await this.s3.send(
       new PutObjectCommand({
         Bucket: s3Config.bucket,
@@ -37,7 +38,11 @@ export class S3Service {
       }),
     );
 
-    return `https://${s3Config.bucket}.s3.${s3Config.region}.amazonaws.com/${key}`;
+    const endpoint = s3Config.endPoint.replace(/^https?:\/\//, '');
+    return {
+      key,
+      url: `http://${endpoint}/${s3Config.bucket}/${key}`,
+    };
   }
 
   async deleteFile(key: string): Promise<void> {
