@@ -261,7 +261,7 @@ export class BatchInboundService {
         const insertResult = await manager
           .createQueryBuilder()
           .insert()
-          .into('inventory_detail_storage')
+          .into('detail_inventory_storage')
           .values({
             batch_in_id: data.batch_in_id,
             storage_id: data.storage_id,
@@ -269,8 +269,6 @@ export class BatchInboundService {
             createdBy: userId, // picker
           })
           .execute();
-
-        const batchInboundId = insertResult.identifiers[0].id;
 
         // 2. INSERT ke relocation inbound
         await manager
