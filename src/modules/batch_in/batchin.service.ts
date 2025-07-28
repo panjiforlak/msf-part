@@ -58,12 +58,15 @@ export class BatchInboundService {
           'i.inventory_name AS part_name',
           'bi.quantity AS quantity',
           'bi.barcode AS barcode',
+          'bi.picker_id AS picker_id',
+          'u.name AS picker_name',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
         .leftJoin('doc_shipping', 'ds', 'bi.doc_ship_id = ds.id')
+        .leftJoin('users', 'u', 'bi.picker_id = u.id')
         .where('bi."deletedAt" IS NULL');
 
       if (search) {
