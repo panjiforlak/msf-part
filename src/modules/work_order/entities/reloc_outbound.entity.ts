@@ -42,6 +42,10 @@ export class RelocOutbound {
   @Column({ type: 'int', default: 0 })
   quantity: number;
 
+  @ApiProperty()
+  @Column({ type: 'int', nullable: true })
+  picker_id: number;
+
   // Audit fields commented out - will be added back once database structure is confirmed
   // @ApiProperty({ required: false })
   // @Column({ name: 'created_by', type: 'int', nullable: true, default: 0 })

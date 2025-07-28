@@ -23,6 +23,7 @@ import { CreateWorkOrderDto } from './dto/create.dto';
 import { UpdateWorkOrderDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ApprovalDto } from './dto/approval.dto';
+import { AssignPickerDto } from './dto/assign-picker.dto';
 
 @ApiTags('Work Order')
 @ApiBearerAuth('jwt')
@@ -222,6 +223,37 @@ export class WorkOrderController {
     @Req() req,
   ) {
     return this.workOrderService.approval(id, approvalDto, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/assign-picker')
+  @ApiOperation({
+    summary: 'Assign picker to work order',
+    description:
+      'Assign a picker to work order. This will update picker_id in all reloc_outbound records related to this work order.',
+  })
+  @SwaggerApiResponse({
+    status: 200,
+    description: 'Picker assigned successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { type: 'null' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @SwaggerApiResponse({ status: 404, description: 'Work order not found' })
+  @SwaggerApiResponse({
+    status: 400,
+    description: 'Bad request - validation error or picker not found',
+  })
+  assignPicker(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() assignPickerDto: AssignPickerDto,
+    @Req() req,
+  ) {
+    return this.workOrderService.assignPicker(id, assignPickerDto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

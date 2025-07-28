@@ -20,6 +20,7 @@ import { UpdateWorkOrderDto } from './dto/update.dto';
 import { WorkOrderResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ApprovalDto, ApprovalStatus } from './dto/approval.dto';
+import { AssignPickerDto } from './dto/assign-picker.dto';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -522,6 +523,55 @@ export class WorkOrderService {
       console.error('Approval error:', error);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(error.message || 'Failed to process approval');
+    }
+  }
+
+  async assignPicker(
+    id: number,
+    assignPickerDto: AssignPickerDto,
+    userId: number,
+  ): Promise<ApiResponse<WorkOrderResponseDto>> {
+    try {
+      // Validasi work order exists
+      const orderForm = await this.orderFormRepository.findOne({
+        where: { id },
+        withDeleted: false,
+      });
+
+      if (!orderForm) {
+        throwError('Work order not found', 404);
+      }
+
+      // Validasi picker_id exists di tabel employee
+      const employeeExists = await this.dataSource
+        .createQueryBuilder()
+        .select('1')
+        .from('employee', 'e')
+        .where('e.id = :pickerId', { pickerId: assignPickerDto.picker_id })
+        .getRawOne();
+
+      if (!employeeExists) {
+        throwError('Picker ID tidak ditemukan di tabel employee', 400);
+      }
+
+      // Update picker_id di semua reloc_outbound yang terkait dengan work order ini
+      await this.dataSource
+        .createQueryBuilder()
+        .update('reloc_outbound')
+        .set({ picker_id: assignPickerDto.picker_id })
+        .where('batch_out_id IN (SELECT id FROM batch_outbound WHERE order_form_id = :orderId)', {
+          orderId: id,
+        })
+        .execute();
+
+      return successResponse(
+        {} as WorkOrderResponseDto,
+        'Picker assigned successfully',
+      );
+    } catch (error) {
+      console.error('Assign picker error:', error);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(error.message || 'Failed to assign picker');
     }
   }
 
