@@ -10,7 +10,11 @@ import {
   successResponse,
   throwError,
 } from '../../../common/helpers/response.helper';
-import { paginateResponse } from '../../../common/helpers/public.helper';
+import {
+  generateNIPWithInitial,
+  generateSimpleNIP,
+  paginateResponse,
+} from '../../../common/helpers/public.helper';
 import {
   GetEmployeeQueryDto,
   QueryParamDto,
@@ -114,7 +118,13 @@ export class EmployeeService {
     data: CreateEmployeeDto,
   ): Promise<ApiResponse<ReturnResponseDto>> {
     try {
-      const existing = await this.findByNip(data.nip);
+      const nip = generateSimpleNIP(
+        Math.floor(100000 + Math.random() * 900000),
+      );
+      const fullname = data.first_name + ' ' + data.last_name;
+      const nipCode = generateNIPWithInitial(fullname, Number(nip));
+      console.log(nipCode);
+      const existing = await this.findByNip(nipCode);
       if (existing) {
         throwError(
           `NIP ${existing.nip} already in use by another employee`,
@@ -124,6 +134,7 @@ export class EmployeeService {
 
       const newEmployee = this.employeeRepository.create({
         ...data,
+        nip: nipCode,
         status: data.status as EmploymentStatus,
         createdBy: 1,
         updatedBy: 1,

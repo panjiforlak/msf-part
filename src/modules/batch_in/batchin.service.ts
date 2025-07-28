@@ -63,6 +63,7 @@ export class BatchInboundService {
           'u.name AS picker_name',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
+          'bi."status_reloc" AS status',
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
@@ -301,6 +302,8 @@ export class BatchInboundService {
     try {
       await this.dataSource.transaction(async (manager) => {
         // 1. INSERT ke inventory detail storage
+        console.log('[DEBUG] update batch_inbound id:', data.batch_in_id);
+
         const insertResult = await manager
           .createQueryBuilder()
           .insert()
@@ -337,6 +340,16 @@ export class BatchInboundService {
             racks_id: data.storage_id,
           })
           .where('id = :id', { id: data.inventory_id })
+          .execute();
+
+        // 4. UPDATE batch_inbound change status inbound to storage
+        await manager
+          .createQueryBuilder()
+          .update('batch_inbound')
+          .set({
+            status_reloc: 'storage',
+          })
+          .where('id = :id', { id: data.batch_in_id })
           .execute();
       });
 
