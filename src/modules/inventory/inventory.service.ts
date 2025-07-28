@@ -221,6 +221,7 @@ export class InventoryService {
           'i.uom AS uom',
           'i.remarks AS remarks',
           'c.inventory_type AS inventory_type',
+          'i.component_id AS component_id',
           'c.component_name AS component_name',
           'CAST(COALESCE(SUM(ri.quantity), 0) AS INTEGER) AS qty_in',
           'CAST(COALESCE(SUM(ro.quantity), 0) AS INTEGER) AS qty_out',
@@ -264,6 +265,7 @@ export class InventoryService {
         .addGroupBy('i.inventory_internal_code')
         .addGroupBy('i.uom')
         .addGroupBy('i.remarks')
+        .addGroupBy('i.component_id')
         .addGroupBy('c.inventory_type')
         .addGroupBy('c.component_name')
         .addGroupBy('i.quantity')
