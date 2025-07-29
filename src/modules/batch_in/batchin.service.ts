@@ -431,7 +431,6 @@ export class BatchInboundService {
         const tempRows = await manager.query(
           `SELECT * FROM temp_inbound_queue`,
         );
-        console.log('🔥 TEMP DATA', tempRows);
       });
       return successResponse(
         { data: data.barcode },
@@ -504,6 +503,22 @@ export class BatchInboundService {
           .where('id = :id', { id: data.inventory_id })
           .execute();
 
+        await manager
+          .createQueryBuilder()
+          .update('temp_inbound_queue')
+          .set({
+            quantity: () => `"quantity" - ${data.quantity}`,
+          })
+          .where('id = :id', { id: data.inventory_id })
+          .execute();
+
+        await manager
+          .createQueryBuilder()
+          .delete()
+          .from('temp_inbound_queue')
+          .where('id = :id', { id: data.inventory_id })
+          .andWhere('quantity <= 0')
+          .execute();
         // 4. UPDATE batch_inbound change status inbound to storage
         await manager
           .createQueryBuilder()
