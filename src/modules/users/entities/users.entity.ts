@@ -42,6 +42,10 @@ export class Users {
   @Column()
   isActive: boolean;
 
+  @Expose()
+  @Column()
+  employee_id: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

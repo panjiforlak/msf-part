@@ -139,6 +139,7 @@ export class UsersService {
       if (existingMail) {
         throwError('Email already registered', 409);
       }
+      console.log(data);
       const hashedPassword = await bcrypt.hash(data.password, 10);
       const newUser = this.userRepository.create({
         ...data,
@@ -151,6 +152,7 @@ export class UsersService {
         name: result.name,
         email: result.email,
         roleId: result.roleId,
+        employee_id: result.employee_id,
       };
 
       return successResponse(response);

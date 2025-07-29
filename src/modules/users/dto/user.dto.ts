@@ -37,6 +37,11 @@ export class CreateUserDto {
   @Type(() => Number)
   @IsNumber()
   roleId: number;
+
+  @ApiProperty({ example: 1 })
+  @Type(() => Number)
+  @IsNumber()
+  employee_id: number;
 }
 
 export class UserResponseDto {
@@ -45,6 +50,7 @@ export class UserResponseDto {
   name: string;
   email: string;
   roleId: number;
+  employee_id: number;
   roles?: any;
   meta?: any;
 }
@@ -74,6 +80,10 @@ export class UpdateUserDto {
   @Type(() => Number)
   @IsNumber()
   roleId?: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  employee_id?: number;
 
   @IsString()
   reset_password_token?: string | null;
