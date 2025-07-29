@@ -74,7 +74,10 @@ export class UsersService {
   }
 
   async findById(id: number): Promise<ApiResponse<any>> {
-    const result: any = await this.userRepository.findOne({ where: { id } });
+    const result: any = await this.userRepository.findOne({
+      where: { id },
+      relations: ['employees', 'roles'],
+    });
     if (!result) {
       throwError('User not found', 404);
     }
@@ -84,7 +87,7 @@ export class UsersService {
       name: result.name,
       roleId: result.roleId,
     };
-    return successResponse(response);
+    return successResponse(result);
   }
 
   async findAll(
@@ -107,7 +110,7 @@ export class UsersService {
         },
         skip,
         take: limit,
-        relations: ['roles'],
+        relations: ['employees', 'roles'],
       });
       const transformedResult = plainToInstance(Users, result, {
         excludeExtraneousValues: true,
@@ -155,6 +158,7 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
+      console.log(error.stack);
       throw new InternalServerErrorException('Failed to create user');
     }
   }

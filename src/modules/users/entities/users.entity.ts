@@ -10,6 +10,7 @@ import {
   JoinColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Employee } from '../../master/employee/entities/employee.entity';
 
 @Entity()
 export class Users {
@@ -60,4 +61,9 @@ export class Users {
   @ManyToOne(() => Roles, (role) => role.users)
   @JoinColumn({ name: 'roleId' })
   roles?: Roles;
+
+  @Expose()
+  @ManyToOne(() => Employee, (employee) => employee.users)
+  @JoinColumn({ name: 'employee_id' })
+  employees?: Employee;
 }

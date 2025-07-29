@@ -1,5 +1,6 @@
 import { Expose, Exclude } from 'class-transformer';
 import { IsEnum } from 'class-validator';
+import { Users } from '../../../users/entities/users.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum EmploymentStatus {
@@ -75,4 +77,7 @@ export class Employee {
   @Exclude()
   @DeleteDateColumn()
   deletedAt: Date | null;
+
+  @OneToMany(() => Users, (user) => user.employees)
+  users?: Users[];
 }
