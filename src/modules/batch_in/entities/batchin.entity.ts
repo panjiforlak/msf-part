@@ -59,6 +59,9 @@ export class BatchInbound {
   })
   status_reloc: batchin_type;
 
+  @Column()
+  status?: boolean;
+
   @Column({ type: 'int', default: 0 })
   createdBy: number;
 
