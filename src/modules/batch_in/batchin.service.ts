@@ -381,7 +381,7 @@ export class BatchInboundService {
       await this.dataSource.transaction(async (manager) => {
         // 1. Buat temp table pakai raw SQL karena QueryBuilder tidak support CREATE TEMP TABLE
         await manager.query(`
-        CREATE TEMP TABLE IF NOT EXISTS temp_inbound_queue (
+        CREATE TABLE IF NOT EXISTS temp_inbound_queue (
           id SERIAL PRIMARY KEY,
           batch_in_id INT,
           batch VARCHAR(35),
@@ -573,4 +573,6 @@ export class BatchInboundService {
       throw new InternalServerErrorException('Failed to delete batch inbound');
     }
   }
+
+  // PDA Storage
 }
