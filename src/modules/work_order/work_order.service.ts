@@ -289,7 +289,6 @@ export class WorkOrderService {
               'All batch_inbound records (first 10):',
               allBatchInbounds,
             );
-            
             const batchInbounds = await manager
               .createQueryBuilder()
               .select('bi.id, bi.inventory_id')

@@ -452,16 +452,27 @@ export class BatchInboundService {
   ): Promise<ApiResponse<any>> {
     try {
       await this.dataSource.transaction(async (manager) => {
-        // 1. INSERT ke inventory detail storage
-        console.log('[DEBUG] update batch_inbound id:', data.batch_in_id);
+        const storage = await manager
+          .createQueryBuilder()
+          .select('*')
+          .from('storage_area', 'sa')
+          .where('sa.barcode = :barcode', { barcode: data.barcode })
+          .andWhere('sa.deleted_at IS NULL') // jika pakai soft delete
+          .getRawOne();
 
+        if (!storage) {
+          throwError(`Storage barcode ${data.barcode} not found`);
+        }
+        const storageId = storage.id;
+
+        // 1. INSERT ke inventory detail storage
         const insertResult = await manager
           .createQueryBuilder()
           .insert()
           .into('detail_inventory_storage')
           .values({
             batch_in_id: data.batch_in_id,
-            storage_id: data.storage_id,
+            storage_id: storageId,
             quantity: data.quantity,
             createdBy: userId, // picker
           })
@@ -475,7 +486,7 @@ export class BatchInboundService {
           .values({
             batch_in_id: data.batch_in_id,
             reloc_from: 1, // 1 = inbound
-            reloc_to: data.storage_id,
+            reloc_to: storageId,
             quantity: data.quantity,
             reloc_date: new Date(),
             created_by: userId, // picker
@@ -488,7 +499,7 @@ export class BatchInboundService {
           .update('inventory')
           .set({
             quantity: () => `"quantity" + ${data.quantity}`,
-            racks_id: data.storage_id,
+            racks_id: storageId,
           })
           .where('id = :id', { id: data.inventory_id })
           .execute();

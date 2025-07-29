@@ -69,7 +69,7 @@ export class CreatePDABatchInDto {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  storage_id: number;
+  barcode: number;
 
   @ApiProperty()
   @IsNumber()
