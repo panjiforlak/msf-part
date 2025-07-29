@@ -451,22 +451,22 @@ export class BatchInboundService {
     userId: number,
   ): Promise<ApiResponse<any>> {
     try {
+      console.log(data);
       await this.dataSource.transaction(async (manager) => {
         const storage = await manager
           .createQueryBuilder()
-          .select('*')
+          .select(['sa.id', 'sa.storage_type', 'sa.barcode'])
           .from('storage_area', 'sa')
-          .where('sa.barcode = :barcode', { barcode: data.barcode })
-          .andWhere('sa.deleted_at IS NULL') // jika pakai soft delete
+          .where('sa.barcode = :barcode', { barcode: data.storage_id })
+          .andWhere('sa.deletedAt IS NULL')
           .getRawOne();
 
         if (!storage) {
-          throwError(`Storage barcode ${data.barcode} not found`);
+          throwError(`Storage barcode ${data.storage_id} not found`, 400);
         }
         const storageId = storage.id;
-
         // 1. INSERT ke inventory detail storage
-        const insertResult = await manager
+        await manager
           .createQueryBuilder()
           .insert()
           .into('detail_inventory_storage')
@@ -521,7 +521,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      console.error(error);
+      console.error('🔥 Error in createPDA:', error);
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
