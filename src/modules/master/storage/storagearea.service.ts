@@ -40,8 +40,11 @@ export class StorageareaService {
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
+      const whereCondition = query.search
+        ? { storage_type: query.search as any } // pastikan sesuai enum
+        : {};
       const [result, total] = await this.repository.findAndCount({
-        where: query.search ? [{ barcode: ILike(`%${query.search}%`) }] : {},
+        where: whereCondition,
         withDeleted: false,
         order: {
           id: 'DESC',

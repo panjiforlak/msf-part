@@ -55,6 +55,8 @@ export class InventoryService {
           'i.inventory_internal_code AS part_number_internal',
           'i.inventory_name AS inventory_name',
           'c.component_name AS component_name',
+          'i.racks_id AS racks_id',
+          'sa.storage_code AS racks_name',
           // 'COALESCE(SUM(DISTINCT ri.quantity), 0) AS qty_in',
           'COALESCE(SUM(CASE WHEN ri.quantity >= 0 THEN ri.quantity ELSE 0 END), 0) AS qty_in',
           'COALESCE(SUM(CASE WHEN ri.quantity < 0 THEN ri.quantity ELSE 0 END), 0) AS qty_out',
@@ -66,7 +68,8 @@ export class InventoryService {
 
         // INBOUND
         .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-        .leftJoin('detail_inventory_storage', 'ri', 'bi.id = ri.batch_in_id ');
+        .leftJoin('detail_inventory_storage', 'ri', 'bi.id = ri.batch_in_id ')
+        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
 
       // // OUTBOUND
       // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
@@ -84,7 +87,9 @@ export class InventoryService {
         .addGroupBy('i.inventory_code')
         .addGroupBy('i.inventory_internal_code')
         .addGroupBy('i.inventory_name')
+        .addGroupBy('i.racks_id')
         .addGroupBy('c.component_name')
+        .addGroupBy('sa.storage_code')
         .addGroupBy('i.quantity')
         .orderBy('i.id', 'DESC')
         .offset(skip)
@@ -110,7 +115,7 @@ export class InventoryService {
                 'ri',
                 'bi.id = ri.batch_in_id',
               )
-
+              .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
               // // OUTBOUND
               // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
               // .leftJoin(
@@ -125,7 +130,7 @@ export class InventoryService {
                 { search: `%${search}%` },
               )
               .groupBy(
-                'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name, i.quantity',
+                'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name,i.racks_id,sa.storage_code, i.quantity',
               )
           );
         }, 'sub');
@@ -213,6 +218,7 @@ export class InventoryService {
           'ro',
           'ro.batch_in_id = bo.id AND ro.reloc_to != 0',
         )
+
         .select([
           'i.id AS id',
           'i.inventory_name AS inventory_name',
