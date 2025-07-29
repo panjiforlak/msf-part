@@ -58,7 +58,7 @@ export class BatchInboundController {
     return this.services.queuePDA(dto, req.user.id);
   }
 
-  @ApiTags('PDA Inbounds') // post queue
+  @ApiTags('PDA Inbounds') // get queue
   @ApiOperation({
     summary: 'List Antrian barang by picker after scan barang yang mau dibawa',
   })

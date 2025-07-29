@@ -516,7 +516,9 @@ export class BatchInboundService {
           .createQueryBuilder()
           .delete()
           .from('temp_inbound_queue')
-          .where('id = :id', { id: data.inventory_id })
+          .where('inventory_id = :inventory_id', {
+            inventory_id: data.inventory_id,
+          })
           .andWhere('quantity <= 0')
           .execute();
         // 4. UPDATE batch_inbound change status inbound to storage
