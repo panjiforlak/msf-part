@@ -86,3 +86,58 @@ export class CreatePDABatchInDto {
   @IsNotEmpty()
   storage_type: StorageTypeEnum;
 }
+export class PostPDAQueueDto {
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  batch_in_id: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  batch: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  inventory_id: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  part_name: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  part_number: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  part_number_internal: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  quantity: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  rack_destination: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  barcode: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  picker_id: number;
+
+  @IsOptional()
+  @IsNumber()
+  createdBy?: number;
+}

@@ -17,4 +17,12 @@ export class ParamsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Super admin : yes',
+  })
+  @ApiProperty({ example: 'example : IUuihSZuih' })
+  @IsOptional()
+  @IsString()
+  superadmin?: string;
 }

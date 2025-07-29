@@ -16,6 +16,7 @@ import { plainToInstance } from 'class-transformer';
 import {
   CreateBatchInDto,
   CreatePDABatchInDto,
+  PostPDAQueueDto,
   StorageTypeEnum,
 } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
@@ -120,6 +121,7 @@ export class BatchInboundService {
       const skip = (page - 1) * limit;
 
       const search = query.search?.toLowerCase() ?? '';
+      const superadmin = query.superadmin?.toLowerCase() ?? '';
 
       const qb = this.dataSource
         .createQueryBuilder()
@@ -138,11 +140,16 @@ export class BatchInboundService {
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
-        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
-        .where('bi.picker_id = :pickerId', { pickerId: picker_id })
-        .andWhere('bi."deletedAt" IS NULL');
+        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
 
-      // searchnya neeeehhh broh
+      if (superadmin !== 'yes') {
+        qb.where('bi.picker_id = :pickerId', { pickerId: picker_id });
+      } else {
+        qb.where('1=1');
+      }
+
+      qb.andWhere('bi."deletedAt" IS NULL');
+
       if (search) {
         qb.andWhere('LOWER(bi.barcode) LIKE :search', {
           search: `%${search}%`,
@@ -151,18 +158,29 @@ export class BatchInboundService {
 
       qb.orderBy('bi.id', 'ASC').offset(skip).limit(limit);
 
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .from('batch_inbound', 'bi')
+        .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
+
+      if (superadmin !== 'yes') {
+        countQb.where('bi.picker_id = :pickerId', { pickerId: picker_id });
+      } else {
+        countQb.where('1=1');
+      }
+
+      countQb.andWhere('bi."deletedAt" IS NULL');
+
+      if (search) {
+        countQb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
       const [result, total] = await Promise.all([
         qb.getRawMany(),
-        this.dataSource
-          .createQueryBuilder()
-          .from('batch_inbound', 'bi')
-          .where('bi.picker_id = :pickerId', { pickerId: picker_id })
-          .andWhere('bi."deletedAt" IS NULL')
-          .andWhere(
-            search ? 'LOWER(bi.barcode) LIKE :search' : 'TRUE',
-            search ? { search: `%${search}%` } : {},
-          )
-          .getCount(),
+        countQb.getCount(),
       ]);
 
       return paginateResponse(
@@ -175,6 +193,66 @@ export class BatchInboundService {
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to fetch batch inbound');
+    }
+  }
+
+  async findAllPDAQueue(
+    picker_id: number,
+    query: ParamsDto,
+  ): Promise<ApiResponse<any>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const superadmin = query.superadmin ?? 'no'; // tambahkan ini
+
+      const whereConditions: string[] = [];
+      const params: any[] = [];
+
+      let paramIndex = 1;
+
+      // Filter berdasarkan picker_id kalau bukan superadmin
+      if (superadmin !== 'yes') {
+        whereConditions.push(`picker_id = $${paramIndex++}`);
+        params.push(picker_id);
+      }
+
+      // Filter berdasarkan pencarian (search)
+      if (search) {
+        whereConditions.push(`LOWER(batch) LIKE $${paramIndex++}`);
+        params.push(`%${search}%`);
+      }
+
+      const whereClause = whereConditions.length
+        ? `WHERE ${whereConditions.join(' AND ')}`
+        : '';
+
+      // Hitung total data
+      const countQuery = `SELECT COUNT(*) FROM temp_inbound_queue ${whereClause}`;
+      const countResult = await this.dataSource.query(countQuery, params);
+      const total = parseInt(countResult[0].count, 10);
+
+      // Ambil data dengan pagination
+      const dataQuery = `
+      SELECT *
+      FROM temp_inbound_queue
+      ${whereClause}
+      ORDER BY id ASC
+      OFFSET ${skip} LIMIT ${limit}
+    `;
+      const result = await this.dataSource.query(dataQuery, params);
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get temp queue success',
+      );
+    } catch (error) {
+      console.error('🔥 Error fetching PDA queue:', error);
+      throw new InternalServerErrorException('Failed to fetch PDA queued data');
     }
   }
 
@@ -292,6 +370,79 @@ export class BatchInboundService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to create batch inbound');
+    }
+  }
+
+  async queuePDA(
+    data: PostPDAQueueDto,
+    userId: number,
+  ): Promise<ApiResponse<any>> {
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        // 1. Buat temp table pakai raw SQL karena QueryBuilder tidak support CREATE TEMP TABLE
+        await manager.query(`
+        CREATE TEMP TABLE IF NOT EXISTS temp_inbound_queue (
+          id SERIAL PRIMARY KEY,
+          batch_in_id INT,
+          batch VARCHAR(35),
+          inventory_id INT DEFAULT 0,
+          part_name VARCHAR(35),
+          part_number VARCHAR(35),
+          part_number_internal VARCHAR(35),
+          quantity INT DEFAULT 0,
+          rack_destination VARCHAR(35),
+          barcode  VARCHAR(35),
+          picker_id INT,
+          "createdBy" INT,
+          "createdAt" TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+        // 2. Insert ke temp table dengan query builder
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into('temp_inbound_queue')
+          .values({
+            batch_in_id: data.batch_in_id,
+            batch: data.batch,
+            inventory_id: data.inventory_id,
+            part_name: data.part_name,
+            part_number: data.part_number,
+            part_number_internal: data.part_number_internal,
+            quantity: data.quantity,
+            rack_destination: data.rack_destination,
+            barcode: data.barcode,
+            picker_id: data.picker_id,
+            createdBy: userId,
+          })
+          .returning('*')
+          .execute();
+
+        // 3. Update batch_inbound status_reloc ke 'queue'
+        // await manager
+        //   .createQueryBuilder()
+        //   .update('batch_inbound')
+        //   .set({
+        //     quantity: () => `quantity - ${data.quantity}`,
+        //   })
+        //   .where('id = :id', { id: data.batch_in_id })
+        //   .execute();
+        const tempRows = await manager.query(
+          `SELECT * FROM temp_inbound_queue`,
+        );
+        console.log('🔥 TEMP DATA', tempRows);
+      });
+      return successResponse(
+        { data: data.barcode },
+        'Scan queued successfully',
+        201,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(
+        'Failed to execute transactional insert/update',
+      );
     }
   }
 

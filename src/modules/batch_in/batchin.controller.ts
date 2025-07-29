@@ -17,7 +17,11 @@ import {
 import { BatchInboundService } from './batchin.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CreateBatchInDto, CreatePDABatchInDto } from './dto/create.dto';
+import {
+  CreateBatchInDto,
+  CreatePDABatchInDto,
+  PostPDAQueueDto,
+} from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { IsArray, ValidateNested } from 'class-validator';
@@ -37,12 +41,34 @@ export class BatchInboundController {
   // StartPDA Inbound
   @ApiTags('PDA Inbounds')
   @ApiOperation({
-    summary: 'Saat Scan inventory, tambahkan query param search={barcodenya}',
+    summary:
+      'List PDA inbound. tambahkan query param saat scan barcode search={barcodenya}',
   })
   @UseGuards(JwtAuthGuard)
   @Get('pda/:pickerId')
   findAllPDA(@Param('pickerId') pickerId: number, @Query() query: ParamsDto) {
     return this.services.findAllPDA(pickerId, query);
+  }
+
+  @ApiTags('PDA Inbounds') // post queue
+  @ApiOperation({ summary: 'POST untuk masuk antrian barang' })
+  @UseGuards(JwtAuthGuard)
+  @Post('pda/queue')
+  postingPDAQueue(@Body() dto: PostPDAQueueDto, @Req() req) {
+    return this.services.queuePDA(dto, req.user.id);
+  }
+
+  @ApiTags('PDA Inbounds') // post queue
+  @ApiOperation({
+    summary: 'List Antrian barang by picker after scan barang yang mau dibawa',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get('pda/queue/:pickerId')
+  findAllPDAQueue(
+    @Param('pickerId') pickerId: number,
+    @Query() query: ParamsDto,
+  ) {
+    return this.services.findAllPDAQueue(pickerId, query);
   }
 
   @ApiTags('PDA Inbounds')
