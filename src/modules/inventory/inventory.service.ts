@@ -232,7 +232,8 @@ export class InventoryService {
           'CAST(COALESCE(SUM(ri.quantity), 0) AS INTEGER) AS qty_in',
           'CAST(COALESCE(SUM(ro.quantity), 0) AS INTEGER) AS qty_out',
           'i.quantity AS qty_onhand',
-          'sa.barcode AS racks',
+          'i.racks_id AS racks_id',
+          'sa.storage_code AS racks_name',
         ])
         .addSelect((subQuery) => {
           return subQuery
@@ -275,7 +276,8 @@ export class InventoryService {
         .addGroupBy('c.inventory_type')
         .addGroupBy('c.component_name')
         .addGroupBy('i.quantity')
-        .addGroupBy('sa.barcode')
+        .addGroupBy('i.racks_id')
+        .addGroupBy('sa.storage_code')
         .getRawOne();
 
       if (!result) {
