@@ -16,6 +16,9 @@ export class GetSuppliersQueryDto {
   supplier_name?: string;
 
   @Expose()
+  supplier_address?: string;
+
+  @Expose()
   remarks?: string;
 
   @Expose()

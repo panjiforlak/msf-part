@@ -88,6 +88,7 @@ export class SuppliersService {
         uuid: result.uuid,
         item_id: result.item_id,
         supplier_name: result.supplier_name,
+        supplier_address: result.supplier_address,
         remarks: result.remarks,
       };
 
