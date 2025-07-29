@@ -149,6 +149,7 @@ export class BatchInboundService {
       }
 
       qb.andWhere('bi."deletedAt" IS NULL');
+      qb.andWhere('bi."status" = true');
 
       if (search) {
         qb.andWhere('LOWER(bi.barcode) LIKE :search', {
@@ -450,7 +451,6 @@ export class BatchInboundService {
     userId: number,
   ): Promise<ApiResponse<any>> {
     try {
-      console.log(data);
       await this.dataSource.transaction(async (manager) => {
         const storage = await manager
           .createQueryBuilder()
@@ -515,7 +515,7 @@ export class BatchInboundService {
           .execute();
 
         // Delete
-        await manager
+        const deleteResult = await manager
           .createQueryBuilder()
           .delete()
           .from('temp_inbound_queue')
@@ -524,6 +524,19 @@ export class BatchInboundService {
           })
           .andWhere('quantity <= 0')
           .execute();
+
+        // Jika delete berhasil dan baris dihapus
+        if (deleteResult.affected && deleteResult.affected > 0) {
+          await manager
+            .createQueryBuilder()
+            .update('batch_inbound')
+            .set({
+              status: false,
+            })
+            .where('id = :id', { id: data.batch_in_id })
+            .execute();
+        }
+
         // 4. UPDATE batch_inbound change status inbound to storage
         await manager
           .createQueryBuilder()
