@@ -21,6 +21,7 @@ import {
   CreateBatchInDto,
   CreatePDABatchInDto,
   PostPDAQueueDto,
+  CreatePDAStorageB2RDto,
 } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -116,7 +117,7 @@ export class BatchInboundController {
   }
 
   //
-  @ApiTags('PDA Inbounds')
+  @ApiTags('PDA Storage')
   @ApiOperation({
     summary: 'List PDA Storage. Box to Rack}',
   })
@@ -127,5 +128,13 @@ export class BatchInboundController {
     @Query() query: ParamsDto,
   ) {
     return this.services.findAllPDAB2r(pickerId, query);
+  }
+
+  @ApiTags('PDA Storage')
+  @ApiOperation({ summary: 'Saat Save untuk relocation item to RACKS or BOX' })
+  @UseGuards(JwtAuthGuard)
+  @Post('pda/b2r')
+  createPDAb2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
+    return this.services.createPDAb2r(dto, req.user.id);
   }
 }

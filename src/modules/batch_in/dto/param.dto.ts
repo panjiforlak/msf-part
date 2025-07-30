@@ -19,6 +19,14 @@ export class ParamsDto {
   search?: string;
 
   @ApiPropertyOptional({
+    description: 'Storage = b2r',
+  })
+  @ApiProperty({ example: 'example : IUuihSZuih' })
+  @IsOptional()
+  @IsString()
+  storage?: string;
+
+  @ApiPropertyOptional({
     description: 'Super admin : yes',
   })
   @ApiProperty({ example: 'example : IUuihSZuih' })
