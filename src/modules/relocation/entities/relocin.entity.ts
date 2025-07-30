@@ -11,7 +11,7 @@ import {
   OneToMany,
 } from 'typeorm';
 
-@Entity('reloc_inbound')
+@Entity('relocation')
 export class RelocInbound {
   @PrimaryGeneratedColumn()
   id: number;

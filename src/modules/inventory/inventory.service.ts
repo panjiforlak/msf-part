@@ -208,7 +208,7 @@ export class InventoryService {
         .leftJoin('storage_area', 'sa', 'sa.id = i.racks_id')
         .leftJoin('batch_inbound', 'bi', 'bi.inventory_id = i.id')
         .leftJoin(
-          'reloc_inbound',
+          'relocation',
           'ri',
           'ri.batch_in_id = bi.id AND ri.reloc_to != 0',
         )

@@ -481,7 +481,7 @@ export class BatchInboundService {
         await manager
           .createQueryBuilder()
           .insert()
-          .into('reloc_inbound')
+          .into('relocation')
           .values({
             batch_in_id: data.batch_in_id,
             reloc_from: 1, // 1 = inbound

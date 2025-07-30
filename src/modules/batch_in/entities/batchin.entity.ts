@@ -1,4 +1,4 @@
-import { RelocInbound } from '../../relocation_in/entities/relocin.entity';
+import { RelocInbound } from '../../relocation/entities/relocin.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
 import {
   Entity,
