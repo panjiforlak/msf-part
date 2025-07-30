@@ -68,13 +68,8 @@ export class InventoryService {
 
         // INBOUND
         .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-        .leftJoin('detail_inventory_storage', 'ri', 'bi.id = ri.batch_in_id ')
+        .leftJoin('relocation', 'ri', 'bi.id = ri.batch_in_id ')
         .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
-
-      // // OUTBOUND
-      // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
-      // .leftJoin('detail_inventory_storage', 'ro', 'bo.id = ro.batch_in_id ')
-      // .where('i."deletedAt" IS NULL');
 
       if (search) {
         qb.andWhere('LOWER(i.inventory_name) LIKE :search', {
@@ -110,16 +105,12 @@ export class InventoryService {
 
               // INBOUND
               .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-              .leftJoin(
-                'detail_inventory_storage',
-                'ri',
-                'bi.id = ri.batch_in_id',
-              )
+              .leftJoin('relocation', 'ri', 'bi.id = ri.batch_in_id')
               .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
               // // OUTBOUND
               // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
               // .leftJoin(
-              //   'detail_inventory_storage',
+              //   'relocation',
               //   'ro',
               //   'bo.id = ro.batch_in_id ',
               // )

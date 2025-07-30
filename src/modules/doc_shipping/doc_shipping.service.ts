@@ -163,7 +163,7 @@ export class DocShippingService {
       );
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error(error.stack);
+      console.error('errornya nih ===>', error.stack);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create doc shipping');
     } finally {

@@ -293,16 +293,20 @@ export class BatchInboundService {
     try {
       const result: any = await this.repository.findOne({
         where: { barcode: slug },
+        relations: ['inventory'],
       });
 
       if (!result) {
         throwError('batch inbound not found', 404);
       }
+      //destruct dari relasi inventory
+      const { inventory_name } = result.inventory || {};
 
       const response: any = {
         id: result.id,
         barcode: result.barcode,
         inventory_id: result.inventory_id,
+        inventory_name: inventory_name,
         doc_ship_id: result.doc_ship_id,
         supplier_id: result.supplier_id,
         quantity: result.quantity,
@@ -463,19 +467,7 @@ export class BatchInboundService {
         if (!storage) {
           throwError(`Storage barcode ${data.storage_id} not found`, 400);
         }
-        const storageId = storage.id;
-        // 1. INSERT ke inventory detail storage
-        await manager
-          .createQueryBuilder()
-          .insert()
-          .into('detail_inventory_storage')
-          .values({
-            batch_in_id: data.batch_in_id,
-            storage_id: storageId,
-            quantity: data.quantity,
-            createdBy: userId, // picker
-          })
-          .execute();
+        const storageId = storage.sa_id;
 
         // 2. INSERT ke relocation inbound
         await manager
@@ -488,6 +480,7 @@ export class BatchInboundService {
             reloc_to: storageId,
             quantity: data.quantity,
             reloc_date: new Date(),
+            reloc_type: 'inbound',
             created_by: userId, // picker
           })
           .execute();
