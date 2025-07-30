@@ -469,6 +469,12 @@ export class BatchInboundService {
         }
         const storageId = storage.sa_id;
 
+        let statusBox = true;
+
+        if (storage.sa_storage_type?.toLowerCase() === 'box') {
+          statusBox = false;
+        }
+
         // 2. INSERT ke relocation inbound
         await manager
           .createQueryBuilder()
@@ -476,12 +482,13 @@ export class BatchInboundService {
           .into('relocation')
           .values({
             batch_in_id: data.batch_in_id,
-            reloc_from: 1, // 1 = inbound
+            reloc_from: 1,
             reloc_to: storageId,
             quantity: data.quantity,
             reloc_date: new Date(),
             reloc_type: 'inbound',
-            created_by: userId, // picker
+            reloc_status: statusBox,
+            created_by: userId,
           })
           .execute();
 
@@ -612,4 +619,83 @@ export class BatchInboundService {
   }
 
   // PDA Storage
+  async findAllPDAB2r(
+    picker_id: number,
+    query: ParamsDto,
+  ): Promise<ApiResponse<any>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+
+      const search = query.search?.toLowerCase() ?? '';
+      const superadmin = query.superadmin?.toLowerCase() ?? '';
+
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'r.batch_in_id AS batch_in_id',
+          'r.uuid AS batch',
+          'bi.inventory_id AS inventory_id',
+          'i.inventory_name AS part_name',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'r.quantity AS quantity',
+          'sa2.storage_code AS box_source',
+          'sa.storage_code AS rack_destination',
+          'r.uuid AS barcode',
+          `TO_CHAR(r."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi.picker_id AS picker_id',
+        ])
+        .from('relocation', 'r')
+        .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
+        .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+        .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
+        .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
+        .where('r.reloc_status = false');
+
+      if (superadmin !== 'yes') {
+        qb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+
+      if (search) {
+        qb.andWhere('LOWER(r.uuid) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      qb.orderBy('r.id', 'ASC').offset(skip).limit(limit);
+
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .from('relocation', 'r')
+        .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id');
+
+      countQb.where('r.reloc_status = false');
+      if (superadmin !== 'yes') {
+        countQb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+      if (search) {
+        countQb.andWhere('LOWER(r.uuid) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      const [result, total] = await Promise.all([
+        qb.getRawMany(),
+        countQb.getCount(),
+      ]);
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get all batch inbound successfully',
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to fetch batch inbound');
+    }
+  }
 }

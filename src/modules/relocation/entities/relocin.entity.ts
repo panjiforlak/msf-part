@@ -39,6 +39,12 @@ export class RelocInbound {
   @CreateDateColumn({ type: 'timestamptz' })
   reloc_date: Date;
 
+  @Column()
+  reloc_type: string;
+
+  @Column({ default: false })
+  reloc_status: boolean;
+
   @Column({ type: 'int', default: 0 })
   createdBy: number;
 

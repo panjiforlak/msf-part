@@ -57,16 +57,12 @@ export class InventoryService {
           'c.component_name AS component_name',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
-          // 'COALESCE(SUM(DISTINCT ri.quantity), 0) AS qty_in',
-          'COALESCE(SUM(CASE WHEN ri.quantity >= 0 THEN ri.quantity ELSE 0 END), 0) AS qty_in',
+          "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'inbound' THEN ri.quantity ELSE 0 END), 0) AS qty_in",
           'COALESCE(SUM(CASE WHEN ri.quantity < 0 THEN ri.quantity ELSE 0 END), 0) AS qty_out',
-          // 'COALESCE(SUM(DISTINCT ro.quantity), 0) AS qty_out',
           'i.quantity AS qty_on_hand',
         ])
         .from('inventory', 'i')
         .leftJoin('components', 'c', 'i.component_id = c.id')
-
-        // INBOUND
         .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
         .leftJoin('relocation', 'ri', 'bi.id = ri.batch_in_id ')
         .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
@@ -97,33 +93,21 @@ export class InventoryService {
         .createQueryBuilder()
         .select('COUNT(*)', 'total')
         .from((subQb) => {
-          return (
-            subQb
-              .select('i.id', 'id')
-              .from('inventory', 'i')
-              .leftJoin('components', 'c', 'i.component_id = c.id')
-
-              // INBOUND
-              .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
-              .leftJoin('relocation', 'ri', 'bi.id = ri.batch_in_id')
-              .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
-              // // OUTBOUND
-              // .leftJoin('batch_outbound', 'bo', 'i.id = bo.inventory_id')
-              // .leftJoin(
-              //   'relocation',
-              //   'ro',
-              //   'bo.id = ro.batch_in_id ',
-              // )
-
-              .where('i."deletedAt" IS NULL')
-              .andWhere(
-                search ? 'LOWER(i.inventory_name) LIKE :search' : 'TRUE',
-                { search: `%${search}%` },
-              )
-              .groupBy(
-                'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name,i.racks_id,sa.storage_code, i.quantity',
-              )
-          );
+          return subQb
+            .select('i.id', 'id')
+            .from('inventory', 'i')
+            .leftJoin('components', 'c', 'i.component_id = c.id')
+            .leftJoin('batch_inbound', 'bi', 'i.id = bi.inventory_id')
+            .leftJoin('relocation', 'ri', 'bi.id = ri.batch_in_id')
+            .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
+            .where('i."deletedAt" IS NULL')
+            .andWhere(
+              search ? 'LOWER(i.inventory_name) LIKE :search' : 'TRUE',
+              { search: `%${search}%` },
+            )
+            .groupBy(
+              'i.id, c.inventory_type, i.inventory_code, i.inventory_internal_code, i.inventory_name, c.component_name,i.racks_id,sa.storage_code, i.quantity',
+            );
         }, 'sub');
 
       const countResult = await countQb.getRawOne();

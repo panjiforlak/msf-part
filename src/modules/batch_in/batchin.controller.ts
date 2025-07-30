@@ -114,4 +114,18 @@ export class BatchInboundController {
   remove(@Param('barcode') barcode: string, @Req() req) {
     return this.services.remove(barcode, req.user.id);
   }
+
+  //
+  @ApiTags('PDA Inbounds')
+  @ApiOperation({
+    summary: 'List PDA Storage. Box to Rack}',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get('pda/b2r/:pickerId')
+  findAllPDAB2r(
+    @Param('pickerId') pickerId: number,
+    @Query() query: ParamsDto,
+  ) {
+    return this.services.findAllPDAB2r(pickerId, query);
+  }
 }
