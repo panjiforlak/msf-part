@@ -6,6 +6,8 @@ import { BatchOutbound } from '../work_order/entities/batch_outbound.entity';
 import { BatchInbound } from '../batch_in/entities/batchin.entity';
 import { Inventory } from '../inventory/entities/inventory.entity';
 import { RelocInbound } from '../relocation/entities/relocin.entity';
+import { Vehicles } from '../master/vehicles/entities/vehicle.entity';
+import { Users } from '../users/entities/users.entity';
 import { PdaOutboundResponseDto } from './dto/response.dto';
 import { BatchOutboundResponseDto } from './dto/batch-outbound-response.dto';
 import { CreateRelocationDto } from './dto/create-relocation.dto';
@@ -23,6 +25,10 @@ export class PdaOutboundService {
     private inventoryRepository: Repository<Inventory>,
     @InjectRepository(RelocInbound)
     private relocInboundRepository: Repository<RelocInbound>,
+    @InjectRepository(Vehicles)
+    private vehiclesRepository: Repository<Vehicles>,
+    @InjectRepository(Users)
+    private usersRepository: Repository<Users>,
   ) {}
 
   async findAll(userId: number, superadmin?: string): Promise<PdaOutboundResponseDto[]> {
@@ -35,8 +41,25 @@ export class PdaOutboundService {
     }
 
     const orderForms = await query
+      .leftJoin('vehicles', 'v', 'order_form.vehicle_id = v.id')
+      .leftJoin('users', 'admin_user', 'order_form.admin_id = admin_user.id')
+      .leftJoin('users', 'driver_user', 'order_form.driver_id = driver_user.id')
+      .leftJoin('users', 'mechanic_user', 'order_form.mechanic_id = mechanic_user.id')
+      .leftJoin('users', 'request_user', 'order_form.request_id = request_user.id')
+      .leftJoin('users', 'approval_user', 'order_form.approval_by = approval_user.id')
+      .leftJoin('users', 'picker_user', 'order_form.picker_id = picker_user.id')
+      .select([
+        'order_form.*',
+        'v.vin_number as vin_number',
+        'admin_user.name as admin_name',
+        'driver_user.name as driver_name',
+        'mechanic_user.name as mechanic_name',
+        'request_user.name as request_name',
+        'approval_user.name as approvalBy_name',
+        'picker_user.name as picker_name'
+      ])
       .orderBy('order_form.createdAt', 'DESC')
-      .getMany();
+      .getRawMany();
 
     // Transform data dan tambahkan label_wo
     return orderForms.map(orderForm => ({

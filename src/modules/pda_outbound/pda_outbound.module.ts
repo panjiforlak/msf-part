@@ -7,9 +7,11 @@ import { BatchOutbound } from '../work_order/entities/batch_outbound.entity';
 import { BatchInbound } from '../batch_in/entities/batchin.entity';
 import { Inventory } from '../inventory/entities/inventory.entity';
 import { RelocInbound } from '../relocation/entities/relocin.entity';
+import { Vehicles } from '../master/vehicles/entities/vehicle.entity';
+import { Users } from '../users/entities/users.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderForm, BatchOutbound, BatchInbound, Inventory, RelocInbound])],
+  imports: [TypeOrmModule.forFeature([OrderForm, BatchOutbound, BatchInbound, Inventory, RelocInbound, Vehicles, Users])],
   controllers: [PdaOutboundController],
   providers: [PdaOutboundService],
   exports: [PdaOutboundService],

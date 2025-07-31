@@ -67,4 +67,26 @@ export class PdaOutboundResponseDto {
 
   @ApiProperty()
   label_wo: string;
+
+  // Field baru yang diminta
+  @ApiProperty({ required: false })
+  vin_number?: string;
+
+  @ApiProperty({ required: false })
+  admin_name?: string;
+
+  @ApiProperty({ required: false })
+  driver_name?: string;
+
+  @ApiProperty({ required: false })
+  mechanic_name?: string;
+
+  @ApiProperty({ required: false })
+  request_name?: string;
+
+  @ApiProperty({ required: false })
+  approvalBy_name?: string;
+
+  @ApiProperty({ required: false })
+  picker_name?: string;
 } 
