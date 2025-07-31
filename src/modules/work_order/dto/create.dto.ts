@@ -32,9 +32,13 @@ export class SparepartDto {
 }
 
 export class CreateWorkOrderDto {
-  @ApiProperty({ description: 'Vehicle ID from vehicles table' })
+  @ApiProperty({ 
+    description: 'Vehicle ID from vehicles table (can be 0 or null for non-vehicle orders)',
+    required: false,
+    example: 0
+  })
+  @IsOptional()
   @IsNumber()
-  @IsNotEmpty()
   vehicle_id: number;
 
   @ApiProperty({ description: 'Driver ID from users table' })
