@@ -1,164 +1,239 @@
 # PDA Outbound Module
 
-Module ini menangani operasi untuk mengambil data order form yang akan ditampilkan di PDA (Personal Digital Assistant) untuk proses outbound.
+Module ini menangani operasi outbound untuk PDA (Personal Digital Assistant).
 
-## Fitur
+## Endpoints
 
-- Mengambil data order form berdasarkan picker_id dari token JWT
-- Dukungan untuk superadmin untuk melihat semua data
-- Menambahkan label_wo dengan format WO-{id}
-
-## Endpoint
-
-### GET /pda-outbound
-
-Mengambil data order form untuk PDA outbound.
-
-**Headers:**
-- `Authorization: Bearer <token>` - JWT token untuk autentikasi
+### 1. GET /api/pda-outbound
+Mengambil data order form berdasarkan picker_id dari token JWT atau semua data jika superadmin.
 
 **Query Parameters:**
-- `superadmin` (optional) - Jika bernilai "yes" maka menampilkan semua data, jika tidak maka hanya data sesuai picker_id
+- `superadmin` (optional): Jika diisi dengan 'yes', akan menampilkan semua data
 
 **Response:**
 ```json
 {
-  "success": true,
+  "status": "success",
   "message": "Data PDA Outbound berhasil diambil",
   "data": [
     {
       "id": 1,
-      "vehicle_id": 1,
-      "admin_id": 1,
-      "driver_id": 1,
-      "mechanic_id": 1,
-      "picker_id": 123,
-      "request_id": 1,
-      "departement": "IT",
-      "remark": "Test remark",
-      "order_type": "sparepart",
-      "start_date": "2024-01-01T00:00:00.000Z",
-      "end_date": "2024-01-01T00:00:00.000Z",
-      "status": "pending",
-      "createdBy": 1,
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedBy": 1,
-      "updatedAt": "2024-01-01T00:00:00.000Z",
-      "deletedBy": 0,
-      "deletedAt": null,
-      "approvalBy": null,
-      "approvalAt": null,
+      "label_wo": "WO-1",
+      "vin_number": "ABC123",
+      "admin_name": "Admin Name",
+      "driver_name": "Driver Name",
+      "mechanic_name": "Mechanic Name",
+      "request_name": "Request Name",
+      "approvalBy_name": "Approval Name",
+      "picker_name": "Picker Name"
+    }
+  ]
+}
+```
+
+### 2. GET /api/pda-outbound/:orderFormId/batch-outbound
+Mengambil data batch outbound berdasarkan order form ID.
+
+**Path Parameters:**
+- `orderFormId` (number): ID dari order form
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Data Batch Outbound berhasil diambil",
+  "data": [
+    {
+      "id": 1,
+      "batch_outbound_id": 1,
+      "inventory_id": 1,
+      "destination_id": 1,
+      "quantity": 5,
+      "start_date": "2025-01-01T00:00:00.000Z",
+      "part_number": "PART001",
+      "part_name_label": "Part Name",
+      "remark": "Remark",
+      "status": "active",
+      "racks_name": "Rack A",
       "label_wo": "WO-1"
     }
   ]
 }
 ```
 
-### GET /pda-outbound/:orderFormId/batch-outbound
-
-Mengambil data batch outbound berdasarkan order form ID.
-
-**Headers:**
-- `Authorization: Bearer <token>` - JWT token untuk autentikasi
-
-**Path Parameters:**
-- `orderFormId` - ID dari order form
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Data Batch Outbound berhasil diambil",
-  "data": [
-    {
-      "id": 10,
-      "inventory_id": 1,
-      "destination_id": 30,
-      "quantity": 1,
-      "start_date": "2025-07-30T17:00:00.000Z",
-      "part_number": "INT/I1HGBH41JXMN192",
-      "part_name_label": "Fuel Pump",
-      "remark": "testing",
-      "status": "Ready",
-      "racks_name": "R4",
-      "label_wo": "WO-10"
-    }
-  ]
-}
-```
-
-### POST /pda-outbound/relocation
-
+### 3. POST /api/pda-outbound/relocation
 Membuat data relocation berdasarkan barcode inbound.
-
-**Headers:**
-- `Authorization: Bearer <token>` - JWT token untuk autentikasi
 
 **Request Body:**
 ```json
 {
-  "barcode_inbound": "abc123def456",
-  "quantity": 5
+  "barcode_inbound": "f58edb181e97",
+  "quantity": 3
 }
 ```
 
 **Response:**
 ```json
 {
-  "statusCode": 201,
+  "status": "success",
   "message": "Relocation berhasil dibuat",
   "data": {
     "id": 1,
     "batch_in_id": 1,
-    "reloc_from": 5,
+    "reloc_from": 1,
     "reloc_to": 0,
     "reloc_type": "outbound",
-    "quantity": 5,
+    "quantity": 3,
+    "picker_id": 1,
     "reloc_status": false,
-    "reloc_date": "2025-07-31T08:30:00.000Z",
-    "barcode_inbound": "abc123def456",
-    "picker_id": 123
+    "reloc_date": "2025-01-01T00:00:00.000Z",
+    "barcode_inbound": "f58edb181e97"
   }
 }
 ```
 
-## Logika Bisnis
+### 4. POST /api/pda-outbound/scan-destination
+**ENDPOINT BARU** - Scan destination untuk proses outbound dengan quantity yang bisa dicicil.
 
-1. **Filter berdasarkan picker_id**: Jika parameter `superadmin` tidak bernilai "yes", maka data yang ditampilkan hanya yang sesuai dengan `picker_id` yang sama dengan user ID dari token JWT.
-
-2. **Superadmin access**: Jika parameter `superadmin` bernilai "yes", maka semua data order form akan ditampilkan.
-
-3. **Label WO**: Setiap data akan ditambahkan field `label_wo` dengan format `WO-{id}`.
-
-4. **Ordering**: Data diurutkan berdasarkan `createdAt` secara descending (terbaru di atas).
-
-5. **Create Relocation**: 
-   - Validasi barcode inbound ada di tabel batch_inbound
-   - Ambil inventory_id dari batch_inbound
-   - Ambil racks_id dari tabel inventory
-   - Buat data relocation dengan reloc_type "outbound"
-   - Picker_id diambil dari user yang login
-
-## Struktur File
-
-```
-src/modules/pda_outbound/
-├── __test__/
-│   ├── pda_outbound.controller.spec.ts
-│   └── pda_outbound.service.spec.ts
-├── dto/
-│   ├── query.dto.ts
-│   └── response.dto.ts
-├── pda_outbound.controller.ts
-├── pda_outbound.module.ts
-├── pda_outbound.service.ts
-└── README.md
+**Request Body:**
+```json
+{
+  "barcode_inbound": "f58edb181e97",
+  "quantity": 1,
+  "batch_outbound_id": 1
+}
 ```
 
-## Testing
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Scan destination berhasil diproses",
+  "data": {
+    "id": 1,
+    "barcode_inbound": "f58edb181e97",
+    "quantity": 1,
+    "total_scanned_quantity": 3,
+    "target_quantity": 3,
+    "is_completed": true,
+    "sppb_id": 1,
+    "sppb_number": "WHO001"
+  }
+}
+```
 
-Jalankan test dengan perintah:
+## Contoh Penggunaan
 
+### Scan Destination dengan Quantity Dicicil
+
+**Scan Pertama (qty 1):**
 ```bash
-npm run test src/modules/pda_outbound
-``` 
+curl -X 'POST' \
+  'http://localhost:9596/api/pda-outbound/scan-destination' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "barcode_inbound": "f58edb181e97",
+  "quantity": 1,
+  "batch_outbound_id": 1
+}'
+```
+
+**Response Scan Pertama:**
+```json
+{
+  "status": "success",
+  "message": "Scan destination berhasil diproses",
+  "data": {
+    "id": 1,
+    "barcode_inbound": "f58edb181e97",
+    "quantity": 1,
+    "total_scanned_quantity": 1,
+    "target_quantity": 3,
+    "is_completed": false,
+    "sppb_id": null,
+    "sppb_number": null
+  }
+}
+```
+
+**Scan Kedua (qty 2):**
+```bash
+curl -X 'POST' \
+  'http://localhost:9596/api/pda-outbound/scan-destination' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "barcode_inbound": "f58edb181e97",
+  "quantity": 2,
+  "batch_outbound_id": 1
+}'
+```
+
+**Response Scan Kedua (Completed):**
+```json
+{
+  "status": "success",
+  "message": "Scan destination berhasil diproses",
+  "data": {
+    "id": 2,
+    "barcode_inbound": "f58edb181e97",
+    "quantity": 2,
+    "total_scanned_quantity": 3,
+    "target_quantity": 3,
+    "is_completed": true,
+    "sppb_id": 1,
+    "sppb_number": "WHO001"
+  }
+}
+```
+
+## Proses Scan Destination
+
+Endpoint `scan-destination` memiliki proses khusus:
+
+1. **Validasi Input**: 
+   - Cek barcode_inbound ada di tabel batch_inbound
+   - Cek batch_outbound_id ada di tabel batch_outbound
+
+2. **Pembuatan Relocation**: 
+   - Membuat data relocation dengan quantity yang di-input
+   - Quantity bisa dicicil (contoh: scan pertama qty 1, scan kedua qty 2)
+
+3. **Akumulasi Quantity**: 
+   - Menghitung total quantity yang sudah di-scan untuk hari ini
+   - Membandingkan dengan target quantity dari batch_outbound
+
+4. **Pembuatan SPPB**: 
+   - Jika total quantity sudah mencapai target, otomatis membuat data SPPB
+   - SPPB number auto-generate dengan format WHO001, WHO002, dst
+   - Status SPPB default "waiting"
+
+## Database Tables
+
+### Tabel SPPB (Baru)
+```sql
+CREATE TABLE sppb (
+  id SERIAL PRIMARY KEY,
+  uuid TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(6), 'hex'),
+  order_form_id INTEGER DEFAULT 0,
+  sppb_number VARCHAR(20) UNIQUE,
+  mechanic_photo TEXT,
+  status ENUM('waiting', 'completed') DEFAULT 'waiting',
+  createdBy INTEGER DEFAULT 0,
+  createdAt TIMESTAMPTZ DEFAULT NOW(),
+  updatedBy INTEGER DEFAULT 0,
+  updatedAt TIMESTAMPTZ,
+  deletedBy INTEGER DEFAULT 0,
+  deletedAt TIMESTAMPTZ
+);
+```
+
+## Error Handling
+
+- **404**: Barcode inbound atau batch outbound tidak ditemukan
+- **400**: Data input tidak valid
+- **401**: Unauthorized (token tidak valid)
+- **500**: Internal server error 

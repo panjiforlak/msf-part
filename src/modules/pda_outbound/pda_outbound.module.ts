@@ -9,9 +9,11 @@ import { Inventory } from '../inventory/entities/inventory.entity';
 import { RelocInbound } from '../relocation/entities/relocin.entity';
 import { Vehicles } from '../master/vehicles/entities/vehicle.entity';
 import { Users } from '../users/entities/users.entity';
+import { Sppb } from './entities/sppb.entity';
+import { InboundOutboundArea } from '../master/inoutarea/entities/inout.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderForm, BatchOutbound, BatchInbound, Inventory, RelocInbound, Vehicles, Users])],
+  imports: [TypeOrmModule.forFeature([OrderForm, BatchOutbound, BatchInbound, Inventory, RelocInbound, Vehicles, Users, Sppb, InboundOutboundArea])],
   controllers: [PdaOutboundController],
   providers: [PdaOutboundService],
   exports: [PdaOutboundService],

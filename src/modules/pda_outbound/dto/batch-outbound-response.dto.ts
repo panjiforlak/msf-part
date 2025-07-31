@@ -6,6 +6,9 @@ export class BatchOutboundResponseDto {
   id: number;
 
   @ApiProperty()
+  batch_outbound_id: number;
+
+  @ApiProperty()
   inventory_id: number;
 
   @ApiProperty()

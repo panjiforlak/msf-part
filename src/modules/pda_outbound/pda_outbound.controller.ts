@@ -6,6 +6,9 @@ import { PdaOutboundQueryDto } from './dto/query.dto';
 import { PdaOutboundResponseDto } from './dto/response.dto';
 import { BatchOutboundResponseDto } from './dto/batch-outbound-response.dto';
 import { CreateRelocationDto } from './dto/create-relocation.dto';
+import { ScanDestinationDto } from './dto/scan-destination.dto';
+import { ScanDestinationResponseDto } from './dto/scan-destination-response.dto';
+import { GetAreaOutboundDto, GetAreaOutboundResponseDto } from './dto/get-area-outbound.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 
 @ApiTags('PDA Outbound')
@@ -77,5 +80,49 @@ export class PdaOutboundController {
     const userId = req.user.id;
     const data = await this.pdaOutboundService.createRelocation(createRelocationDto, userId);
     return successResponse(data, 'Relocation berhasil dibuat', 201);
+  }
+
+  @Post('scan-destination')
+  @ApiOperation({
+    summary: 'Scan Destination',
+    description: 'Scan destination untuk proses outbound dengan quantity yang bisa dicicil'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Scan destination berhasil diproses',
+    type: ScanDestinationResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Barcode inbound atau batch outbound tidak ditemukan'
+  })
+  async scanDestination(
+    @Request() req,
+    @Body() scanDestinationDto: ScanDestinationDto
+  ) {
+    const userId = req.user.id;
+    const data = await this.pdaOutboundService.scanDestination(scanDestinationDto, userId);
+    return successResponse(data, 'Scan destination berhasil diproses', 201);
+  }
+
+  @Get('get-area-outbound')
+  @ApiOperation({
+    summary: 'Get Area Outbound',
+    description: 'Mengambil data area outbound berdasarkan barcode area'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data area outbound berhasil diambil',
+    type: [GetAreaOutboundResponseDto]
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Barcode area tidak ditemukan di tabel inbound_outbound_area'
+  })
+  async getAreaOutbound(
+    @Query() getAreaOutboundDto: GetAreaOutboundDto
+  ) {
+    const data = await this.pdaOutboundService.getAreaOutbound(getAreaOutboundDto);
+    return successResponse(data, 'Data area outbound berhasil diambil');
   }
 } 
