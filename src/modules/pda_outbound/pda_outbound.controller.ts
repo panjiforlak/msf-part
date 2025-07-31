@@ -1,10 +1,11 @@
-import { Controller, Get, Query, UseGuards, Request, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, Request, Param, ParseIntPipe, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { PdaOutboundService } from './pda_outbound.service';
 import { PdaOutboundQueryDto } from './dto/query.dto';
 import { PdaOutboundResponseDto } from './dto/response.dto';
 import { BatchOutboundResponseDto } from './dto/batch-outbound-response.dto';
+import { CreateRelocationDto } from './dto/create-relocation.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 
 @ApiTags('PDA Outbound')
@@ -52,7 +53,29 @@ export class PdaOutboundController {
   async findBatchOutboundByOrderFormId(
     @Param('orderFormId', ParseIntPipe) orderFormId: number
   ) {
-    const data = await this.pdaOutboundService.findBatchOutboundByOrderFormId(orderFormId);
-    return successResponse(data, 'Data Batch Outbound berhasil diambil');
+          const data = await this.pdaOutboundService.findBatchOutboundByOrderFormId(orderFormId);
+      return successResponse(data, 'Data Batch Outbound berhasil diambil');
+    }
+
+  @Post('relocation')
+  @ApiOperation({
+    summary: 'Create Relocation',
+    description: 'Membuat data relocation berdasarkan barcode inbound'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Relocation berhasil dibuat'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Barcode inbound tidak ditemukan'
+  })
+  async createRelocation(
+    @Request() req,
+    @Body() createRelocationDto: CreateRelocationDto
+  ) {
+    const userId = req.user.id;
+    const data = await this.pdaOutboundService.createRelocation(createRelocationDto, userId);
+    return successResponse(data, 'Relocation berhasil dibuat', 201);
   }
 } 

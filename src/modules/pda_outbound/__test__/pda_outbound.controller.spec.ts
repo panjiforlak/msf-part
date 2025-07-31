@@ -9,6 +9,7 @@ describe('PdaOutboundController', () => {
   const mockService = {
     findAll: jest.fn(),
     findBatchOutboundByOrderFormId: jest.fn(),
+    createRelocation: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -106,6 +107,43 @@ describe('PdaOutboundController', () => {
       expect(result).toEqual({
         statusCode: 200,
         message: 'Data Batch Outbound berhasil diambil',
+        data: mockData,
+      });
+    });
+
+    it('should create relocation successfully', async () => {
+      const createRelocationDto = {
+        barcode_inbound: 'abc123def456',
+        quantity: 5,
+      };
+
+      const mockRequest = {
+        user: {
+          id: 123,
+        },
+      };
+
+      const mockData = {
+        id: 1,
+        batch_in_id: 1,
+        reloc_from: 5,
+        reloc_to: 0,
+        reloc_type: 'outbound',
+        quantity: 5,
+        picker_id: 123,
+        reloc_status: false,
+        reloc_date: new Date(),
+        barcode_inbound: 'abc123def456',
+      };
+
+      mockService.createRelocation.mockResolvedValue(mockData);
+
+      const result = await controller.createRelocation(mockRequest, createRelocationDto);
+
+      expect(service.createRelocation).toHaveBeenCalledWith(createRelocationDto, 123);
+      expect(result).toEqual({
+        statusCode: 201,
+        message: 'Relocation berhasil dibuat',
         data: mockData,
       });
     });

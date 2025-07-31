@@ -87,6 +87,41 @@ Mengambil data batch outbound berdasarkan order form ID.
 }
 ```
 
+### POST /pda-outbound/relocation
+
+Membuat data relocation berdasarkan barcode inbound.
+
+**Headers:**
+- `Authorization: Bearer <token>` - JWT token untuk autentikasi
+
+**Request Body:**
+```json
+{
+  "barcode_inbound": "abc123def456",
+  "quantity": 5
+}
+```
+
+**Response:**
+```json
+{
+  "statusCode": 201,
+  "message": "Relocation berhasil dibuat",
+  "data": {
+    "id": 1,
+    "batch_in_id": 1,
+    "reloc_from": 5,
+    "reloc_to": 0,
+    "reloc_type": "outbound",
+    "quantity": 5,
+    "reloc_status": false,
+    "reloc_date": "2025-07-31T08:30:00.000Z",
+    "barcode_inbound": "abc123def456",
+    "picker_id": 123
+  }
+}
+```
+
 ## Logika Bisnis
 
 1. **Filter berdasarkan picker_id**: Jika parameter `superadmin` tidak bernilai "yes", maka data yang ditampilkan hanya yang sesuai dengan `picker_id` yang sama dengan user ID dari token JWT.
@@ -96,6 +131,13 @@ Mengambil data batch outbound berdasarkan order form ID.
 3. **Label WO**: Setiap data akan ditambahkan field `label_wo` dengan format `WO-{id}`.
 
 4. **Ordering**: Data diurutkan berdasarkan `createdAt` secara descending (terbaru di atas).
+
+5. **Create Relocation**: 
+   - Validasi barcode inbound ada di tabel batch_inbound
+   - Ambil inventory_id dari batch_inbound
+   - Ambil racks_id dari tabel inventory
+   - Buat data relocation dengan reloc_type "outbound"
+   - Picker_id diambil dari user yang login
 
 ## Struktur File
 
