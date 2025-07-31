@@ -137,4 +137,17 @@ export class BatchInboundController {
   createPDAb2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
     return this.services.createPDAb2r(dto, req.user.id);
   }
+
+  @ApiTags('PDA Storage')
+  @ApiOperation({
+    summary: 'List PDA Storage. Box to Rack}',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get('pda/r2r/:pickerId')
+  findAllPDAR2r(
+    @Param('pickerId') pickerId: number,
+    @Query() query: ParamsDto,
+  ) {
+    return this.services.findAllPDAR2r(pickerId, query);
+  }
 }

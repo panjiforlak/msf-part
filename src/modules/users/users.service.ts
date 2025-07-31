@@ -24,6 +24,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { randomBytes } from 'crypto';
 import { MailService } from '../../integrations/mail/mail.service';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,7 @@ export class UsersService {
     @InjectRepository(Users)
     private userRepository: Repository<Users>,
     private readonly mailService: MailService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findByUsername(username: string): Promise<Users | null> {
@@ -97,30 +99,39 @@ export class UsersService {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const role = query.role?.toLowerCase() ?? '';
 
-      const [result, total] = await this.userRepository.findAndCount({
-        where: query.search
-          ? [
-              { username: ILike(`%${query.search}%`) },
-              { name: ILike(`%${query.search}%`) },
-            ]
-          : {},
-        order: {
-          id: 'DESC',
-        },
-        skip,
-        take: limit,
-        relations: ['employees', 'roles'],
-      });
+      const qb = this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.employees', 'employees')
+        .leftJoinAndSelect('user.roles', 'roles');
+
+      if (search) {
+        qb.where('user.username ILIKE :search', {
+          search: `%${search}%`,
+        }).orWhere('user.name ILIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+      if (role) {
+        qb.andWhere('roles.name ILIKE :role', { role: `%${role}%` });
+      }
+
+      qb.orderBy('user.id', 'DESC').skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
       const transformedResult = plainToInstance(Users, result, {
         excludeExtraneousValues: true,
       });
+
       return paginateResponse(
         transformedResult,
         total,
         page,
         limit,
-        'Get users susccessfuly',
+        'Get users successfully',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;

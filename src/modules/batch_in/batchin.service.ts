@@ -263,7 +263,6 @@ export class BatchInboundService {
     }
   }
 
-  //for api calling
   async findById(id: number): Promise<ApiResponse<any>> {
     try {
       const result: any = await this.repository.findOne({
@@ -708,6 +707,7 @@ export class BatchInboundService {
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
+
   async createPDAb2r(
     data: CreatePDAStorageB2RDto,
     userId: number,
@@ -794,6 +794,134 @@ export class BatchInboundService {
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
+    }
+  }
+
+  async findAllPDAR2r(
+    picker_id: number,
+    query: ParamsDto,
+  ): Promise<ApiResponse<any>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const superadmin = query.superadmin?.toLowerCase() ?? '';
+
+      // Subquery: Ambil reloc_to terakhir (prefer 'rack-to-rack' lalu 'inbound') per batch_in_id
+      const subQuery = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'inner_r.batch_in_id AS batch_in_id',
+          'inner_r.reloc_to AS reloc_to',
+        ])
+        .from((qb) => {
+          return qb
+            .select([
+              'r.batch_in_id AS batch_in_id',
+              'r.reloc_to AS reloc_to',
+              `ROW_NUMBER() OVER (
+              PARTITION BY r.batch_in_id
+              ORDER BY 
+                CASE WHEN r.reloc_type = 'rack-to-rack' THEN 1 ELSE 2 END,
+                r."createdAt" DESC
+            ) AS row_num`,
+            ])
+            .from('relocation', 'r')
+            .where(`r.reloc_type IN ('rack-to-rack', 'inbound')`)
+            .andWhere(`r."deletedAt" IS NULL`);
+        }, 'inner_r')
+        .where('inner_r.row_num = 1');
+
+      // Main query
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'bi.id AS batch_in_id',
+          'bi.barcode AS batch',
+          'i.id AS inventory_id',
+          'i.inventory_name AS part_name',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'i.quantity AS quantity',
+          'reloc_final.reloc_to AS rack_source_id',
+          'sa2.storage_code AS rack_source',
+          'sa.storage_code AS rack_destination',
+          `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi.picker_id AS picker_id',
+        ])
+        .from('inventory', 'i')
+        .leftJoin(
+          'batch_inbound',
+          'bi',
+          'i.id = bi.inventory_id AND bi."deletedAt" IS NULL',
+        )
+        .leftJoin(
+          'storage_area',
+          'sa',
+          'i.racks_id = sa.id AND sa."deletedAt" IS NULL',
+        )
+        .leftJoin(
+          `(${subQuery.getQuery()})`,
+          'reloc_final',
+          'reloc_final.batch_in_id = bi.id',
+        )
+        .leftJoin(
+          'storage_area',
+          'sa2',
+          'reloc_final.reloc_to = sa2.id AND sa2."deletedAt" IS NULL',
+        )
+        .where('i."deletedAt" IS NULL')
+        .setParameters(subQuery.getParameters());
+
+      if (superadmin !== 'yes') {
+        qb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+
+      if (search) {
+        qb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      qb.orderBy('bi.id', 'ASC').offset(skip).limit(limit);
+
+      // Count Query
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .from('batch_inbound', 'bi')
+        .leftJoin(
+          'inventory',
+          'i',
+          'bi.inventory_id = i.id AND i."deletedAt" IS NULL',
+        )
+        .where('bi."deletedAt" IS NULL');
+
+      if (superadmin !== 'yes') {
+        countQb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+
+      if (search) {
+        countQb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      const [result, total] = await Promise.all([
+        qb.getRawMany(),
+        countQb.getCount(),
+      ]);
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get all PDA R2R successfully',
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to fetch PDA R2R data');
     }
   }
 }
