@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ParamsDto {
@@ -16,4 +16,14 @@ export class ParamsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by order type',
+    enum: ['sparepart', 'non sparepart'],
+    example: 'sparepart'
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['sparepart', 'non sparepart'])
+  order_type?: string;
 }

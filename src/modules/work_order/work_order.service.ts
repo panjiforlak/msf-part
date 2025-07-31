@@ -79,6 +79,12 @@ export class WorkOrderService {
           });
         }
 
+        if (query.order_type) {
+          qb.andWhere('of.order_type = :orderType', {
+            orderType: query.order_type,
+          });
+        }
+
         result = await qb
           .orderBy('of.id', 'DESC')
           .offset(skip)
@@ -99,6 +105,12 @@ export class WorkOrderService {
         if (query.search) {
           countQb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
             search: `%${query.search.toLowerCase()}%`,
+          });
+        }
+
+        if (query.order_type) {
+          countQb.andWhere('of.order_type = :orderType', {
+            orderType: query.order_type,
           });
         }
 

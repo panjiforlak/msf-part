@@ -36,7 +36,7 @@ export class WorkOrderController {
   @ApiOperation({
     summary: 'Get all work orders',
     description:
-      'Retrieve a paginated list of all work orders with optional search functionality',
+      'Retrieve a paginated list of all work orders with optional search functionality and order type filtering',
   })
   @SwaggerApiResponse({
     status: 200,
