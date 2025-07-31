@@ -1,14 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsNumber, IsNotEmpty } from 'class-validator';
 
 export class ScanDestinationDto {
   @ApiProperty({
-    description: 'Barcode dari tabel batch_inbound',
-    example: 'f58edb181e97'
+    description: 'ID dari batch inbound',
+    example: 1
   })
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  barcode_inbound: string;
+  batch_in_id: number;
+
+  @ApiProperty({
+    description: 'ID dari inbound outbound area',
+    example: 1
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  inbound_outbound_area_id: number;
 
   @ApiProperty({
     description: 'Quantity yang akan di-scan',
@@ -20,7 +28,7 @@ export class ScanDestinationDto {
 
   @ApiProperty({
     description: 'ID dari batch outbound',
-    example: 1
+    example: 18
   })
   @IsNumber()
   @IsNotEmpty()

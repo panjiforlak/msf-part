@@ -185,20 +185,50 @@ export class PdaOutboundService {
     };
   }
 
-  async scanDestination(scanDestinationDto: ScanDestinationDto, userId: number): Promise<any> {
-    // 1. Cek barcode_inbound ada di tabel batch_inbound atau tidak
-    const batchInbound = await this.batchInboundRepository.findOne({
-      where: { barcode: scanDestinationDto.barcode_inbound },
+  async scanDestination(
+    scanDestinationDto: ScanDestinationDto,
+    userId: number,
+  ): Promise<any> {
+    // 0. Cari relocation_id dari tabel relocation samakan batch_in_id dengan body request batch_in_id
+    const existingRelocation = await this.relocInboundRepository.findOne({
+      where: {
+        batch_in_id: scanDestinationDto.batch_in_id,
+        reloc_type: 'outbound',
+      },
     });
 
-    if (!batchInbound) {
+    if (!existingRelocation) {
       throw new HttpException(
-        `Barcode inbound '${scanDestinationDto.barcode_inbound}' tidak ditemukan`,
+        `Relocation dengan batch_in_id ${scanDestinationDto.batch_in_id} tidak ditemukan`,
         HttpStatus.NOT_FOUND,
       );
     }
 
-    // 2. Cek batch_outbound_id ada atau tidak
+    // 1. Cek apakah samakan id di tabel batch_inbound dengan body request batch_in_id
+    const batchInbound = await this.batchInboundRepository.findOne({
+      where: { id: scanDestinationDto.batch_in_id },
+    });
+
+    if (!batchInbound) {
+      throw new HttpException(
+        `Batch inbound dengan ID ${scanDestinationDto.batch_in_id} tidak ditemukan`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 2. Cek apakah samakan id di tabel inbound_outbound_area dengan body request inbound_outbound_area_id
+    const inboundOutboundArea = await this.inboundOutboundAreaRepository.findOne({
+      where: { id: scanDestinationDto.inbound_outbound_area_id },
+    });
+
+    if (!inboundOutboundArea) {
+      throw new HttpException(
+        `Inbound outbound area dengan ID ${scanDestinationDto.inbound_outbound_area_id} tidak ditemukan`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 3. Cek batch_outbound_id ada atau tidak
     const batchOutbound = await this.batchOutboundRepository.findOne({
       where: { id: scanDestinationDto.batch_outbound_id },
     });
@@ -210,58 +240,48 @@ export class PdaOutboundService {
       );
     }
 
-    // 3. Ambil inventory_id dari batch_inbound
-    const inventoryId = batchInbound.inventory_id;
+    // 4. Update quantity_temp_outbound di tabel relocation
+    const currentTempQuantity = existingRelocation.quantity_temp_outbound || 0;
+    const newTempQuantity = currentTempQuantity + scanDestinationDto.quantity;
 
-    // 4. Cek di tabel inventory dan ambil racks_id
-    const inventory = await this.inventoryRepository.findOne({
-      where: { id: inventoryId },
+    // Update relocation dengan quantity_temp_outbound baru
+    await this.relocInboundRepository.update(
+      { id: existingRelocation.id },
+      {
+        quantity_temp_outbound: newTempQuantity,
+        updatedBy: userId,
+      },
+    );
+
+    // 5. Cek apakah quantity_temp_outbound sudah sama dengan quantity
+    const updatedRelocation = await this.relocInboundRepository.findOne({
+      where: { id: existingRelocation.id },
     });
 
-    if (!inventory) {
+    if (!updatedRelocation) {
       throw new HttpException(
-        `Inventory dengan ID ${inventoryId} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        'Gagal mengambil data relocation yang diupdate',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
 
-    const racksId = inventory.racks_id;
-
-    // 5. Buat data relocation
-    const relocation = this.relocInboundRepository.create({
-      batch_in_id: batchInbound.id,
-      reloc_from: racksId,
-      reloc_to: 0,
-      reloc_type: 'outbound',
-      quantity: scanDestinationDto.quantity,
-      picker_id: userId,
-      reloc_status: false,
-      reloc_date: new Date(),
-      createdBy: userId,
-    });
-
-    const savedRelocation = await this.relocInboundRepository.save(relocation);
-
-    // 6. Hitung total quantity yang sudah di-scan untuk batch_outbound_id ini
-    const totalScannedQuantity = await this.relocInboundRepository
-      .createQueryBuilder('reloc')
-      .leftJoin('batch_inbound', 'bi', 'reloc.batch_in_id = bi.id')
-      .where('bi.inventory_id = :inventoryId', { inventoryId })
-      .andWhere('reloc.reloc_type = :relocType', { relocType: 'outbound' })
-      .andWhere('reloc.picker_id = :pickerId', { pickerId: userId })
-      .andWhere('reloc.createdAt >= :today', { today: new Date().setHours(0, 0, 0, 0) })
-      .select('SUM(reloc.quantity)', 'total')
-      .getRawOne();
-
-    const totalQuantity = parseInt(totalScannedQuantity?.total || '0');
-    const targetQuantity = batchOutbound.quantity;
-    const isCompleted = totalQuantity >= targetQuantity;
-
+    let isCompleted = false;
     let sppbId: number | null = null;
     let sppbNumber: string | null = null;
 
-    // 7. Jika sudah mencapai target quantity, buat data SPPB
-    if (isCompleted) {
+    if (updatedRelocation.quantity_temp_outbound >= updatedRelocation.quantity) {
+      // Update reloc_status menjadi true
+      await this.relocInboundRepository.update(
+        { id: existingRelocation.id },
+        {
+          reloc_status: true,
+          updatedBy: userId,
+        },
+      );
+
+      isCompleted = true;
+
+      // 6. Jika sudah true maka simpan data di tabel sppb
       // Ambil order_form_id dari batch_outbound
       const orderFormId = batchOutbound.order_form_id || 0;
 
@@ -294,11 +314,12 @@ export class PdaOutboundService {
     }
 
     return {
-      id: savedRelocation.id,
-      barcode_inbound: scanDestinationDto.barcode_inbound,
+      id: existingRelocation.id,
+      batch_in_id: scanDestinationDto.batch_in_id,
+      inbound_outbound_area_id: scanDestinationDto.inbound_outbound_area_id,
       quantity: scanDestinationDto.quantity,
-      total_scanned_quantity: totalQuantity,
-      target_quantity: targetQuantity,
+      quantity_temp_outbound: newTempQuantity,
+      target_quantity: updatedRelocation.quantity,
       is_completed: isCompleted,
       sppb_id: sppbId,
       sppb_number: sppbNumber,

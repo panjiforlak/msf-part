@@ -12,14 +12,6 @@ export class Sppb {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    type: 'text',
-    unique: true,
-    nullable: false,
-    default: () => "encode(gen_random_bytes(6), 'hex')",
-  })
-  uuid: string;
-
   @Column({ type: 'int', default: 0 })
   order_form_id: number;
 
