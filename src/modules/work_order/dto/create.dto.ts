@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { WorkOrderStatus } from '../entities/order_form.entity';
+import { WorkOrderStatus, OrderType } from '../entities/order_form.entity';
 
 export class SparepartDto {
   @ApiProperty({ description: 'Inventory ID from inventory table' })
@@ -61,6 +61,11 @@ export class CreateWorkOrderDto {
   @IsString()
   @IsNotEmpty()
   remark: string;
+
+  @ApiProperty({ enum: OrderType, description: 'Order type: sparepart or non sparepart' })
+  @IsEnum(OrderType)
+  @IsNotEmpty()
+  order_type: OrderType;
 
   @ApiProperty({
     type: String,

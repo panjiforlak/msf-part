@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkOrderStatus } from '../entities/order_form.entity';
+import { WorkOrderStatus, OrderType } from '../entities/order_form.entity';
 
 export class SparepartResponseDto {
   @ApiProperty()
@@ -57,6 +57,9 @@ export class WorkOrderResponseDto {
 
   @ApiProperty()
   remark: string;
+
+  @ApiProperty({ enum: OrderType })
+  order_type: OrderType;
 
   @ApiProperty()
   start_date: Date;

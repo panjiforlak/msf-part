@@ -18,6 +18,11 @@ export enum WorkOrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum OrderType {
+  SPAREPART = 'sparepart',
+  NON_SPAREPART = 'non sparepart',
+}
+
 @Entity('order_form')
 export class OrderForm {
   @ApiProperty()
@@ -59,6 +64,14 @@ export class OrderForm {
   @ApiProperty()
   @Column({ type: 'text' })
   remark: string;
+
+  @ApiProperty({ enum: OrderType })
+  @Column({
+    type: 'enum',
+    enum: OrderType,
+    default: OrderType.SPAREPART,
+  })
+  order_type: OrderType;
 
   @ApiProperty()
   @Column({ type: 'timestamptz' })

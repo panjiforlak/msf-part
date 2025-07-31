@@ -61,6 +61,7 @@ export class WorkOrderService {
             "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
+            'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
@@ -151,6 +152,7 @@ export class WorkOrderService {
             "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
+            'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
@@ -345,6 +347,7 @@ export class WorkOrderService {
             request_id: createWorkOrderDto.request,
             departement: createWorkOrderDto.departement,
             remark: createWorkOrderDto.remark,
+            order_type: createWorkOrderDto.order_type,
             start_date: new Date(createWorkOrderDto.start_date),
             end_date: new Date(createWorkOrderDto.end_date),
             status: createWorkOrderDto.status,
@@ -527,6 +530,7 @@ export class WorkOrderService {
           driver_id: updateWorkOrderDto.driver || orderForm!.driver_id,
           mechanic_id: updateWorkOrderDto.mechanic || orderForm!.mechanic_id,
           request_id: updateWorkOrderDto.request || orderForm!.request_id,
+          order_type: updateWorkOrderDto.order_type || orderForm!.order_type,
         });
 
         await manager.save(updatedOrderForm);
