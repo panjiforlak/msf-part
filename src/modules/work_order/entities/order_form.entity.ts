@@ -112,4 +112,12 @@ export class OrderForm {
   @ApiProperty()
   @DeleteDateColumn({ name: 'deletedat', type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  @ApiProperty()
+  @Column({ name: 'approval_by', type: 'int', nullable: true })
+  approvalBy: number;
+
+  @ApiProperty()
+  @Column({ name: 'approval_at', type: 'timestamptz', nullable: true })
+  approvalAt: Date;
 }

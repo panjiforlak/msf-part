@@ -694,6 +694,8 @@ export class WorkOrderService {
       if (approvalDto.status === ApprovalStatus.APPROVAL) {
         await this.orderFormRepository.update(id, {
           status: WorkOrderStatus.IN_PROGRESS,
+          approvalBy: userId,
+          approvalAt: new Date(),
         });
 
         // Update remarks di tabel batch_outbound jika ada remark
