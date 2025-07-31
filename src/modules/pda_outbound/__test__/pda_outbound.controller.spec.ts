@@ -8,6 +8,7 @@ describe('PdaOutboundController', () => {
 
   const mockService = {
     findAll: jest.fn(),
+    findBatchOutboundByOrderFormId: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -76,6 +77,35 @@ describe('PdaOutboundController', () => {
       expect(result).toEqual({
         statusCode: 200,
         message: 'Data PDA Outbound berhasil diambil',
+        data: mockData,
+      });
+    });
+
+    it('should return batch outbound data by order form id', async () => {
+      const mockData = [
+        {
+          id: 1,
+          inventory_id: 1,
+          destination_id: 30,
+          quantity: 1,
+          start_date: new Date(),
+          part_number: 'INT/I1HGBH41JXMN192',
+          part_name_label: 'Fuel Pump',
+          remark: 'testing',
+          status: 'outbound',
+          racks_name: 'R4',
+          label_wo: 'WO-10',
+        },
+      ];
+
+      mockService.findBatchOutboundByOrderFormId.mockResolvedValue(mockData);
+
+      const result = await controller.findBatchOutboundByOrderFormId(10);
+
+      expect(service.findBatchOutboundByOrderFormId).toHaveBeenCalledWith(10);
+      expect(result).toEqual({
+        statusCode: 200,
+        message: 'Data Batch Outbound berhasil diambil',
         data: mockData,
       });
     });

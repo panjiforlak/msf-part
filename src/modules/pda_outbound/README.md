@@ -54,6 +54,39 @@ Mengambil data order form untuk PDA outbound.
 }
 ```
 
+### GET /pda-outbound/:orderFormId/batch-outbound
+
+Mengambil data batch outbound berdasarkan order form ID.
+
+**Headers:**
+- `Authorization: Bearer <token>` - JWT token untuk autentikasi
+
+**Path Parameters:**
+- `orderFormId` - ID dari order form
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Data Batch Outbound berhasil diambil",
+  "data": [
+    {
+      "id": 10,
+      "inventory_id": 1,
+      "destination_id": 30,
+      "quantity": 1,
+      "start_date": "2025-07-30T17:00:00.000Z",
+      "part_number": "INT/I1HGBH41JXMN192",
+      "part_name_label": "Fuel Pump",
+      "remark": "testing",
+      "status": "Ready",
+      "racks_name": "R4",
+      "label_wo": "WO-10"
+    }
+  ]
+}
+```
+
 ## Logika Bisnis
 
 1. **Filter berdasarkan picker_id**: Jika parameter `superadmin` tidak bernilai "yes", maka data yang ditampilkan hanya yang sesuai dengan `picker_id` yang sama dengan user ID dari token JWT.
