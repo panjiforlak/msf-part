@@ -116,10 +116,10 @@ export class BatchInboundController {
     return this.services.remove(barcode, req.user.id);
   }
 
-  //
+  // get list inventory B2R
   @ApiTags('PDA Storage')
   @ApiOperation({
-    summary: 'List PDA Storage. Box to Rack}',
+    summary: 'ITEM LIST BOX TO RACK (B2R)',
   })
   @UseGuards(JwtAuthGuard)
   @Get('pda/b2r/:pickerId')
@@ -130,17 +130,19 @@ export class BatchInboundController {
     return this.services.findAllPDAB2r(pickerId, query);
   }
 
+  // Post rack inventory B2R
   @ApiTags('PDA Storage')
-  @ApiOperation({ summary: 'Saat Save untuk relocation item to RACKS or BOX' })
+  @ApiOperation({ summary: 'POSTING BOX to RACKS (B2R)' })
   @UseGuards(JwtAuthGuard)
   @Post('pda/b2r')
   createPDAb2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
     return this.services.createPDAb2r(dto, req.user.id);
   }
 
+  // get list inventory R2R
   @ApiTags('PDA Storage')
   @ApiOperation({
-    summary: 'List PDA Storage. Box to Rack}',
+    summary: 'ITEM LIST RACK TO RACK (R2R)',
   })
   @UseGuards(JwtAuthGuard)
   @Get('pda/r2r/:pickerId')
@@ -149,5 +151,14 @@ export class BatchInboundController {
     @Query() query: ParamsDto,
   ) {
     return this.services.findAllPDAR2r(pickerId, query);
+  }
+
+  // Post rack inventory B2R
+  @ApiTags('PDA Storage')
+  @ApiOperation({ summary: 'POSTING RACKS to RACKS (R2R)' })
+  @UseGuards(JwtAuthGuard)
+  @Post('pda/b2r')
+  createPDAR2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
+    return this.services.createPDAR2r(dto, req.user.id);
   }
 }

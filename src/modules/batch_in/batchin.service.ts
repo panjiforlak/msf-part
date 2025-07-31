@@ -808,7 +808,6 @@ export class BatchInboundService {
       const search = query.search?.toLowerCase() ?? '';
       const superadmin = query.superadmin?.toLowerCase() ?? '';
 
-      // Subquery: Ambil reloc_to terakhir (prefer 'rack-to-rack' lalu 'inbound') per batch_in_id
       const subQuery = this.dataSource
         .createQueryBuilder()
         .select([
@@ -833,7 +832,7 @@ export class BatchInboundService {
         }, 'inner_r')
         .where('inner_r.row_num = 1');
 
-      // Main query
+      // Main querynya -___-
       const qb = this.dataSource
         .createQueryBuilder()
         .select([
@@ -844,6 +843,13 @@ export class BatchInboundService {
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
           'i.quantity AS quantity',
+          `(i.quantity - COALESCE((
+              SELECT SUM(r2.quantity)
+              FROM relocation r2
+              WHERE r2.batch_in_id = bi.id
+                AND r2.reloc_type = 'inbound'
+                AND r2.reloc_status = false
+            ), 0)) AS quantity`,
           'reloc_final.reloc_to AS rack_source_id',
           'sa2.storage_code AS rack_source',
           'sa.storage_code AS rack_destination',
@@ -886,7 +892,6 @@ export class BatchInboundService {
 
       qb.orderBy('bi.id', 'ASC').offset(skip).limit(limit);
 
-      // Count Query
       const countQb = this.dataSource
         .createQueryBuilder()
         .from('batch_inbound', 'bi')
@@ -922,6 +927,95 @@ export class BatchInboundService {
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to fetch PDA R2R data');
+    }
+  }
+
+  async createPDAR2r(
+    data: CreatePDAStorageB2RDto,
+    userId: number,
+  ): Promise<ApiResponse<any>> {
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const storage = await manager
+          .createQueryBuilder()
+          .select(['sa.id', 'sa.storage_type', 'sa.barcode'])
+          .from('storage_area', 'sa')
+          .where('sa.barcode = :barcode', { barcode: data.storage_id })
+          .andWhere('sa.deletedAt IS NULL')
+          .getRawOne();
+
+        if (!storage) {
+          throwError(`Storage barcode ${data.storage_id} not found`, 400);
+        }
+
+        const storageId = storage.sa_id;
+
+        // 2. INSERT ke relocation storage
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into('relocation')
+          .values({
+            batch_in_id: data.batch_in_id,
+            reloc_from: data.storage_source_id,
+            reloc_to: storageId,
+            quantity: data.quantity,
+            reloc_date: new Date(),
+            reloc_type: 'box-to-rack',
+            reloc_status: true,
+            created_by: userId,
+          })
+          .execute();
+
+        await manager
+          .createQueryBuilder()
+          .update('temp_inbound_queue')
+          .set({
+            quantity: () => `"quantity" - ${data.quantity}`,
+          })
+          .where('inventory_id = :inventory_id', {
+            inventory_id: data.inventory_id,
+          })
+          .andWhere('storage_source_id=:storage_source_id', {
+            storage_source_id: data.storage_source_id,
+          })
+          .execute();
+
+        // Delete temp
+        await manager
+          .createQueryBuilder()
+          .delete()
+          .from('temp_inbound_queue')
+          .where('inventory_id = :inventory_id', {
+            inventory_id: data.inventory_id,
+          })
+          .andWhere('storage_source_id=:storage_source_id', {
+            storage_source_id: data.storage_source_id,
+          })
+          .andWhere('quantity <= 0')
+          .execute();
+
+        // 4. UPDATE batch_inbound change status inbound to storage
+        await manager
+          .createQueryBuilder()
+          .update('batch_inbound')
+          .set({
+            status_reloc: 'storage',
+          })
+          .where('id = :id', { id: data.batch_in_id })
+          .execute();
+      });
+
+      return successResponse(
+        null,
+        'Insert batch + log + update inventory success',
+        201,
+      );
+    } catch (error) {
+      console.error('🔥 Error in createPDA:', error);
+      throw new InternalServerErrorException(
+        'Failed to execute transactional insert/update',
+      );
     }
   }
 }
