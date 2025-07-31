@@ -18,6 +18,11 @@ export enum WorkOrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum OrderType {
+  SPAREPART = 'sparepart',
+  NON_SPAREPART = 'non sparepart',
+}
+
 @Entity('order_form')
 export class OrderForm {
   @ApiProperty()
@@ -46,6 +51,10 @@ export class OrderForm {
 
   @ApiProperty()
   @Column({ type: 'int', default: 0 })
+  picker_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
   request_id: number;
 
   @ApiProperty()
@@ -55,6 +64,14 @@ export class OrderForm {
   @ApiProperty()
   @Column({ type: 'text' })
   remark: string;
+
+  @ApiProperty({ enum: OrderType })
+  @Column({
+    type: 'enum',
+    enum: OrderType,
+    default: OrderType.SPAREPART,
+  })
+  order_type: OrderType;
 
   @ApiProperty()
   @Column({ type: 'timestamptz' })
@@ -95,4 +112,12 @@ export class OrderForm {
   @ApiProperty()
   @DeleteDateColumn({ name: 'deletedat', type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  @ApiProperty()
+  @Column({ name: 'approval_by', type: 'int', nullable: true })
+  approvalBy: number;
+
+  @ApiProperty()
+  @Column({ name: 'approval_at', type: 'timestamptz', nullable: true })
+  approvalAt: Date;
 }

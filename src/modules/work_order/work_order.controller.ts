@@ -36,7 +36,7 @@ export class WorkOrderController {
   @ApiOperation({
     summary: 'Get all work orders',
     description:
-      'Retrieve a paginated list of all work orders with optional search functionality',
+      'Retrieve a paginated list of all work orders with optional search functionality and order type filtering',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -51,7 +51,7 @@ export class WorkOrderController {
             properties: {
               id: { type: 'number' },
               uuid: { type: 'string' },
-              vin_number: { type: 'string' },
+              vehicle_id: { type: 'string' },
               driver: { type: 'string' },
               mechanic: { type: 'string' },
               request: { type: 'string' },
@@ -61,7 +61,7 @@ export class WorkOrderController {
               end_date: { type: 'string', format: 'date-time' },
               status: {
                 type: 'string',
-                enum: ['pending', 'in_progress', 'completed', 'cancelled'],
+                enum: ['pending', 'on progress', 'completed', 'cancelled'],
               },
             },
           },
@@ -106,7 +106,7 @@ export class WorkOrderController {
           properties: {
             id: { type: 'number' },
             uuid: { type: 'string' },
-            vin_number: { type: 'string' },
+            vehicle_id: { type: 'string' },
             driver: { type: 'string' },
             mechanic: { type: 'string' },
             request: { type: 'string' },
@@ -124,8 +124,8 @@ export class WorkOrderController {
                 type: 'object',
                 properties: {
                   id: { type: 'number' },
-                  part_name: { type: 'number' },
-                  destination: { type: 'number' },
+                  inventory_id: { type: 'number' },
+                  destination_id: { type: 'number' },
                   quantity: { type: 'number' },
                   start_date: { type: 'string', format: 'date-time' },
                   part_number: { type: 'string' },
@@ -152,7 +152,7 @@ export class WorkOrderController {
   @ApiOperation({
     summary: 'Create new work order',
     description:
-      'Create a new work order with sparepart list. The system will automatically create batch_outbound and reloc_outbound records.',
+      'Create a new work order with sparepart list. The system will validate all references and automatically create batch_outbound and reloc_outbound records.',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -167,7 +167,7 @@ export class WorkOrderController {
   })
   @SwaggerApiResponse({
     status: 400,
-    description: 'Bad request - validation error',
+    description: 'Bad request - validation error or reference data not found',
   })
   create(@Body() createWorkOrderDto: CreateWorkOrderDto, @Req() req) {
     return this.workOrderService.create(createWorkOrderDto, req.user.id);
@@ -236,7 +236,7 @@ export class WorkOrderController {
   @ApiOperation({
     summary: 'Assign picker to work order',
     description:
-      'Assign a picker to work order. This will update picker_id in all reloc_outbound records related to this work order.',
+      'Assign a picker to work order. This will update picker_id in the order_form table.',
   })
   @SwaggerApiResponse({
     status: 200,

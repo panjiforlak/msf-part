@@ -56,32 +56,32 @@ export class WorkOrderService {
           .select([
             'of.id AS id',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
-            "COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'N/A') AS driver",
-            "COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'N/A') AS mechanic",
-            "COALESCE(CONCAT(r.first_name, ' ', r.last_name), 'N/A') AS request",
+            "COALESCE(dr.name, 'N/A') AS driver",
+            "COALESCE(mc.name, 'N/A') AS mechanic",
+            "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
+            'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
-            // Audit fields commented out
-            // 'of."createdBy" AS "createdBy"',
-            // 'of."createdAt" AS "createdAt"',
-            // 'of."updatedBy" AS "updatedBy"',
-            // 'of."updatedAt" AS "updatedAt"',
-            // 'of."deletedBy" AS "deletedBy"',
-            // 'of."deletedAt" AS "deletedAt"',
           ])
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
-          .leftJoin('employee', 'd', 'of.driver_id = d.id')
-          .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
-          .leftJoin('employee', 'r', 'of.request_id = r.id');
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
           qb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
             search: `%${query.search.toLowerCase()}%`,
+          });
+        }
+
+        if (query.order_type) {
+          qb.andWhere('of.order_type = :orderType', {
+            orderType: query.order_type,
           });
         }
 
@@ -97,14 +97,20 @@ export class WorkOrderService {
           .select('COUNT(of.id)', 'count')
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
-          .leftJoin('employee', 'd', 'of.driver_id = d.id')
-          .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
-          .leftJoin('employee', 'r', 'of.request_id = r.id');
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
           countQb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
             search: `%${query.search.toLowerCase()}%`,
+          });
+        }
+
+        if (query.order_type) {
+          countQb.andWhere('of.order_type = :orderType', {
+            orderType: query.order_type,
           });
         }
 
@@ -152,17 +158,22 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
-            'of.vehicle_id AS vin_number',
-            'of.driver_id AS driver',
-            'of.mechanic_id AS mechanic',
-            'of.request_id AS request',
+            "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(dr.name, 'N/A') AS driver",
+            "COALESCE(mc.name, 'N/A') AS mechanic",
+            "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
+            'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
           ])
           .from('order_form', 'of')
+          .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id')
           .where('of.id = :id', { id });
 
         orderForm = await qb.getRawOne();
@@ -173,15 +184,15 @@ export class WorkOrderService {
             .createQueryBuilder()
             .select([
               'bo.id AS id',
-              'bo.inventory_id AS part_name',
-              'ro.reloc_to AS destination',
+              'bo.inventory_id AS inventory_id',
+              'ro.reloc_to AS destination_id',
               'bo.quantity AS quantity',
               'of.start_date AS start_date',
               'i.inventory_internal_code AS part_number',
               'i.inventory_name AS part_name_label',
               'of.remark AS remark',
               "'Ready' AS status",
-              "COALESCE(sa.barcode, 'N/A') AS racks_name",
+              "COALESCE(sa.storage_code, 'N/A') AS racks_name",
             ])
             .from('batch_outbound', 'bo')
             .leftJoin(
@@ -234,15 +245,121 @@ export class WorkOrderService {
 
       await this.dataSource.transaction(async (manager) => {
         try {
-          // 1. Create order form
+          // 1. Check vehicle_id from vehicles table
+          const vehicleExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('vehicles', 'v')
+            .where('v.id = :vehicleId', {
+              vehicleId: createWorkOrderDto.vehicle_id,
+            })
+            .getRawOne();
+
+          if (!vehicleExists) {
+            throw new HttpException(
+              'Vehicle ID not found in vehicles table',
+              400,
+            );
+          }
+
+          // 2. Check driver from users table
+          const driverExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :driverId', { driverId: createWorkOrderDto.driver })
+            .getRawOne();
+
+          if (!driverExists) {
+            throw new HttpException('Driver ID not found in users table', 400);
+          }
+
+          // 3. Check mechanic from users table
+          const mechanicExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :mechanicId', {
+              mechanicId: createWorkOrderDto.mechanic,
+            })
+            .getRawOne();
+
+          if (!mechanicExists) {
+            throw new HttpException(
+              'Mechanic ID not found in users table',
+              400,
+            );
+          }
+
+          // 4. Check request from users table
+          const requestExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :requestId', {
+              requestId: createWorkOrderDto.request,
+            })
+            .getRawOne();
+
+          if (!requestExists) {
+            throw new HttpException('Request ID not found in users table', 400);
+          }
+
+          // 5. Check inventory_id and quantity for each sparepart
+          for (const sparepart of createWorkOrderDto.sparepart_list) {
+            // Check inventory_id from inventory table
+            const inventoryExists = await manager
+              .createQueryBuilder()
+              .select('i.id, i.quantity')
+              .from('inventory', 'i')
+              .where('i.id = :inventoryId', {
+                inventoryId: sparepart.inventory_id,
+              })
+              .getRawOne();
+
+            if (!inventoryExists) {
+              throw new HttpException(
+                `Inventory ID ${sparepart.inventory_id} not found in inventory table`,
+                400,
+              );
+            }
+
+            // 6. Check destination_id from inbound_outbound_area table
+            const destinationExists = await manager
+              .createQueryBuilder()
+              .select('1')
+              .from('inbound_outbound_area', 'ioa')
+              .where('ioa.id = :destinationId', {
+                destinationId: sparepart.destination_id,
+              })
+              .getRawOne();
+
+            if (!destinationExists) {
+              throw new HttpException(
+                `Destination ID ${sparepart.destination_id} not found in inbound_outbound_area table`,
+                400,
+              );
+            }
+
+            // 7. Check quantity from inventory table
+            if (sparepart.quantity > inventoryExists.quantity) {
+              throw new HttpException(
+                `Quantity ${sparepart.quantity} exceeds available quantity ${inventoryExists.quantity} for inventory ID ${sparepart.inventory_id}`,
+                400,
+              );
+            }
+          }
+
+          // 8. Create order form
           const orderForm = manager.create(OrderForm, {
-            vehicle_id: createWorkOrderDto.vin_number,
+            vehicle_id: createWorkOrderDto.vehicle_id,
             admin_id: userId,
             driver_id: createWorkOrderDto.driver,
             mechanic_id: createWorkOrderDto.mechanic,
             request_id: createWorkOrderDto.request,
             departement: createWorkOrderDto.departement,
             remark: createWorkOrderDto.remark,
+            order_type: createWorkOrderDto.order_type,
             start_date: new Date(createWorkOrderDto.start_date),
             end_date: new Date(createWorkOrderDto.end_date),
             status: createWorkOrderDto.status,
@@ -253,12 +370,12 @@ export class WorkOrderService {
           savedOrderForm = await manager.save(orderForm);
           console.log('Order form saved:', savedOrderForm);
 
-          // 2. Create batch outbound for each sparepart
+          // 9. Create batch outbound for each sparepart
           for (const sparepart of createWorkOrderDto.sparepart_list) {
             console.log('Processing sparepart:', sparepart);
 
             const batchOutbound = manager.create(BatchOutbound, {
-              inventory_id: sparepart.part_name,
+              inventory_id: sparepart.inventory_id,
               order_form_id: savedOrderForm.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
@@ -269,12 +386,12 @@ export class WorkOrderService {
             const savedBatchOutbound = await manager.save(batchOutbound);
             console.log('Batch outbound saved:', savedBatchOutbound);
 
-            // 3. Get batch_inbound data berdasarkan inventory_id
+            // 10. Get batch_inbound data berdasarkan inventory_id
             console.log(
               'Searching for batch_inbound with inventory_id:',
-              sparepart.part_name,
+              sparepart.inventory_id,
               'type:',
-              typeof sparepart.part_name,
+              typeof sparepart.inventory_id,
             );
 
             // First, let's check if there are any batch_inbound records at all
@@ -294,28 +411,28 @@ export class WorkOrderService {
               .select('bi.id, bi.inventory_id')
               .from('batch_inbound', 'bi')
               .where('bi.inventory_id = :inventoryId', {
-                inventoryId: sparepart.part_name,
+                inventoryId: sparepart.inventory_id,
               })
               .getRawMany();
 
             console.log(
               'Batch inbounds found for inventory_id',
-              sparepart.part_name,
+              sparepart.inventory_id,
               ':',
               batchInbounds,
             );
 
-            // 4. Get racks_id from inventory
+            // 11. Get racks_id from inventory
             const inventory = await manager
               .createQueryBuilder()
               .select('i.racks_id')
               .from('inventory', 'i')
-              .where('i.id = :id', { id: sparepart.part_name })
+              .where('i.id = :id', { id: sparepart.inventory_id })
               .getOne();
 
             console.log('Inventory found:', inventory);
 
-            // 5. Create reloc outbound untuk setiap batch_inbound
+            // 12. Create reloc outbound untuk setiap batch_inbound
             // Jika ada banyak batch_inbound dengan inventory_id yang sama,
             // maka akan dibuat banyak row di reloc_outbound
             if (batchInbounds && batchInbounds.length > 0) {
@@ -328,7 +445,7 @@ export class WorkOrderService {
                 const relocOutboundData = {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination,
+                  reloc_to: sparepart.destination_id,
                   quantity: sparepart.quantity,
                   reloc_date: new Date(createWorkOrderDto.start_date),
                   createdBy: userId,
@@ -359,7 +476,7 @@ export class WorkOrderService {
             } else {
               console.log(
                 'No batch_inbound found for inventory_id:',
-                sparepart.part_name,
+                sparepart.inventory_id,
               );
             }
           }
@@ -421,10 +538,11 @@ export class WorkOrderService {
         // 1. Update order form
         const updatedOrderForm = manager.merge(OrderForm, orderForm!, {
           ...updateWorkOrderDto,
-          vehicle_id: updateWorkOrderDto.vin_number || orderForm!.vehicle_id,
+          vehicle_id: updateWorkOrderDto.vehicle_id || orderForm!.vehicle_id,
           driver_id: updateWorkOrderDto.driver || orderForm!.driver_id,
           mechanic_id: updateWorkOrderDto.mechanic || orderForm!.mechanic_id,
           request_id: updateWorkOrderDto.request || orderForm!.request_id,
+          order_type: updateWorkOrderDto.order_type || orderForm!.order_type,
         });
 
         await manager.save(updatedOrderForm);
@@ -457,7 +575,7 @@ export class WorkOrderService {
           // 3. Create new batch outbound and reloc outbound
           for (const sparepart of updateWorkOrderDto.sparepart_list) {
             const batchOutbound = manager.create(BatchOutbound, {
-              inventory_id: sparepart.part_name,
+              inventory_id: sparepart.inventory_id,
               order_form_id: orderForm!.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
@@ -472,7 +590,7 @@ export class WorkOrderService {
               .select('bi.id, bi.inventory_id')
               .from('batch_inbound', 'bi')
               .where('bi.inventory_id = :inventoryId', {
-                inventoryId: sparepart.part_name,
+                inventoryId: sparepart.inventory_id,
               })
               .getMany();
 
@@ -481,7 +599,7 @@ export class WorkOrderService {
               .createQueryBuilder()
               .select('i.racks_id')
               .from('inventory', 'i')
-              .where('i.id = :id', { id: sparepart.part_name })
+              .where('i.id = :id', { id: sparepart.inventory_id })
               .getOne();
 
             // Create reloc outbound untuk setiap batch_inbound
@@ -490,7 +608,7 @@ export class WorkOrderService {
                 const relocOutbound = manager.create(RelocOutbound, {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination,
+                  reloc_to: sparepart.destination_id,
                   quantity: sparepart.quantity,
                 });
 
@@ -576,6 +694,8 @@ export class WorkOrderService {
       if (approvalDto.status === ApprovalStatus.APPROVAL) {
         await this.orderFormRepository.update(id, {
           status: WorkOrderStatus.IN_PROGRESS,
+          approvalBy: userId,
+          approvalAt: new Date(),
         });
 
         // Update remarks di tabel batch_outbound jika ada remark
@@ -622,30 +742,27 @@ export class WorkOrderService {
         throwError('Work order not found', 404);
       }
 
-      // Validasi picker_id exists di tabel employee
-      const employeeExists = await this.dataSource
+      // Validasi picker_id exists di tabel users
+      const userExists = await this.dataSource
         .createQueryBuilder()
         .select('1')
-        .from('employee', 'e')
-        .where('e.id = :pickerId', { pickerId: assignPickerDto.picker_id })
+        .from('users', 'u')
+        .where('u.id = :pickerId', { pickerId: assignPickerDto.picker_id })
         .getRawOne();
 
-      if (!employeeExists) {
-        throwError('Picker ID tidak ditemukan di tabel employee', 400);
+      if (!userExists) {
+        throwError('Picker ID tidak ditemukan di tabel users', 400);
       }
 
-      // Update picker_id di semua reloc_outbound yang terkait dengan work order ini
-      await this.dataSource
-        .createQueryBuilder()
-        .update('reloc_outbound')
-        .set({ picker_id: assignPickerDto.picker_id })
-        .where(
-          'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
-          {
-            orderId: id,
-          },
-        )
-        .execute();
+      // Update picker_id di tabel order_form
+      await this.orderFormRepository.update(
+        { id },
+        {
+          picker_id: assignPickerDto.picker_id,
+          updatedBy: userId,
+          updatedAt: new Date(),
+        },
+      );
 
       return successResponse(
         {} as WorkOrderResponseDto,

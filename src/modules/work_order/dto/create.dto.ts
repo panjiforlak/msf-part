@@ -10,71 +10,89 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { WorkOrderStatus } from '../entities/order_form.entity';
+import { WorkOrderStatus, OrderType } from '../entities/order_form.entity';
 
 export class SparepartDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Inventory ID from inventory table' })
   @IsNumber()
   @IsNotEmpty()
-  part_name: number;
+  inventory_id: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Destination ID from inbound_outbound_area table',
+  })
   @IsNumber()
   @IsNotEmpty()
-  destination: number;
+  destination_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Quantity to be processed' })
   @IsNumber()
   @IsNotEmpty()
   quantity: number;
 }
 
 export class CreateWorkOrderDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Vehicle ID from vehicles table' })
   @IsNumber()
   @IsNotEmpty()
-  vin_number: number;
+  vehicle_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Driver ID from users table' })
   @IsNumber()
   @IsNotEmpty()
   driver: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Mechanic ID from users table' })
   @IsNumber()
   @IsNotEmpty()
   mechanic: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Request user ID from users table' })
   @IsNumber()
   @IsNotEmpty()
   request: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Department name (free text)' })
   @IsString()
   @IsNotEmpty()
   departement: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Remark (free text)' })
   @IsString()
   @IsNotEmpty()
   remark: string;
 
-  @ApiProperty({ type: String, format: 'date' })
+  @ApiProperty({ enum: OrderType, description: 'Order type: sparepart or non sparepart' })
+  @IsEnum(OrderType)
+  @IsNotEmpty()
+  order_type: OrderType;
+
+  @ApiProperty({
+    type: String,
+    format: 'date',
+    description: 'Start date in YYYY-MM-DD format',
+  })
   @IsString()
   @IsNotEmpty()
   start_date: string;
 
-  @ApiProperty({ type: String, format: 'date' })
+  @ApiProperty({
+    type: String,
+    format: 'date',
+    description: 'End date in YYYY-MM-DD format',
+  })
   @IsString()
   @IsNotEmpty()
   end_date: string;
 
-  @ApiProperty({ enum: WorkOrderStatus })
+  @ApiProperty({ enum: WorkOrderStatus, description: 'Work order status' })
   @IsEnum(WorkOrderStatus)
   status: WorkOrderStatus;
 
-  @ApiProperty({ type: [SparepartDto] })
+  @ApiProperty({
+    type: [SparepartDto],
+    description: 'List of spareparts to be processed',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SparepartDto)
