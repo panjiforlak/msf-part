@@ -244,11 +244,12 @@ export class PdaOutboundService {
     const currentTempQuantity = existingRelocation.quantity_temp_outbound || 0;
     const newTempQuantity = currentTempQuantity + scanDestinationDto.quantity;
 
-    // Update relocation dengan quantity_temp_outbound baru
+    // Update relocation dengan quantity_temp_outbound baru dan reloc_to
     await this.relocInboundRepository.update(
       { id: existingRelocation.id },
       {
         quantity_temp_outbound: newTempQuantity,
+        reloc_to: scanDestinationDto.inbound_outbound_area_id,
         updatedBy: userId,
       },
     );
