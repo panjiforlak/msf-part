@@ -178,7 +178,7 @@ export class WorkOrderService {
               'i.inventory_name AS part_name_label',
               'of.remark AS remark',
               "'Ready' AS status",
-              "COALESCE(sa.barcode, 'N/A') AS racks_name",
+              "COALESCE(sa.storage_code, 'N/A') AS racks_name",
             ])
             .from('batch_outbound', 'bo')
             .leftJoin(
