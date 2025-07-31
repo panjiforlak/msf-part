@@ -755,12 +755,12 @@ export class BatchInboundService {
             inventory_id: data.inventory_id,
           })
           .andWhere('storage_source_id=:storage_source_id', {
-            storage_source_id: storageId,
+            storage_source_id: data.storage_source_id,
           })
           .execute();
 
         // Delete temp
-        const deleteResult = await manager
+        await manager
           .createQueryBuilder()
           .delete()
           .from('temp_inbound_queue')
