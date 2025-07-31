@@ -280,38 +280,66 @@ export class PdaOutboundService {
         },
       );
 
-      isCompleted = true;
-
-      // 6. Jika sudah true maka simpan data di tabel sppb
-      // Ambil order_form_id dari batch_outbound
+      // 6. Cari order_form_id dari tabel batch_outbound
       const orderFormId = batchOutbound.order_form_id || 0;
 
-      // Generate sppb_number
-      const lastSppb = await this.sppbRepository
-        .createQueryBuilder('sppb')
-        .orderBy('sppb.id', 'DESC')
-        .getOne();
+      // 7. Cek di tabel relocation yang memiliki order_form_id yang sama
+      // Caranya: ambil semua batch_inbound yang memiliki inventory_id yang sama dengan batch_outbound
+      const relatedBatchInbounds = await this.batchInboundRepository
+        .createQueryBuilder('bi')
+        .where('bi.inventory_id = :inventoryId', { inventoryId: batchOutbound.inventory_id })
+        .select('bi.id')
+        .getMany();
 
-      let nextNumber = 1;
-      if (lastSppb) {
-        const lastNumber = parseInt(lastSppb.sppb_number.replace('WHO', ''));
-        nextNumber = lastNumber + 1;
+      if (relatedBatchInbounds.length > 0) {
+        const batchInIds = relatedBatchInbounds.map((bi) => bi.id);
+
+        // Cek semua relocation dengan batch_in_id yang terkait menggunakan In operator
+        const allRelatedRelocations = await this.relocInboundRepository
+          .createQueryBuilder('reloc')
+          .where('reloc.batch_in_id IN (:...batchInIds)', { batchInIds })
+          .andWhere('reloc.reloc_type = :relocType', { relocType: 'outbound' })
+          .getMany();
+
+        // Cek apakah semua relocation sudah memiliki reloc_status = true
+        const allCompleted = allRelatedRelocations.every(
+          (reloc) => reloc.reloc_status === true,
+        );
+
+        if (allCompleted) {
+          isCompleted = true;
+
+          // 8. Jika semua relocation sudah true, buat data SPPB
+          // Generate sppb_number
+          const lastSppb = await this.sppbRepository
+            .createQueryBuilder('sppb')
+            .orderBy('sppb.id', 'DESC')
+            .getOne();
+
+          let nextNumber = 1;
+          if (lastSppb) {
+            const lastNumber = parseInt(
+              lastSppb.sppb_number.replace('WHO', ''),
+            );
+            nextNumber = lastNumber + 1;
+          }
+
+          const sppbNumberStr = `WHO${nextNumber.toString().padStart(3, '0')}`;
+
+          // Buat data SPPB
+          const sppb = this.sppbRepository.create({
+            order_form_id: orderFormId,
+            sppb_number: sppbNumberStr,
+            mechanic_photo: null,
+            status: 'waiting',
+            createdBy: userId,
+          });
+
+          const savedSppb = await this.sppbRepository.save(sppb);
+          sppbId = savedSppb.id;
+          sppbNumber = savedSppb.sppb_number;
+        }
       }
-
-      const sppbNumberStr = `WHO${nextNumber.toString().padStart(3, '0')}`;
-
-      // Buat data SPPB
-      const sppb = this.sppbRepository.create({
-        order_form_id: orderFormId,
-        sppb_number: sppbNumberStr,
-        mechanic_photo: null,
-        status: 'waiting',
-        createdBy: userId,
-      });
-
-      const savedSppb = await this.sppbRepository.save(sppb);
-      sppbId = savedSppb.id;
-      sppbNumber = savedSppb.sppb_number;
     }
 
     return {
