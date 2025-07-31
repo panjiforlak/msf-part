@@ -46,6 +46,10 @@ export class OrderForm {
 
   @ApiProperty()
   @Column({ type: 'int', default: 0 })
+  picker_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
   request_id: number;
 
   @ApiProperty()

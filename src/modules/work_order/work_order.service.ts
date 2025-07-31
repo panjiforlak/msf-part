@@ -736,18 +736,15 @@ export class WorkOrderService {
         throwError('Picker ID tidak ditemukan di tabel users', 400);
       }
 
-      // Update picker_id di semua reloc_outbound yang terkait dengan work order ini
-      await this.dataSource
-        .createQueryBuilder()
-        .update('reloc_outbound')
-        .set({ picker_id: assignPickerDto.picker_id })
-        .where(
-          'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
-          {
-            orderId: id,
-          },
-        )
-        .execute();
+      // Update picker_id di tabel order_form
+      await this.orderFormRepository.update(
+        { id },
+        {
+          picker_id: assignPickerDto.picker_id,
+          updatedBy: userId,
+          updatedAt: new Date(),
+        },
+      );
 
       return successResponse(
         {} as WorkOrderResponseDto,

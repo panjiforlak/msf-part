@@ -236,7 +236,7 @@ export class WorkOrderController {
   @ApiOperation({
     summary: 'Assign picker to work order',
     description:
-      'Assign a picker to work order. This will update picker_id in all reloc_outbound records related to this work order.',
+      'Assign a picker to work order. This will update picker_id in the order_form table.',
   })
   @SwaggerApiResponse({
     status: 200,
