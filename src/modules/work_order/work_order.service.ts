@@ -180,12 +180,12 @@ export class WorkOrderService {
 
         if (orderForm) {
           // Get sparepart list - menggunakan batch_outbound untuk mendapatkan sparepart yang terkait dengan work order
-          sparepartList = await this.dataSource
+          const rawSparepartList = await this.dataSource
             .createQueryBuilder()
             .select([
               'bo.id AS id',
               'bo.inventory_id AS inventory_id',
-              'ro.reloc_to AS destination_id',
+              'COALESCE(ro.reloc_to, 30) AS destination_id',
               'bo.quantity AS quantity',
               'of.start_date AS start_date',
               'i.inventory_internal_code AS part_number',
@@ -195,16 +195,27 @@ export class WorkOrderService {
               "COALESCE(sa.storage_code, 'N/A') AS racks_name",
             ])
             .from('batch_outbound', 'bo')
+            .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
+            .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
+            .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
             .leftJoin(
               'reloc_outbound',
               'ro',
               'ro.batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id = bo.inventory_id)',
             )
-            .leftJoin('order_form', 'of', 'bo.order_form_id = of.id')
-            .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
-            .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
             .where('bo.order_form_id = :orderId', { orderId: orderForm.id })
             .getRawMany();
+
+          // Remove duplicates based on id and inventory_id combination
+          const seen = new Set();
+          sparepartList = rawSparepartList.filter((item) => {
+            const key = `${item.id}-${item.inventory_id}`;
+            if (seen.has(key)) {
+              return false;
+            }
+            seen.add(key);
+            return true;
+          });
         }
       } catch (dbError) {
         console.log(
