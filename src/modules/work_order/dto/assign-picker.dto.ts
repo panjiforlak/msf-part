@@ -9,4 +9,4 @@ export class AssignPickerDto {
   @IsNotEmpty({ message: 'Picker ID tidak boleh kosong' })
   @IsNumber({}, { message: 'Picker ID harus berupa angka' })
   picker_id: number;
-} 
+}

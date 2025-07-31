@@ -173,8 +173,8 @@ export class WorkOrderService {
             .createQueryBuilder()
             .select([
               'bo.id AS id',
-              'bo.inventory_id AS part_name',
-              'ro.reloc_to AS destination',
+              'bo.inventory_id AS inventory_id',
+              'ro.reloc_to AS destination_id',
               'bo.quantity AS quantity',
               'of.start_date AS start_date',
               'i.inventory_internal_code AS part_number',
@@ -234,9 +234,114 @@ export class WorkOrderService {
 
       await this.dataSource.transaction(async (manager) => {
         try {
-          // 1. Create order form
+          // 1. Check vehicle_id from vehicles table
+          const vehicleExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('vehicles', 'v')
+            .where('v.id = :vehicleId', {
+              vehicleId: createWorkOrderDto.vehicle_id,
+            })
+            .getRawOne();
+
+          if (!vehicleExists) {
+            throw new HttpException(
+              'Vehicle ID not found in vehicles table',
+              400,
+            );
+          }
+
+          // 2. Check driver from users table
+          const driverExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :driverId', { driverId: createWorkOrderDto.driver })
+            .getRawOne();
+
+          if (!driverExists) {
+            throw new HttpException('Driver ID not found in users table', 400);
+          }
+
+          // 3. Check mechanic from users table
+          const mechanicExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :mechanicId', {
+              mechanicId: createWorkOrderDto.mechanic,
+            })
+            .getRawOne();
+
+          if (!mechanicExists) {
+            throw new HttpException(
+              'Mechanic ID not found in users table',
+              400,
+            );
+          }
+
+          // 4. Check request from users table
+          const requestExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :requestId', {
+              requestId: createWorkOrderDto.request,
+            })
+            .getRawOne();
+
+          if (!requestExists) {
+            throw new HttpException('Request ID not found in users table', 400);
+          }
+
+          // 5. Check inventory_id and quantity for each sparepart
+          for (const sparepart of createWorkOrderDto.sparepart_list) {
+            // Check inventory_id from inventory table
+            const inventoryExists = await manager
+              .createQueryBuilder()
+              .select('i.id, i.quantity')
+              .from('inventory', 'i')
+              .where('i.id = :inventoryId', {
+                inventoryId: sparepart.inventory_id,
+              })
+              .getRawOne();
+
+            if (!inventoryExists) {
+              throw new HttpException(
+                `Inventory ID ${sparepart.inventory_id} not found in inventory table`,
+                400,
+              );
+            }
+
+            // 6. Check destination_id from inbound_outbound_area table
+            const destinationExists = await manager
+              .createQueryBuilder()
+              .select('1')
+              .from('inbound_outbound_area', 'ioa')
+              .where('ioa.id = :destinationId', {
+                destinationId: sparepart.destination_id,
+              })
+              .getRawOne();
+
+            if (!destinationExists) {
+              throw new HttpException(
+                `Destination ID ${sparepart.destination_id} not found in inbound_outbound_area table`,
+                400,
+              );
+            }
+
+            // 7. Check quantity from inventory table
+            if (sparepart.quantity > inventoryExists.quantity) {
+              throw new HttpException(
+                `Quantity ${sparepart.quantity} exceeds available quantity ${inventoryExists.quantity} for inventory ID ${sparepart.inventory_id}`,
+                400,
+              );
+            }
+          }
+
+          // 8. Create order form
           const orderForm = manager.create(OrderForm, {
-            vehicle_id: createWorkOrderDto.vin_number,
+            vehicle_id: createWorkOrderDto.vehicle_id,
             admin_id: userId,
             driver_id: createWorkOrderDto.driver,
             mechanic_id: createWorkOrderDto.mechanic,
@@ -253,12 +358,12 @@ export class WorkOrderService {
           savedOrderForm = await manager.save(orderForm);
           console.log('Order form saved:', savedOrderForm);
 
-          // 2. Create batch outbound for each sparepart
+          // 9. Create batch outbound for each sparepart
           for (const sparepart of createWorkOrderDto.sparepart_list) {
             console.log('Processing sparepart:', sparepart);
 
             const batchOutbound = manager.create(BatchOutbound, {
-              inventory_id: sparepart.part_name,
+              inventory_id: sparepart.inventory_id,
               order_form_id: savedOrderForm.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
@@ -269,12 +374,12 @@ export class WorkOrderService {
             const savedBatchOutbound = await manager.save(batchOutbound);
             console.log('Batch outbound saved:', savedBatchOutbound);
 
-            // 3. Get batch_inbound data berdasarkan inventory_id
+            // 10. Get batch_inbound data berdasarkan inventory_id
             console.log(
               'Searching for batch_inbound with inventory_id:',
-              sparepart.part_name,
+              sparepart.inventory_id,
               'type:',
-              typeof sparepart.part_name,
+              typeof sparepart.inventory_id,
             );
 
             // First, let's check if there are any batch_inbound records at all
@@ -294,28 +399,28 @@ export class WorkOrderService {
               .select('bi.id, bi.inventory_id')
               .from('batch_inbound', 'bi')
               .where('bi.inventory_id = :inventoryId', {
-                inventoryId: sparepart.part_name,
+                inventoryId: sparepart.inventory_id,
               })
               .getRawMany();
 
             console.log(
               'Batch inbounds found for inventory_id',
-              sparepart.part_name,
+              sparepart.inventory_id,
               ':',
               batchInbounds,
             );
 
-            // 4. Get racks_id from inventory
+            // 11. Get racks_id from inventory
             const inventory = await manager
               .createQueryBuilder()
               .select('i.racks_id')
               .from('inventory', 'i')
-              .where('i.id = :id', { id: sparepart.part_name })
+              .where('i.id = :id', { id: sparepart.inventory_id })
               .getOne();
 
             console.log('Inventory found:', inventory);
 
-            // 5. Create reloc outbound untuk setiap batch_inbound
+            // 12. Create reloc outbound untuk setiap batch_inbound
             // Jika ada banyak batch_inbound dengan inventory_id yang sama,
             // maka akan dibuat banyak row di reloc_outbound
             if (batchInbounds && batchInbounds.length > 0) {
@@ -328,7 +433,7 @@ export class WorkOrderService {
                 const relocOutboundData = {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination,
+                  reloc_to: sparepart.destination_id,
                   quantity: sparepart.quantity,
                   reloc_date: new Date(createWorkOrderDto.start_date),
                   createdBy: userId,
@@ -359,7 +464,7 @@ export class WorkOrderService {
             } else {
               console.log(
                 'No batch_inbound found for inventory_id:',
-                sparepart.part_name,
+                sparepart.inventory_id,
               );
             }
           }
@@ -421,7 +526,7 @@ export class WorkOrderService {
         // 1. Update order form
         const updatedOrderForm = manager.merge(OrderForm, orderForm!, {
           ...updateWorkOrderDto,
-          vehicle_id: updateWorkOrderDto.vin_number || orderForm!.vehicle_id,
+          vehicle_id: updateWorkOrderDto.vehicle_id || orderForm!.vehicle_id,
           driver_id: updateWorkOrderDto.driver || orderForm!.driver_id,
           mechanic_id: updateWorkOrderDto.mechanic || orderForm!.mechanic_id,
           request_id: updateWorkOrderDto.request || orderForm!.request_id,
@@ -457,7 +562,7 @@ export class WorkOrderService {
           // 3. Create new batch outbound and reloc outbound
           for (const sparepart of updateWorkOrderDto.sparepart_list) {
             const batchOutbound = manager.create(BatchOutbound, {
-              inventory_id: sparepart.part_name,
+              inventory_id: sparepart.inventory_id,
               order_form_id: orderForm!.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
@@ -472,7 +577,7 @@ export class WorkOrderService {
               .select('bi.id, bi.inventory_id')
               .from('batch_inbound', 'bi')
               .where('bi.inventory_id = :inventoryId', {
-                inventoryId: sparepart.part_name,
+                inventoryId: sparepart.inventory_id,
               })
               .getMany();
 
@@ -481,7 +586,7 @@ export class WorkOrderService {
               .createQueryBuilder()
               .select('i.racks_id')
               .from('inventory', 'i')
-              .where('i.id = :id', { id: sparepart.part_name })
+              .where('i.id = :id', { id: sparepart.inventory_id })
               .getOne();
 
             // Create reloc outbound untuk setiap batch_inbound
@@ -490,7 +595,7 @@ export class WorkOrderService {
                 const relocOutbound = manager.create(RelocOutbound, {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination,
+                  reloc_to: sparepart.destination_id,
                   quantity: sparepart.quantity,
                 });
 

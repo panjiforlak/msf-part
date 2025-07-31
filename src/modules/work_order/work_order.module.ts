@@ -9,7 +9,12 @@ import { BatchInbound } from '../batch_in/entities/batchin.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OrderForm, BatchOutbound, RelocOutbound, BatchInbound]),
+    TypeOrmModule.forFeature([
+      OrderForm,
+      BatchOutbound,
+      RelocOutbound,
+      BatchInbound,
+    ]),
   ],
   providers: [WorkOrderService],
   controllers: [WorkOrderController],
