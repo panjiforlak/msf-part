@@ -56,27 +56,20 @@ export class WorkOrderService {
           .select([
             'of.id AS id',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
-            "COALESCE(CONCAT(d.first_name, ' ', d.last_name), 'N/A') AS driver",
-            "COALESCE(CONCAT(m.first_name, ' ', m.last_name), 'N/A') AS mechanic",
-            "COALESCE(CONCAT(r.first_name, ' ', r.last_name), 'N/A') AS request",
+            "COALESCE(dr.name, 'N/A') AS driver",
+            "COALESCE(mc.name, 'N/A') AS mechanic",
+            "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
             'of.status AS status',
-            // Audit fields commented out
-            // 'of."createdBy" AS "createdBy"',
-            // 'of."createdAt" AS "createdAt"',
-            // 'of."updatedBy" AS "updatedBy"',
-            // 'of."updatedAt" AS "updatedAt"',
-            // 'of."deletedBy" AS "deletedBy"',
-            // 'of."deletedAt" AS "deletedAt"',
           ])
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
-          .leftJoin('employee', 'd', 'of.driver_id = d.id')
-          .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
-          .leftJoin('employee', 'r', 'of.request_id = r.id');
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -97,9 +90,9 @@ export class WorkOrderService {
           .select('COUNT(of.id)', 'count')
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
-          .leftJoin('employee', 'd', 'of.driver_id = d.id')
-          .leftJoin('employee', 'm', 'of.mechanic_id = m.id')
-          .leftJoin('employee', 'r', 'of.request_id = r.id');
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -152,10 +145,10 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
-            'of.vehicle_id AS vin_number',
-            'of.driver_id AS driver',
-            'of.mechanic_id AS mechanic',
-            'of.request_id AS request',
+            "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(dr.name, 'N/A') AS driver",
+            "COALESCE(mc.name, 'N/A') AS mechanic",
+            "COALESCE(req.name, 'N/A') AS request",
             'of.departement AS departement',
             'of.remark AS remark',
             'of.start_date AS start_date',
@@ -163,6 +156,10 @@ export class WorkOrderService {
             'of.status AS status',
           ])
           .from('order_form', 'of')
+          .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
+          .leftJoin('users', 'dr', 'of.driver_id = dr.id')
+          .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
+          .leftJoin('users', 'req', 'of.request_id = req.id')
           .where('of.id = :id', { id });
 
         orderForm = await qb.getRawOne();
@@ -727,16 +724,16 @@ export class WorkOrderService {
         throwError('Work order not found', 404);
       }
 
-      // Validasi picker_id exists di tabel employee
-      const employeeExists = await this.dataSource
+      // Validasi picker_id exists di tabel users
+      const userExists = await this.dataSource
         .createQueryBuilder()
         .select('1')
-        .from('employee', 'e')
-        .where('e.id = :pickerId', { pickerId: assignPickerDto.picker_id })
+        .from('users', 'u')
+        .where('u.id = :pickerId', { pickerId: assignPickerDto.picker_id })
         .getRawOne();
 
-      if (!employeeExists) {
-        throwError('Picker ID tidak ditemukan di tabel employee', 400);
+      if (!userExists) {
+        throwError('Picker ID tidak ditemukan di tabel users', 400);
       }
 
       // Update picker_id di semua reloc_outbound yang terkait dengan work order ini
