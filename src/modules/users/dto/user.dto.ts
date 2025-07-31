@@ -66,6 +66,9 @@ export class GetUsersQueryDto {
 
   @IsOptional()
   search?: string;
+
+  @IsOptional()
+  role?: string;
 }
 
 export class UpdateUserDto {

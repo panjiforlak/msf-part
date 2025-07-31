@@ -263,7 +263,6 @@ export class BatchInboundService {
     }
   }
 
-  //for api calling
   async findById(id: number): Promise<ApiResponse<any>> {
     try {
       const result: any = await this.repository.findOne({
@@ -708,7 +707,230 @@ export class BatchInboundService {
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
+
   async createPDAb2r(
+    data: CreatePDAStorageB2RDto,
+    userId: number,
+  ): Promise<ApiResponse<any>> {
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const storage = await manager
+          .createQueryBuilder()
+          .select(['sa.id', 'sa.storage_type', 'sa.barcode'])
+          .from('storage_area', 'sa')
+          .where('sa.barcode = :barcode', { barcode: data.storage_id })
+          .andWhere('sa.deletedAt IS NULL')
+          .getRawOne();
+
+        if (!storage) {
+          throwError(`Storage barcode ${data.storage_id} not found`, 400);
+        }
+
+        const storageId = storage.sa_id;
+
+        // 2. INSERT ke relocation storage
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into('relocation')
+          .values({
+            batch_in_id: data.batch_in_id,
+            reloc_from: data.storage_source_id,
+            reloc_to: storageId,
+            quantity: data.quantity,
+            reloc_date: new Date(),
+            reloc_type: 'box-to-rack',
+            reloc_status: true,
+            created_by: userId,
+          })
+          .execute();
+
+        await manager
+          .createQueryBuilder()
+          .update('temp_inbound_queue')
+          .set({
+            quantity: () => `"quantity" - ${data.quantity}`,
+          })
+          .where('inventory_id = :inventory_id', {
+            inventory_id: data.inventory_id,
+          })
+          .andWhere('storage_source_id=:storage_source_id', {
+            storage_source_id: data.storage_source_id,
+          })
+          .execute();
+
+        // Delete temp
+        await manager
+          .createQueryBuilder()
+          .delete()
+          .from('temp_inbound_queue')
+          .where('inventory_id = :inventory_id', {
+            inventory_id: data.inventory_id,
+          })
+          .andWhere('storage_source_id=:storage_source_id', {
+            storage_source_id: data.storage_source_id,
+          })
+          .andWhere('quantity <= 0')
+          .execute();
+
+        // 4. UPDATE batch_inbound change status inbound to storage
+        await manager
+          .createQueryBuilder()
+          .update('batch_inbound')
+          .set({
+            status_reloc: 'storage',
+          })
+          .where('id = :id', { id: data.batch_in_id })
+          .execute();
+      });
+
+      return successResponse(
+        null,
+        'Insert batch + log + update inventory success',
+        201,
+      );
+    } catch (error) {
+      console.error('🔥 Error in createPDA:', error);
+      throw new InternalServerErrorException(
+        'Failed to execute transactional insert/update',
+      );
+    }
+  }
+
+  async findAllPDAR2r(
+    picker_id: number,
+    query: ParamsDto,
+  ): Promise<ApiResponse<any>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const superadmin = query.superadmin?.toLowerCase() ?? '';
+
+      const subQuery = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'inner_r.batch_in_id AS batch_in_id',
+          'inner_r.reloc_to AS reloc_to',
+        ])
+        .from((qb) => {
+          return qb
+            .select([
+              'r.batch_in_id AS batch_in_id',
+              'r.reloc_to AS reloc_to',
+              `ROW_NUMBER() OVER (
+              PARTITION BY r.batch_in_id
+              ORDER BY 
+                CASE WHEN r.reloc_type = 'rack-to-rack' THEN 1 ELSE 2 END,
+                r."createdAt" DESC
+            ) AS row_num`,
+            ])
+            .from('relocation', 'r')
+            .where(`r.reloc_type IN ('rack-to-rack', 'inbound')`)
+            .andWhere(`r."deletedAt" IS NULL`);
+        }, 'inner_r')
+        .where('inner_r.row_num = 1');
+
+      // Main querynya -___-
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'bi.id AS batch_in_id',
+          'bi.barcode AS batch',
+          'i.id AS inventory_id',
+          'i.inventory_name AS part_name',
+          'i.inventory_code AS part_number',
+          'i.inventory_internal_code AS part_number_internal',
+          'i.quantity AS quantity',
+          `(i.quantity - COALESCE((
+              SELECT SUM(r2.quantity)
+              FROM relocation r2
+              WHERE r2.batch_in_id = bi.id
+                AND r2.reloc_type = 'inbound'
+                AND r2.reloc_status = false
+            ), 0)) AS quantity`,
+          'reloc_final.reloc_to AS rack_source_id',
+          'sa2.storage_code AS rack_source',
+          'sa.storage_code AS rack_destination',
+          `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi.picker_id AS picker_id',
+        ])
+        .from('inventory', 'i')
+        .leftJoin(
+          'batch_inbound',
+          'bi',
+          'i.id = bi.inventory_id AND bi."deletedAt" IS NULL',
+        )
+        .leftJoin(
+          'storage_area',
+          'sa',
+          'i.racks_id = sa.id AND sa."deletedAt" IS NULL',
+        )
+        .leftJoin(
+          `(${subQuery.getQuery()})`,
+          'reloc_final',
+          'reloc_final.batch_in_id = bi.id',
+        )
+        .leftJoin(
+          'storage_area',
+          'sa2',
+          'reloc_final.reloc_to = sa2.id AND sa2."deletedAt" IS NULL',
+        )
+        .where('i."deletedAt" IS NULL')
+        .setParameters(subQuery.getParameters());
+
+      if (superadmin !== 'yes') {
+        qb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+
+      if (search) {
+        qb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      qb.orderBy('bi.id', 'ASC').offset(skip).limit(limit);
+
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .from('batch_inbound', 'bi')
+        .leftJoin(
+          'inventory',
+          'i',
+          'bi.inventory_id = i.id AND i."deletedAt" IS NULL',
+        )
+        .where('bi."deletedAt" IS NULL');
+
+      if (superadmin !== 'yes') {
+        countQb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
+      }
+
+      if (search) {
+        countQb.andWhere('LOWER(bi.barcode) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      const [result, total] = await Promise.all([
+        qb.getRawMany(),
+        countQb.getCount(),
+      ]);
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get all PDA R2R successfully',
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to fetch PDA R2R data');
+    }
+  }
+
+  async createPDAR2r(
     data: CreatePDAStorageB2RDto,
     userId: number,
   ): Promise<ApiResponse<any>> {
