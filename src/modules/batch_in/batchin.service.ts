@@ -853,6 +853,7 @@ export class BatchInboundService {
           'reloc_final.reloc_to AS rack_source_id',
           'sa2.storage_code AS rack_source',
           'sa.storage_code AS rack_destination',
+          'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi.picker_id AS picker_id',
         ])
