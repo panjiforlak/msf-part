@@ -257,11 +257,15 @@ export class WorkOrderService {
       await this.dataSource.transaction(async (manager) => {
         try {
           // Check if order_type is "non sparepart"
-          const isNonSparepart = createWorkOrderDto.order_type === 'non sparepart';
+          const isNonSparepart =
+            createWorkOrderDto.order_type === ('non sparepart' as any);
 
           if (!isNonSparepart) {
             // 1. Check vehicle_id from vehicles table (only if not null or 0)
-            if (createWorkOrderDto.vehicle_id && createWorkOrderDto.vehicle_id !== 0) {
+            if (
+              createWorkOrderDto.vehicle_id &&
+              createWorkOrderDto.vehicle_id !== 0
+            ) {
               const vehicleExists = await manager
                 .createQueryBuilder()
                 .select('1')
@@ -328,22 +332,7 @@ export class WorkOrderService {
               );
             }
 
-            // 6. Check destination_id from inbound_outbound_area table
-            const destinationExists = await manager
-              .createQueryBuilder()
-              .select('1')
-              .from('inbound_outbound_area', 'ioa')
-              .where('ioa.id = :destinationId', {
-                destinationId: sparepart.destination_id,
-              })
-              .getRawOne();
 
-            if (!destinationExists) {
-              throw new HttpException(
-                `Destination ID ${sparepart.destination_id} not found in inbound_outbound_area table`,
-                400,
-              );
-            }
 
             // 7. Check quantity from inventory table (only for sparepart orders)
             if (!isNonSparepart && sparepart.quantity > inventoryExists.quantity) {
@@ -463,7 +452,7 @@ export class WorkOrderService {
                 const relocOutboundData = {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination_id,
+                  reloc_to: 0, // Set default value since destination_id is removed
                   quantity: sparepart.quantity,
                   reloc_date: new Date(createWorkOrderDto.start_date),
                   createdBy: userId,
@@ -626,7 +615,7 @@ export class WorkOrderService {
                 const relocOutbound = manager.create(RelocOutbound, {
                   batch_in_id: batchInbound.id,
                   reloc_from: inventory?.racks_id || 0,
-                  reloc_to: sparepart.destination_id,
+                  reloc_to: 0, // Set default value since destination_id is removed
                   quantity: sparepart.quantity,
                 });
 
