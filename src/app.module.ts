@@ -18,6 +18,7 @@ import { BatchInboundModule } from './modules/batch_in/batchin.module';
 import { RelocInboundModule } from './modules/relocation/relocin.module';
 import { ComponentsModule } from './modules/master/components/components.module';
 import { WorkOrderModule } from './modules/work_order/work_order.module';
+import { PdaOutboundModule } from './modules/pda_outbound/pda_outbound.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { WorkOrderModule } from './modules/work_order/work_order.module';
     RelocInboundModule,
     ComponentsModule,
     WorkOrderModule,
+    PdaOutboundModule,
   ],
 })
 export class AppModule {}

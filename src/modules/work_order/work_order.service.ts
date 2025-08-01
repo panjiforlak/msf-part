@@ -256,67 +256,60 @@ export class WorkOrderService {
 
       await this.dataSource.transaction(async (manager) => {
         try {
-          // 1. Check vehicle_id from vehicles table
-          const vehicleExists = await manager
-            .createQueryBuilder()
-            .select('1')
-            .from('vehicles', 'v')
-            .where('v.id = :vehicleId', {
-              vehicleId: createWorkOrderDto.vehicle_id,
-            })
-            .getRawOne();
+          // Check if order_type is "non sparepart"
+          const isNonSparepart = createWorkOrderDto.order_type === 'non sparepart';
 
-          if (!vehicleExists) {
-            throw new HttpException(
-              'Vehicle ID not found in vehicles table',
-              400,
-            );
+          if (!isNonSparepart) {
+            // 1. Check vehicle_id from vehicles table (only if not null or 0)
+            if (createWorkOrderDto.vehicle_id && createWorkOrderDto.vehicle_id !== 0) {
+              const vehicleExists = await manager
+                .createQueryBuilder()
+                .select('1')
+                .from('vehicles', 'v')
+                .where('v.id = :vehicleId', {
+                  vehicleId: createWorkOrderDto.vehicle_id,
+                })
+                .getRawOne();
+
+              if (!vehicleExists) {
+                throw new HttpException(
+                  'Vehicle ID not found in vehicles table',
+                  400,
+                );
+              }
+            }
+
+            // 2. Check driver from users table
+            const driverExists = await manager
+              .createQueryBuilder()
+              .select('1')
+              .from('users', 'u')
+              .where('u.id = :driverId', { driverId: createWorkOrderDto.driver })
+              .getRawOne();
+
+            if (!driverExists) {
+              throw new HttpException('Driver ID not found in users table', 400);
+            }
+
+            // 3. Check mechanic from users table
+            const mechanicExists = await manager
+              .createQueryBuilder()
+              .select('1')
+              .from('users', 'u')
+              .where('u.id = :mechanicId', {
+                mechanicId: createWorkOrderDto.mechanic,
+              })
+              .getRawOne();
+
+            if (!mechanicExists) {
+              throw new HttpException(
+                'Mechanic ID not found in users table',
+                400,
+              );
+            }
           }
 
-          // 2. Check driver from users table
-          const driverExists = await manager
-            .createQueryBuilder()
-            .select('1')
-            .from('users', 'u')
-            .where('u.id = :driverId', { driverId: createWorkOrderDto.driver })
-            .getRawOne();
-
-          if (!driverExists) {
-            throw new HttpException('Driver ID not found in users table', 400);
-          }
-
-          // 3. Check mechanic from users table
-          const mechanicExists = await manager
-            .createQueryBuilder()
-            .select('1')
-            .from('users', 'u')
-            .where('u.id = :mechanicId', {
-              mechanicId: createWorkOrderDto.mechanic,
-            })
-            .getRawOne();
-
-          if (!mechanicExists) {
-            throw new HttpException(
-              'Mechanic ID not found in users table',
-              400,
-            );
-          }
-
-          // 4. Check request from users table
-          const requestExists = await manager
-            .createQueryBuilder()
-            .select('1')
-            .from('users', 'u')
-            .where('u.id = :requestId', {
-              requestId: createWorkOrderDto.request,
-            })
-            .getRawOne();
-
-          if (!requestExists) {
-            throw new HttpException('Request ID not found in users table', 400);
-          }
-
-          // 5. Check inventory_id and quantity for each sparepart
+          // 5. Check inventory_id and quantity for each sparepart (for all order types)
           for (const sparepart of createWorkOrderDto.sparepart_list) {
             // Check inventory_id from inventory table
             const inventoryExists = await manager
@@ -352,8 +345,8 @@ export class WorkOrderService {
               );
             }
 
-            // 7. Check quantity from inventory table
-            if (sparepart.quantity > inventoryExists.quantity) {
+            // 7. Check quantity from inventory table (only for sparepart orders)
+            if (!isNonSparepart && sparepart.quantity > inventoryExists.quantity) {
               throw new HttpException(
                 `Quantity ${sparepart.quantity} exceeds available quantity ${inventoryExists.quantity} for inventory ID ${sparepart.inventory_id}`,
                 400,
@@ -361,9 +354,23 @@ export class WorkOrderService {
             }
           }
 
+          // 4. Check request from users table (always required)
+          const requestExists = await manager
+            .createQueryBuilder()
+            .select('1')
+            .from('users', 'u')
+            .where('u.id = :requestId', {
+              requestId: createWorkOrderDto.request,
+            })
+            .getRawOne();
+
+          if (!requestExists) {
+            throw new HttpException('Request ID not found in users table', 400);
+          }
+
           // 8. Create order form
           const orderForm = manager.create(OrderForm, {
-            vehicle_id: createWorkOrderDto.vehicle_id,
+            vehicle_id: createWorkOrderDto.vehicle_id || 0, // Set to 0 if null/undefined
             admin_id: userId,
             driver_id: createWorkOrderDto.driver,
             mechanic_id: createWorkOrderDto.mechanic,
@@ -381,7 +388,7 @@ export class WorkOrderService {
           savedOrderForm = await manager.save(orderForm);
           console.log('Order form saved:', savedOrderForm);
 
-          // 9. Create batch outbound for each sparepart
+          // 9. Create batch outbound for each sparepart (for all order types)
           for (const sparepart of createWorkOrderDto.sparepart_list) {
             console.log('Processing sparepart:', sparepart);
 
@@ -470,29 +477,29 @@ export class WorkOrderService {
                 const relocOutbound = manager.create(
                   RelocOutbound,
                   relocOutboundData,
-                );
+              );
 
-                console.log(
-                  'Reloc outbound created for batch_in_id:',
-                  batchInbound.id,
-                );
-                const savedRelocOutbound = await manager.save(relocOutbound);
-                console.log(
-                  'Reloc outbound saved successfully for batch_in_id:',
-                  batchInbound.id,
-                  'with ID:',
-                  savedRelocOutbound.id,
-                );
-              }
-            } else {
               console.log(
-                'No batch_inbound found for inventory_id:',
-                sparepart.inventory_id,
+                'Reloc outbound created for batch_in_id:',
+                batchInbound.id,
+              );
+              const savedRelocOutbound = await manager.save(relocOutbound);
+              console.log(
+                'Reloc outbound saved successfully for batch_in_id:',
+                batchInbound.id,
+                'with ID:',
+                savedRelocOutbound.id,
               );
             }
+          } else {
+            console.log(
+              'No batch_inbound found for inventory_id:',
+              sparepart.inventory_id,
+            );
           }
+        }
 
-          console.log('Transaction completed successfully');
+        console.log('Transaction completed successfully');
         } catch (transactionError) {
           console.error('Error in transaction:', transactionError);
           throw transactionError;

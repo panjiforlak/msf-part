@@ -36,6 +36,12 @@ export class RelocInbound {
   @Column({ type: 'int', default: 0 })
   quantity: number;
 
+  @Column({ type: 'int', default: 0 })
+  quantity_temp_outbound: number;
+
+  @Column({ type: 'int', nullable: true })
+  picker_id: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   reloc_date: Date;
 
