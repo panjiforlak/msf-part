@@ -100,7 +100,8 @@ Membuat data relocation berdasarkan barcode inbound dan batch_outbound_id.
 **Request Body:**
 ```json
 {
-  "barcode_inbound": "f58edb181e97",
+  "batch_in_barcode": "f58edb181e97",
+  "inbound_outbound_area_id": 1,
   "quantity": 1,
   "batch_outbound_id": 1
 }
@@ -113,9 +114,10 @@ Membuat data relocation berdasarkan barcode inbound dan batch_outbound_id.
   "message": "Scan destination berhasil diproses",
   "data": {
     "id": 1,
-    "barcode_inbound": "f58edb181e97",
+    "batch_in_id": 1,
+    "inbound_outbound_area_id": 1,
     "quantity": 1,
-    "total_scanned_quantity": 3,
+    "quantity_temp_outbound": 3,
     "target_quantity": 3,
     "is_completed": true,
     "sppb_id": 1,
@@ -171,7 +173,8 @@ curl -X 'POST' \
   -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-  "barcode_inbound": "f58edb181e97",
+  "batch_in_barcode": "f58edb181e97",
+  "inbound_outbound_area_id": 1,
   "quantity": 1,
   "batch_outbound_id": 1
 }'

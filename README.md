@@ -162,7 +162,7 @@ Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body req
 **Body Request Baru:**
 ```json
 {
-  "batch_in_id": 1,
+  "batch_in_barcode": "abc123def456",
   "inbound_outbound_area_id": 1,
   "quantity": 1,
   "batch_outbound_id": 18
@@ -170,18 +170,21 @@ Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body req
 ```
 
 **Proses yang dijalankan:**
-1. Mencari relocation dengan `batch_in_id` yang sesuai dan `reloc_type = 'outbound'`
-2. Validasi `batch_in_id` ada di tabel `batch_inbound`
+1. Mencari batch_inbound berdasarkan `batch_in_barcode`
+2. Mencari relocation dengan `batch_in_id` yang sesuai dan `reloc_type = 'outbound'`
 3. Validasi `inbound_outbound_area_id` ada di tabel `inbound_outbound_area`
 4. Validasi `batch_outbound_id` ada di tabel `batch_outbound`
 5. Update `quantity_temp_outbound` di tabel relocation dengan menambahkan quantity baru
 6. Jika `quantity_temp_outbound >= quantity`, maka:
    - Update `reloc_status` menjadi `true`
-   - Buat data baru di tabel `sppb` dengan:
-     - `order_form_id` dari `batch_outbound`
-     - `sppb_number` auto generate (format: WHO001, WHO002, dst)
-     - `mechanic_photo` = null
-     - `status` = 'waiting'
+   - Cari `order_form_id` dari tabel `batch_outbound` berdasarkan `batch_outbound_id`
+   - Cek semua relocation yang memiliki `order_form_id` yang sama
+   - Jika semua relocation sudah memiliki `reloc_status = true`, maka:
+     - Buat data baru di tabel `sppb` dengan:
+       - `order_form_id` dari `batch_outbound`
+       - `sppb_number` auto generate (format: WHO001, WHO002, dst)
+       - `mechanic_photo` = null
+       - `status` = 'waiting'
 
 **Response:**
 ```json
