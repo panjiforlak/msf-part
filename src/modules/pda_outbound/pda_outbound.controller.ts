@@ -10,6 +10,7 @@ import { ScanDestinationDto } from './dto/scan-destination.dto';
 import { ScanDestinationResponseDto } from './dto/scan-destination-response.dto';
 import { GetAreaOutboundDto, GetAreaOutboundResponseDto } from './dto/get-area-outbound.dto';
 import { successResponse } from '../../common/helpers/response.helper';
+import { RelocationHistoryResponseDto, RelocationHistoryQueryDto } from './dto/relocation-history.dto';
 
 @ApiTags('PDA Outbound')
 @Controller('pda-outbound')
@@ -124,5 +125,22 @@ export class PdaOutboundController {
   ) {
     const data = await this.pdaOutboundService.getAreaOutbound(getAreaOutboundDto);
     return successResponse(data, 'Data area outbound berhasil diambil');
+  }
+
+  @Get('relocation-history')
+  @ApiOperation({
+    summary: 'Get Relocation History',
+    description: 'Mengambil data riwayat relocation dengan reloc_type = outbound'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data relocation history berhasil diambil',
+    type: [RelocationHistoryResponseDto]
+  })
+  async getRelocationHistory(
+    @Query() query: RelocationHistoryQueryDto
+  ) {
+    const data = await this.pdaOutboundService.getRelocationHistory(query);
+    return successResponse(data, 'Data relocation history berhasil diambil');
   }
 } 

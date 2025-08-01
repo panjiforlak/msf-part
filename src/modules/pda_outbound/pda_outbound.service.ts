@@ -10,6 +10,7 @@ import { Vehicles } from '../master/vehicles/entities/vehicle.entity';
 import { Users } from '../users/entities/users.entity';
 import { Sppb } from './entities/sppb.entity';
 import { InboundOutboundArea } from '../master/inoutarea/entities/inout.entity';
+import { Storagearea } from '../master/storage/entities/storagearea.entity';
 import { PdaOutboundResponseDto } from './dto/response.dto';
 import { BatchOutboundResponseDto } from './dto/batch-outbound-response.dto';
 import { CreateRelocationDto } from './dto/create-relocation.dto';
@@ -18,6 +19,7 @@ import {
   GetAreaOutboundDto,
   GetAreaOutboundResponseDto,
 } from './dto/get-area-outbound.dto';
+import { RelocationHistoryResponseDto, RelocationHistoryQueryDto } from './dto/relocation-history.dto';
 
 @Injectable()
 export class PdaOutboundService {
@@ -40,6 +42,8 @@ export class PdaOutboundService {
     private sppbRepository: Repository<Sppb>,
     @InjectRepository(InboundOutboundArea)
     private inboundOutboundAreaRepository: Repository<InboundOutboundArea>,
+    @InjectRepository(Storagearea)
+    private storageareaRepository: Repository<Storagearea>,
   ) {}
 
   async findAll(
@@ -376,6 +380,59 @@ export class PdaOutboundService {
       sppb_id: sppbId,
       sppb_number: sppbNumber,
     };
+  }
+
+  async getRelocationHistory(
+    query: RelocationHistoryQueryDto,
+  ): Promise<RelocationHistoryResponseDto[]> {
+    let queryBuilder = this.relocInboundRepository
+      .createQueryBuilder('reloc')
+      .leftJoin('batch_inbound', 'bi', 'reloc.batch_in_id = bi.id')
+      .leftJoin('inventory', 'inv', 'bi.inventory_id = inv.id')
+      .leftJoin('users', 'picker', 'reloc.picker_id = picker.id')
+      .leftJoin('storage_area', 'rack', 'reloc.reloc_from = rack.id')
+      .leftJoin('inbound_outbound_area', 'outbound', 'reloc.reloc_to = outbound.id')
+      .where('reloc.reloc_type = :relocType', { relocType: 'outbound' })
+      .select([
+        'reloc.id as relocation_id',
+        'reloc.reloc_date as tanggal',
+        'inv.inventory_name as part_name',
+        'inv.inventory_internal_code as part_internal_code_item',
+        'reloc.quantity as quantity',
+        'inv.uom as uom',
+        'picker.name as picker_name',
+        'rack.storage_code as rack_name',
+        'outbound.inout_area_code as outbound_area_name',
+      ]);
+
+    // Apply keyword filter if provided
+    if (query.keyword) {
+      const keyword = `%${query.keyword}%`;
+      queryBuilder = queryBuilder.andWhere(
+        `(inv.inventory_name ILIKE :keyword OR 
+          inv.inventory_internal_code ILIKE :keyword OR 
+          picker.name ILIKE :keyword OR 
+          rack.storage_code ILIKE :keyword OR 
+          outbound.inout_area_code ILIKE :keyword)`,
+        { keyword },
+      );
+    }
+
+    const results = await queryBuilder
+      .orderBy('reloc.reloc_date', 'DESC')
+      .getRawMany();
+
+    return results.map((result) => ({
+      relocation_id: result.relocation_id,
+      tanggal: result.tanggal,
+      part_name: result.part_name || '',
+      part_internal_code_item: result.part_internal_code_item || '',
+      quantity: result.quantity,
+      uom: result.uom || '',
+      picker_name: result.picker_name || '',
+      rack_name: result.rack_name || '',
+      outbound_area_name: result.outbound_area_name || '',
+    }));
   }
 
   async getAreaOutbound(
