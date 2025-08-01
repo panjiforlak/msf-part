@@ -950,7 +950,7 @@ export class BatchInboundService {
 
         const storageId = storage.sa_id;
 
-        // 2. INSERT ke relocation storage
+        // 2. INSERT ke relocation
         await manager
           .createQueryBuilder()
           .insert()
@@ -961,12 +961,13 @@ export class BatchInboundService {
             reloc_to: storageId,
             quantity: data.quantity,
             reloc_date: new Date(),
-            reloc_type: 'box-to-rack',
+            reloc_type: 'rack-to-rack',
             reloc_status: true,
             created_by: userId,
           })
           .execute();
 
+        // update quantity di queue
         await manager
           .createQueryBuilder()
           .update('temp_inbound_queue')
@@ -981,7 +982,7 @@ export class BatchInboundService {
           })
           .execute();
 
-        // Delete temp
+        // Delete queue jika qty 0
         await manager
           .createQueryBuilder()
           .delete()
