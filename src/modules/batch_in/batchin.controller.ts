@@ -157,7 +157,7 @@ export class BatchInboundController {
   @ApiTags('PDA Storage')
   @ApiOperation({ summary: 'POSTING RACKS to RACKS (R2R)' })
   @UseGuards(JwtAuthGuard)
-  @Post('pda/b2r')
+  @Post('pda/r2r')
   createPDAR2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
     return this.services.createPDAR2r(dto, req.user.id);
   }
