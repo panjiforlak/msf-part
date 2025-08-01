@@ -139,10 +139,22 @@ export class PdaOutboundService {
       );
     }
 
-    // 2. Ambil inventory_id dari batch_inbound
+    // 2. Cek batch_outbound_id ada di tabel batch_outbound atau tidak
+    const batchOutbound = await this.batchOutboundRepository.findOne({
+      where: { id: createRelocationDto.batch_outbound_id },
+    });
+
+    if (!batchOutbound) {
+      throw new HttpException(
+        `Batch outbound dengan ID ${createRelocationDto.batch_outbound_id} tidak ditemukan`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 3. Ambil inventory_id dari batch_inbound
     const inventoryId = batchInbound.inventory_id;
 
-    // 3. Cek di tabel inventory dan ambil racks_id
+    // 4. Cek di tabel inventory dan ambil racks_id
     const inventory = await this.inventoryRepository.findOne({
       where: { id: inventoryId },
     });
@@ -156,13 +168,13 @@ export class PdaOutboundService {
 
     const racksId = inventory.racks_id;
 
-    // 4. Buat data relocation
+    // 5. Buat data relocation dengan quantity dari batch_outbound
     const relocation = this.relocInboundRepository.create({
       batch_in_id: batchInbound.id, // id dari tabel batch_inbound
       reloc_from: racksId, // racks_id dari tabel inventory
       reloc_to: 0, // dikosongkan
       reloc_type: 'outbound', // diisi dengan "outbound"
-      quantity: createRelocationDto.quantity, // quantity dari body request
+      quantity: batchOutbound.quantity, // quantity dari batch_outbound
       picker_id: userId, // user_id dari bearer token
       reloc_status: false, // false saja
       reloc_date: new Date(), // waktu saat ini
@@ -189,29 +201,29 @@ export class PdaOutboundService {
     scanDestinationDto: ScanDestinationDto,
     userId: number,
   ): Promise<any> {
-    // 0. Cari relocation_id dari tabel relocation samakan batch_in_id dengan body request batch_in_id
+    // 0. Cari batch_inbound berdasarkan barcode
+    const batchInbound = await this.batchInboundRepository.findOne({
+      where: { barcode: scanDestinationDto.batch_in_barcode },
+    });
+
+    if (!batchInbound) {
+      throw new HttpException(
+        `Batch inbound dengan barcode '${scanDestinationDto.batch_in_barcode}' tidak ditemukan`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 1. Cari relocation berdasarkan batch_in_id yang didapat dari batch_inbound
     const existingRelocation = await this.relocInboundRepository.findOne({
       where: {
-        batch_in_id: scanDestinationDto.batch_in_id,
+        batch_in_id: batchInbound.id,
         reloc_type: 'outbound',
       },
     });
 
     if (!existingRelocation) {
       throw new HttpException(
-        `Relocation dengan batch_in_id ${scanDestinationDto.batch_in_id} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    // 1. Cek apakah samakan id di tabel batch_inbound dengan body request batch_in_id
-    const batchInbound = await this.batchInboundRepository.findOne({
-      where: { id: scanDestinationDto.batch_in_id },
-    });
-
-    if (!batchInbound) {
-      throw new HttpException(
-        `Batch inbound dengan ID ${scanDestinationDto.batch_in_id} tidak ditemukan`,
+        `Relocation dengan batch_in_id ${batchInbound.id} tidak ditemukan`,
         HttpStatus.NOT_FOUND,
       );
     }
@@ -280,71 +292,82 @@ export class PdaOutboundService {
         },
       );
 
-      // 6. Cari order_form_id dari tabel batch_outbound
+      // 6. Cari order_form_id dari tabel batch_outbound berdasarkan batch_outbound_id
       const orderFormId = batchOutbound.order_form_id || 0;
 
       // 7. Cek di tabel relocation yang memiliki order_form_id yang sama
-      // Caranya: ambil semua batch_inbound yang memiliki inventory_id yang sama dengan batch_outbound
-      const relatedBatchInbounds = await this.batchInboundRepository
-        .createQueryBuilder('bi')
-        .where('bi.inventory_id = :inventoryId', { inventoryId: batchOutbound.inventory_id })
-        .select('bi.id')
+      // Caranya: ambil semua batch_outbound yang memiliki order_form_id yang sama
+      const relatedBatchOutbounds = await this.batchOutboundRepository
+        .createQueryBuilder('bo')
+        .where('bo.order_form_id = :orderFormId', { orderFormId })
+        .select('bo.inventory_id')
         .getMany();
 
-      if (relatedBatchInbounds.length > 0) {
-        const batchInIds = relatedBatchInbounds.map((bi) => bi.id);
+      if (relatedBatchOutbounds.length > 0) {
+        const inventoryIds = relatedBatchOutbounds.map((bo) => bo.inventory_id);
 
-        // Cek semua relocation dengan batch_in_id yang terkait menggunakan In operator
-        const allRelatedRelocations = await this.relocInboundRepository
-          .createQueryBuilder('reloc')
-          .where('reloc.batch_in_id IN (:...batchInIds)', { batchInIds })
-          .andWhere('reloc.reloc_type = :relocType', { relocType: 'outbound' })
+        // Ambil semua batch_inbound yang memiliki inventory_id yang sama dengan batch_outbound terkait
+        const relatedBatchInbounds = await this.batchInboundRepository
+          .createQueryBuilder('bi')
+          .where('bi.inventory_id IN (:...inventoryIds)', { inventoryIds })
+          .select('bi.id')
           .getMany();
 
-        // Cek apakah semua relocation sudah memiliki reloc_status = true
-        const allCompleted = allRelatedRelocations.every(
-          (reloc) => reloc.reloc_status === true,
-        );
+        if (relatedBatchInbounds.length > 0) {
+          const batchInIds = relatedBatchInbounds.map((bi) => bi.id);
 
-        if (allCompleted) {
-          isCompleted = true;
+          // Cek semua relocation dengan batch_in_id yang terkait
+          const allRelatedRelocations = await this.relocInboundRepository
+            .createQueryBuilder('reloc')
+            .where('reloc.batch_in_id IN (:...batchInIds)', { batchInIds })
+            .andWhere('reloc.reloc_type = :relocType', { relocType: 'outbound' })
+            .getMany();
 
-          // 8. Jika semua relocation sudah true, buat data SPPB
-          // Generate sppb_number
-          const lastSppb = await this.sppbRepository
-            .createQueryBuilder('sppb')
-            .orderBy('sppb.id', 'DESC')
-            .getOne();
+          // Cek apakah semua relocation sudah memiliki reloc_status = true
+          const allCompleted = allRelatedRelocations.every(
+            (reloc) => reloc.reloc_status === true,
+          );
 
-          let nextNumber = 1;
-          if (lastSppb) {
-            const lastNumber = parseInt(
-              lastSppb.sppb_number.replace('WHO', ''),
-            );
-            nextNumber = lastNumber + 1;
+          if (allCompleted) {
+            isCompleted = true;
+
+            // 8. Jika semua relocation sudah true, buat data SPPB
+            // Generate sppb_number
+            const lastSppb = await this.sppbRepository
+              .createQueryBuilder('sppb')
+              .orderBy('sppb.id', 'DESC')
+              .getOne();
+
+            let nextNumber = 1;
+            if (lastSppb) {
+              const lastNumber = parseInt(
+                lastSppb.sppb_number.replace('WHO', ''),
+              );
+              nextNumber = lastNumber + 1;
+            }
+
+            const sppbNumberStr = `WHO${nextNumber.toString().padStart(3, '0')}`;
+
+            // Buat data SPPB
+            const sppb = this.sppbRepository.create({
+              order_form_id: orderFormId,
+              sppb_number: sppbNumberStr,
+              mechanic_photo: null,
+              status: 'waiting',
+              createdBy: userId,
+            });
+
+            const savedSppb = await this.sppbRepository.save(sppb);
+            sppbId = savedSppb.id;
+            sppbNumber = savedSppb.sppb_number;
           }
-
-          const sppbNumberStr = `WHO${nextNumber.toString().padStart(3, '0')}`;
-
-          // Buat data SPPB
-          const sppb = this.sppbRepository.create({
-            order_form_id: orderFormId,
-            sppb_number: sppbNumberStr,
-            mechanic_photo: null,
-            status: 'waiting',
-            createdBy: userId,
-          });
-
-          const savedSppb = await this.sppbRepository.save(sppb);
-          sppbId = savedSppb.id;
-          sppbNumber = savedSppb.sppb_number;
         }
       }
     }
 
     return {
       id: existingRelocation.id,
-      batch_in_id: scanDestinationDto.batch_in_id,
+      batch_in_id: batchInbound.id,
       inbound_outbound_area_id: scanDestinationDto.inbound_outbound_area_id,
       quantity: scanDestinationDto.quantity,
       quantity_temp_outbound: newTempQuantity,

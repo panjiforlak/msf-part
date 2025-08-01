@@ -8,6 +8,10 @@ import { BatchOutbound } from '../../work_order/entities/batch_outbound.entity';
 import { BatchInbound } from '../../batch_in/entities/batchin.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
 import { RelocInbound } from '../../relocation/entities/relocin.entity';
+import { Vehicles } from '../../master/vehicles/entities/vehicle.entity';
+import { Users } from '../../users/entities/users.entity';
+import { Sppb } from '../entities/sppb.entity';
+import { InboundOutboundArea } from '../../master/inoutarea/entities/inout.entity';
 
 describe('PdaOutboundService', () => {
   let service: PdaOutboundService;
@@ -16,16 +20,23 @@ describe('PdaOutboundService', () => {
   let batchInboundRepository: Repository<BatchInbound>;
   let inventoryRepository: Repository<Inventory>;
   let relocInboundRepository: Repository<RelocInbound>;
+  let vehiclesRepository: Repository<Vehicles>;
+  let usersRepository: Repository<Users>;
+  let sppbRepository: Repository<Sppb>;
+  let inboundOutboundAreaRepository: Repository<InboundOutboundArea>;
 
   const mockOrderFormRepository = {
     createQueryBuilder: jest.fn(() => ({
       where: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
-      getMany: jest.fn(),
+      getRawMany: jest.fn(),
     })),
   };
 
   const mockBatchOutboundRepository = {
+    findOne: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       leftJoin: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -47,6 +58,23 @@ describe('PdaOutboundService', () => {
   const mockRelocInboundRepository = {
     create: jest.fn(),
     save: jest.fn(),
+  };
+
+  const mockVehiclesRepository = {
+    findOne: jest.fn(),
+  };
+
+  const mockUsersRepository = {
+    findOne: jest.fn(),
+  };
+
+  const mockSppbRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockInboundOutboundAreaRepository = {
+    findOne: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -73,6 +101,22 @@ describe('PdaOutboundService', () => {
           provide: getRepositoryToken(RelocInbound),
           useValue: mockRelocInboundRepository,
         },
+        {
+          provide: getRepositoryToken(Vehicles),
+          useValue: mockVehiclesRepository,
+        },
+        {
+          provide: getRepositoryToken(Users),
+          useValue: mockUsersRepository,
+        },
+        {
+          provide: getRepositoryToken(Sppb),
+          useValue: mockSppbRepository,
+        },
+        {
+          provide: getRepositoryToken(InboundOutboundArea),
+          useValue: mockInboundOutboundAreaRepository,
+        },
       ],
     }).compile();
 
@@ -82,6 +126,10 @@ describe('PdaOutboundService', () => {
     batchInboundRepository = module.get<Repository<BatchInbound>>(getRepositoryToken(BatchInbound));
     inventoryRepository = module.get<Repository<Inventory>>(getRepositoryToken(Inventory));
     relocInboundRepository = module.get<Repository<RelocInbound>>(getRepositoryToken(RelocInbound));
+    vehiclesRepository = module.get<Repository<Vehicles>>(getRepositoryToken(Vehicles));
+    usersRepository = module.get<Repository<Users>>(getRepositoryToken(Users));
+    sppbRepository = module.get<Repository<Sppb>>(getRepositoryToken(Sppb));
+    inboundOutboundAreaRepository = module.get<Repository<InboundOutboundArea>>(getRepositoryToken(InboundOutboundArea));
   });
 
   it('should be defined', () => {
@@ -118,8 +166,10 @@ describe('PdaOutboundService', () => {
 
       const queryBuilder = {
         where: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockData),
+        getRawMany: jest.fn().mockResolvedValue(mockData),
       };
 
       mockOrderFormRepository.createQueryBuilder.mockReturnValue(queryBuilder);
@@ -187,8 +237,10 @@ describe('PdaOutboundService', () => {
 
       const queryBuilder = {
         where: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockData),
+        getRawMany: jest.fn().mockResolvedValue(mockData),
       };
 
       mockOrderFormRepository.createQueryBuilder.mockReturnValue(queryBuilder);
@@ -250,13 +302,18 @@ describe('PdaOutboundService', () => {
       it('should create relocation successfully', async () => {
         const createRelocationDto = {
           barcode_inbound: 'abc123def456',
-          quantity: 5,
+          batch_outbound_id: 1,
         };
 
         const mockBatchInbound = {
           id: 1,
           barcode: 'abc123def456',
           inventory_id: 10,
+        };
+
+        const mockBatchOutbound = {
+          id: 1,
+          quantity: 5,
         };
 
         const mockInventory = {
@@ -278,6 +335,7 @@ describe('PdaOutboundService', () => {
         };
 
         mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
+        mockBatchOutboundRepository.findOne.mockResolvedValue(mockBatchOutbound);
         mockInventoryRepository.findOne.mockResolvedValue(mockInventory);
         mockRelocInboundRepository.create.mockReturnValue(mockRelocation);
         mockRelocInboundRepository.save.mockResolvedValue(mockRelocation);
@@ -286,6 +344,9 @@ describe('PdaOutboundService', () => {
 
         expect(mockBatchInboundRepository.findOne).toHaveBeenCalledWith({
           where: { barcode: 'abc123def456' },
+        });
+        expect(mockBatchOutboundRepository.findOne).toHaveBeenCalledWith({
+          where: { id: 1 },
         });
         expect(mockInventoryRepository.findOne).toHaveBeenCalledWith({
           where: { id: 10 },
@@ -318,7 +379,7 @@ describe('PdaOutboundService', () => {
       it('should throw error when barcode inbound not found', async () => {
         const createRelocationDto = {
           barcode_inbound: 'invalid_barcode',
-          quantity: 5,
+          batch_outbound_id: 1,
         };
 
         mockBatchInboundRepository.findOne.mockResolvedValue(null);
@@ -331,10 +392,10 @@ describe('PdaOutboundService', () => {
         );
       });
 
-      it('should throw error when inventory not found', async () => {
+      it('should throw error when batch outbound not found', async () => {
         const createRelocationDto = {
           barcode_inbound: 'abc123def456',
-          quantity: 5,
+          batch_outbound_id: 999,
         };
 
         const mockBatchInbound = {
@@ -344,6 +405,35 @@ describe('PdaOutboundService', () => {
         };
 
         mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
+        mockBatchOutboundRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
+          HttpException,
+        );
+        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
+          'Batch outbound dengan ID 999 tidak ditemukan',
+        );
+      });
+
+      it('should throw error when inventory not found', async () => {
+        const createRelocationDto = {
+          barcode_inbound: 'abc123def456',
+          batch_outbound_id: 1,
+        };
+
+        const mockBatchInbound = {
+          id: 1,
+          barcode: 'abc123def456',
+          inventory_id: 10,
+        };
+
+        const mockBatchOutbound = {
+          id: 1,
+          quantity: 5,
+        };
+
+        mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
+        mockBatchOutboundRepository.findOne.mockResolvedValue(mockBatchOutbound);
         mockInventoryRepository.findOne.mockResolvedValue(null);
 
         await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(

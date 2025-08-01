@@ -62,13 +62,13 @@ Mengambil data batch outbound berdasarkan order form ID.
 ```
 
 ### 3. POST /api/pda-outbound/relocation
-Membuat data relocation berdasarkan barcode inbound.
+Membuat data relocation berdasarkan barcode inbound dan batch_outbound_id.
 
 **Request Body:**
 ```json
 {
   "barcode_inbound": "f58edb181e97",
-  "quantity": 3
+  "batch_outbound_id": 1
 }
 ```
 
@@ -92,13 +92,16 @@ Membuat data relocation berdasarkan barcode inbound.
 }
 ```
 
+**Catatan:** Quantity akan diambil otomatis dari tabel `batch_outbound` berdasarkan `batch_outbound_id` yang diberikan.
+
 ### 4. POST /api/pda-outbound/scan-destination
 **ENDPOINT BARU** - Scan destination untuk proses outbound dengan quantity yang bisa dicicil.
 
 **Request Body:**
 ```json
 {
-  "barcode_inbound": "f58edb181e97",
+  "batch_in_barcode": "f58edb181e97",
+  "inbound_outbound_area_id": 1,
   "quantity": 1,
   "batch_outbound_id": 1
 }
@@ -111,9 +114,10 @@ Membuat data relocation berdasarkan barcode inbound.
   "message": "Scan destination berhasil diproses",
   "data": {
     "id": 1,
-    "barcode_inbound": "f58edb181e97",
+    "batch_in_id": 1,
+    "inbound_outbound_area_id": 1,
     "quantity": 1,
-    "total_scanned_quantity": 3,
+    "quantity_temp_outbound": 3,
     "target_quantity": 3,
     "is_completed": true,
     "sppb_id": 1,
@@ -123,6 +127,41 @@ Membuat data relocation berdasarkan barcode inbound.
 ```
 
 ## Contoh Penggunaan
+
+### Relocation dengan Quantity dari Batch Outbound
+
+**Membuat Relocation:**
+```bash
+curl -X 'POST' \
+  'http://localhost:9596/api/pda-outbound/relocation' \
+  -H 'accept: */*' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "barcode_inbound": "f58edb181e97",
+  "batch_outbound_id": 1
+}'
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Relocation berhasil dibuat",
+  "data": {
+    "id": 1,
+    "batch_in_id": 1,
+    "reloc_from": 1,
+    "reloc_to": 0,
+    "reloc_type": "outbound",
+    "quantity": 3,
+    "picker_id": 1,
+    "reloc_status": false,
+    "reloc_date": "2025-01-01T00:00:00.000Z",
+    "barcode_inbound": "f58edb181e97"
+  }
+}
+```
 
 ### Scan Destination dengan Quantity Dicicil
 
@@ -134,7 +173,8 @@ curl -X 'POST' \
   -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-  "barcode_inbound": "f58edb181e97",
+  "batch_in_barcode": "f58edb181e97",
+  "inbound_outbound_area_id": 1,
   "quantity": 1,
   "batch_outbound_id": 1
 }'

@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsNotEmpty } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsString } from 'class-validator';
 
 export class ScanDestinationDto {
   @ApiProperty({
-    description: 'ID dari batch inbound',
-    example: 1
+    description: 'Barcode dari batch inbound',
+    example: 'abc123def456'
   })
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  batch_in_id: number;
+  batch_in_barcode: string;
 
   @ApiProperty({
     description: 'ID dari inbound outbound area',

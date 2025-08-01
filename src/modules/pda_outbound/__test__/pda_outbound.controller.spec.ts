@@ -114,7 +114,7 @@ describe('PdaOutboundController', () => {
     it('should create relocation successfully', async () => {
       const createRelocationDto = {
         barcode_inbound: 'abc123def456',
-        quantity: 5,
+        batch_outbound_id: 1,
       };
 
       const mockRequest = {
