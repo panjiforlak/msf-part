@@ -19,6 +19,7 @@ import { RelocInboundModule } from './modules/relocation/relocin.module';
 import { ComponentsModule } from './modules/master/components/components.module';
 import { WorkOrderModule } from './modules/work_order/work_order.module';
 import { PdaOutboundModule } from './modules/pda_outbound/pda_outbound.module';
+import { SppbModule } from './modules/sppb/sppb.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { PdaOutboundModule } from './modules/pda_outbound/pda_outbound.module';
     ComponentsModule,
     WorkOrderModule,
     PdaOutboundModule,
+    SppbModule,
   ],
 })
 export class AppModule {}
