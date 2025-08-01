@@ -139,10 +139,22 @@ export class PdaOutboundService {
       );
     }
 
-    // 2. Ambil inventory_id dari batch_inbound
+    // 2. Cek batch_outbound_id ada di tabel batch_outbound atau tidak
+    const batchOutbound = await this.batchOutboundRepository.findOne({
+      where: { id: createRelocationDto.batch_outbound_id },
+    });
+
+    if (!batchOutbound) {
+      throw new HttpException(
+        `Batch outbound dengan ID ${createRelocationDto.batch_outbound_id} tidak ditemukan`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // 3. Ambil inventory_id dari batch_inbound
     const inventoryId = batchInbound.inventory_id;
 
-    // 3. Cek di tabel inventory dan ambil racks_id
+    // 4. Cek di tabel inventory dan ambil racks_id
     const inventory = await this.inventoryRepository.findOne({
       where: { id: inventoryId },
     });
@@ -156,13 +168,13 @@ export class PdaOutboundService {
 
     const racksId = inventory.racks_id;
 
-    // 4. Buat data relocation
+    // 5. Buat data relocation dengan quantity dari batch_outbound
     const relocation = this.relocInboundRepository.create({
       batch_in_id: batchInbound.id, // id dari tabel batch_inbound
       reloc_from: racksId, // racks_id dari tabel inventory
       reloc_to: 0, // dikosongkan
       reloc_type: 'outbound', // diisi dengan "outbound"
-      quantity: createRelocationDto.quantity, // quantity dari body request
+      quantity: batchOutbound.quantity, // quantity dari batch_outbound
       picker_id: userId, // user_id dari bearer token
       reloc_status: false, // false saja
       reloc_date: new Date(), // waktu saat ini

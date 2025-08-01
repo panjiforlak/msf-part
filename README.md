@@ -132,6 +132,29 @@ ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ;
 
 ## API Changes
 
+### Endpoint relocation telah diubah
+
+Endpoint `POST /api/pda-outbound/relocation` sekarang menggunakan body request yang berbeda:
+
+**Body Request Baru:**
+```json
+{
+  "barcode_inbound": "abc123def456",
+  "batch_outbound_id": 1
+}
+```
+
+**Perubahan:**
+- Quantity tidak lagi diambil dari body request
+- Quantity sekarang diambil otomatis dari tabel `batch_outbound` berdasarkan `batch_outbound_id`
+- Menambahkan validasi untuk memastikan `batch_outbound_id` ada di database
+
+**Proses yang dijalankan:**
+1. Validasi `barcode_inbound` ada di tabel `batch_inbound`
+2. Validasi `batch_outbound_id` ada di tabel `batch_outbound`
+3. Ambil `quantity` dari `batch_outbound`
+4. Buat data relocation dengan quantity dari `batch_outbound`
+
 ### Endpoint scan-destination telah diubah
 
 Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body request yang berbeda:

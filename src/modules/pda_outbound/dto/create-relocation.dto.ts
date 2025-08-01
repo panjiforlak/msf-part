@@ -11,10 +11,10 @@ export class CreateRelocationDto {
   barcode_inbound: string;
 
   @ApiProperty({
-    description: 'Quantity yang akan di-relocate',
-    example: 5
+    description: 'ID dari batch_outbound untuk mengambil quantity',
+    example: 1
   })
   @IsNumber()
   @IsNotEmpty()
-  quantity: number;
+  batch_outbound_id: number;
 } 
