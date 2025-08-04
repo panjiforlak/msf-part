@@ -510,6 +510,7 @@ export class BatchInboundService {
           .where('id = :id', { id: data.inventory_id })
           .execute();
 
+        //4.UPDATE queue if quantity masih ada di queue
         await manager
           .createQueryBuilder()
           .update('temp_inbound_queue')
@@ -521,7 +522,7 @@ export class BatchInboundService {
           })
           .execute();
 
-        // Delete
+        //5. DELETE queue if quantity == 0
         const deleteResult = await manager
           .createQueryBuilder()
           .delete()
@@ -532,7 +533,17 @@ export class BatchInboundService {
           .andWhere('quantity <= 0')
           .execute();
 
-        // Jika delete berhasil dan baris dihapus
+        //6. check batch dengan item tersebut sudah di relocatio berapa?
+        const checkQtyReloc = await manager
+          .createQueryBuilder()
+          .select('SUM(r.quantity)', 'total_quantity')
+          .from('relocation', 'r')
+          .where('r.batch_in_id = :batch_in_id', {
+            batch_in_id: data.batch_in_id,
+          })
+          .getRawOne();
+
+        //7. Jika delete berhasil dan baris dihapus
         if (deleteResult.affected && deleteResult.affected > 0) {
           await manager
             .createQueryBuilder()
@@ -541,10 +552,13 @@ export class BatchInboundService {
               status: false,
             })
             .where('id = :id', { id: data.batch_in_id })
+            .andWhere('quantity = :quantity', {
+              quantity: checkQtyReloc.total_quantity,
+            })
             .execute();
         }
 
-        // 4. UPDATE batch_inbound change status inbound to storage
+        // 8. UPDATE batch_inbound change status inbound to storage
         await manager
           .createQueryBuilder()
           .update('batch_inbound')

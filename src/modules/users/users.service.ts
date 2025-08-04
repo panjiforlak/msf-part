@@ -150,7 +150,7 @@ export class UsersService {
       if (existingMail) {
         throwError('Email already registered', 409);
       }
-      console.log(data);
+
       const hashedPassword = await bcrypt.hash(data.password, 10);
       const newUser = this.userRepository.create({
         ...data,
@@ -185,6 +185,10 @@ export class UsersService {
 
       if (!user) {
         throwError('User not found', 404);
+      }
+
+      if ('password' in updateDto) {
+        delete updateDto.password;
       }
 
       const updatedUser = this.userRepository.merge(user!, updateDto);
