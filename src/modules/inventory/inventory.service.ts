@@ -68,7 +68,7 @@ export class InventoryService {
         .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id');
 
       if (search) {
-        qb.andWhere('LOWER(i.inventory_name) LIKE :search', {
+        qb.andWhere('LOWER(i.inventory_code) LIKE :search', {
           search: `%${search}%`,
         });
       }

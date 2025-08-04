@@ -14,6 +14,10 @@ export enum inv_type {
   OTHERS = 'others',
   SPAREPART = 'sparepart',
   NONSPAREPART = 'non-sparepart',
+  MATERIALS = 'materials',
+  OIL = 'oil',
+  TOOLS = 'tools',
+  GREASE = 'grease',
 }
 
 @Entity('components')
