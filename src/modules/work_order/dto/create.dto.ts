@@ -18,13 +18,6 @@ export class SparepartDto {
   @IsNotEmpty()
   inventory_id: number;
 
-  @ApiProperty({
-    description: 'Destination ID from inbound_outbound_area table',
-  })
-  @IsNumber()
-  @IsNotEmpty()
-  destination_id: number;
-
   @ApiProperty({ description: 'Quantity to be processed' })
   @IsNumber()
   @IsNotEmpty()
