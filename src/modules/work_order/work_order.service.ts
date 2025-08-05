@@ -60,6 +60,7 @@ export class WorkOrderService {
             "COALESCE(mc.name, 'N/A') AS mechanic",
             "COALESCE(pk.name, 'N/A') AS picker",
             "COALESCE(req.name, 'N/A') AS request",
+            "COALESCE(ap.name, 'N/A') AS approval_by",
             'of.departement AS departement',
             'of.remark AS remark',
             'of.order_type AS order_type',
@@ -72,7 +73,8 @@ export class WorkOrderService {
           .leftJoin('users', 'dr', 'of.driver_id = dr.id')
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'pk', 'of.picker_id = pk.id')
-          .leftJoin('users', 'req', 'of.request_id = req.id');
+          .leftJoin('users', 'req', 'of.request_id = req.id')
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -102,7 +104,8 @@ export class WorkOrderService {
           .leftJoin('users', 'dr', 'of.driver_id = dr.id')
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'pk', 'of.picker_id = pk.id')
-          .leftJoin('users', 'req', 'of.request_id = req.id');
+          .leftJoin('users', 'req', 'of.request_id = req.id')
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {

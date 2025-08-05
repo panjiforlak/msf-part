@@ -64,6 +64,7 @@ export class WorkOrderController {
                 type: 'string',
                 enum: ['pending', 'on progress', 'completed', 'cancelled'],
               },
+              approval_by: { type: 'string' },
             },
           },
         },

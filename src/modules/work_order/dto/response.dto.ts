@@ -73,6 +73,9 @@ export class WorkOrderResponseDto {
   @ApiProperty({ enum: WorkOrderStatus })
   status: WorkOrderStatus;
 
+  @ApiProperty()
+  approval_by: string;
+
   @ApiProperty({ type: [SparepartResponseDto] })
   sparepart_list: SparepartResponseDto[];
 
