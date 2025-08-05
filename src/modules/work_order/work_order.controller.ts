@@ -54,6 +54,7 @@ export class WorkOrderController {
               vehicle_id: { type: 'string' },
               driver: { type: 'string' },
               mechanic: { type: 'string' },
+              picker: { type: 'string' },
               request: { type: 'string' },
               departement: { type: 'string' },
               remark: { type: 'string' },

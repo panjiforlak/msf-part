@@ -50,6 +50,9 @@ export class WorkOrderResponseDto {
   mechanic: string;
 
   @ApiProperty()
+  picker: string;
+
+  @ApiProperty()
   request: string;
 
   @ApiProperty()
