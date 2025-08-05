@@ -892,6 +892,7 @@ export class BatchInboundService {
             ])
             .from('relocation', 'r')
             .where(`r.reloc_type IN ('rack-to-rack', 'inbound')`)
+            .andWhere(`r."updatedAt" IS NULL`)
             .andWhere(`r."deletedAt" IS NULL`);
         }, 'inner_r')
         .where('inner_r.row_num = 1');
