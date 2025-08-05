@@ -723,13 +723,31 @@ export class WorkOrderService {
           {} as WorkOrderResponseDto,
           'Work order approved successfully',
         );
-      } else {
-        // Jika reject, tidak mengupdate data
+      } 
+      
+      if (approvalDto.status === ApprovalStatus.REJECTED) {
+        // Jika reject, cek apakah picker_id sudah diassign
+        if (orderForm!.picker_id && orderForm!.picker_id !== 0) {
+          throwError(
+            'Work order tidak dapat di-reject karena sudah di-assign picker',
+            400,
+          );
+        }
+
+        // Jika picker_id kosong, update status menjadi rejected dan kosongkan approval_at dan approval_by
+        await this.orderFormRepository.update(id, {
+          status: WorkOrderStatus.REJECTED,
+          approvalBy: null,
+          approvalAt: null,
+        });
+
         return successResponse(
           {} as WorkOrderResponseDto,
-          'Work order rejected',
+          'Work order rejected successfully',
         );
       }
+      
+      throw new HttpException('Invalid approval status', 400);
     } catch (error) {
       console.error('Approval error:', error);
       if (error instanceof HttpException) throw error;

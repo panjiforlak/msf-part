@@ -3,7 +3,7 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export enum ApprovalStatus {
   APPROVAL = 'approval',
-  REJECT = 'reject',
+  REJECTED = 'rejected',
 }
 
 export class ApprovalDto {
