@@ -107,7 +107,6 @@ export class BatchInboundService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
@@ -150,7 +149,7 @@ export class BatchInboundService {
       }
 
       qb.andWhere('bi."deletedAt" IS NULL');
-      qb.andWhere('bi."status" = true');
+      qb.andWhere(`bi."status_reloc" = 'inbound'`); //status reloc triger by post pda
 
       if (search) {
         qb.andWhere('LOWER(bi.barcode) LIKE :search', {
@@ -193,7 +192,7 @@ export class BatchInboundService {
         'Get all batch inbound successfully',
       );
     } catch (error) {
-      console.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
@@ -258,7 +257,7 @@ export class BatchInboundService {
         'Get temp queue success',
       );
     } catch (error) {
-      console.error('🔥 Error fetching PDA queue:', error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch PDA queued data');
     }
   }
@@ -287,9 +286,7 @@ export class BatchInboundService {
 
       return successResponse(response);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to get batch inbound');
     }
   }
@@ -322,9 +319,7 @@ export class BatchInboundService {
 
       return successResponse(response);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to get batch inbound');
     }
   }
@@ -348,9 +343,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create batch inbound');
     }
   }
@@ -376,9 +369,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create batch inbound');
     }
   }
@@ -450,7 +441,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      console.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
@@ -495,6 +486,7 @@ export class BatchInboundService {
             reloc_date: new Date(),
             reloc_type: 'inbound',
             reloc_status: statusBox,
+            picker_id: userId,
             created_by: userId,
           })
           .execute();
@@ -534,14 +526,15 @@ export class BatchInboundService {
           .execute();
 
         //6. check batch dengan item tersebut sudah di relocatio berapa?
-        const checkQtyReloc = await manager
-          .createQueryBuilder()
-          .select('SUM(r.quantity)', 'total_quantity')
-          .from('relocation', 'r')
-          .where('r.batch_in_id = :batch_in_id', {
-            batch_in_id: data.batch_in_id,
-          })
-          .getRawOne();
+        const checkQtyReloc =
+          (await manager
+            .createQueryBuilder()
+            .select('SUM(r.quantity)', 'total_quantity')
+            .from('relocation', 'r')
+            .where('r.batch_in_id = :batch_in_id', {
+              batch_in_id: data.batch_in_id,
+            })
+            .getRawOne()) || 0;
 
         //7. Jika delete berhasil dan baris dihapus
         if (deleteResult.affected && deleteResult.affected > 0) {
@@ -549,7 +542,7 @@ export class BatchInboundService {
             .createQueryBuilder()
             .update('batch_inbound')
             .set({
-              status: false,
+              status_reloc: 'storage',
             })
             .where('id = :id', { id: data.batch_in_id })
             .andWhere('quantity = :quantity', {
@@ -557,16 +550,6 @@ export class BatchInboundService {
             })
             .execute();
         }
-
-        // 8. UPDATE batch_inbound change status inbound to storage
-        await manager
-          .createQueryBuilder()
-          .update('batch_inbound')
-          .set({
-            status_reloc: 'storage',
-          })
-          .where('id = :id', { id: data.batch_in_id })
-          .execute();
       });
 
       return successResponse(
@@ -575,7 +558,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      console.error('🔥 Error in createPDA:', error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
@@ -607,9 +590,7 @@ export class BatchInboundService {
       };
       return successResponse(response, 'Batch Inbound updated successfully');
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to update Doc Batch');
     }
   }
@@ -631,10 +612,7 @@ export class BatchInboundService {
 
       return successResponse(null, 'Batch inbound deleted successfully');
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      console.log(error.stack);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to delete batch inbound');
     }
   }
@@ -717,7 +695,7 @@ export class BatchInboundService {
         'Get all batch inbound successfully',
       );
     } catch (error) {
-      console.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch batch inbound');
     }
   }
@@ -804,7 +782,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      console.error('🔥 Error in createPDA:', error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
@@ -940,7 +918,7 @@ export class BatchInboundService {
         'Get all PDA R2R successfully',
       );
     } catch (error) {
-      console.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch PDA R2R data');
     }
   }
@@ -1028,7 +1006,7 @@ export class BatchInboundService {
         201,
       );
     } catch (error) {
-      console.error('🔥 Error in createPDA:', error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
