@@ -153,7 +153,7 @@ export class BatchInboundController {
     return this.services.findAllPDAR2r(pickerId, query);
   }
 
-  // Post rack inventory B2R
+  // Post rack inventory R2R
   @ApiTags('PDA Storage')
   @ApiOperation({ summary: 'POSTING RACKS to RACKS (R2R)' })
   @UseGuards(JwtAuthGuard)

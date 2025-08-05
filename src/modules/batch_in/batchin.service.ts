@@ -132,7 +132,12 @@ export class BatchInboundService {
           'i.inventory_name AS part_name',
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
-          'bi.quantity AS quantity',
+          // 'bi.quantity AS quantity',
+          `(bi.quantity - COALESCE((
+            SELECT SUM(r.quantity)
+            FROM relocation r
+            WHERE r.batch_in_id = bi.id AND r.reloc_type= 'inbound'
+          ), 0)::int) AS quantity`,
           'sa.storage_code AS rack_destination',
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
@@ -220,7 +225,11 @@ export class BatchInboundService {
         params.push(picker_id);
       }
 
-      if (storage == 'b2r') {
+      if (!storage) {
+        whereConditions.push(`storage_source IS NULL`);
+      }
+
+      if (storage === 'b2r' || storage === 'r2r') {
         whereConditions.push(`storage_source IS NOT NULL`);
       }
 
@@ -497,13 +506,12 @@ export class BatchInboundService {
           .update('inventory')
           .set({
             quantity: () => `"quantity" + ${data.quantity}`,
-            racks_id: storageId,
           })
           .where('id = :id', { id: data.inventory_id })
           .execute();
 
         //4.UPDATE queue if quantity masih ada di queue
-        await manager
+        const updateQueue = await manager
           .createQueryBuilder()
           .update('temp_inbound_queue')
           .set({
@@ -512,7 +520,17 @@ export class BatchInboundService {
           .where('inventory_id = :inventory_id', {
             inventory_id: data.inventory_id,
           })
+          .andWhere('storage_source_id = :storage_source_id', {
+            storage_source_id: 0,
+          })
           .execute();
+
+        if (updateQueue.affected === 0) {
+          throwError(
+            `Inventory data not found, please makesure your request body `,
+            404,
+          );
+        }
 
         //5. DELETE queue if quantity == 0
         const deleteResult = await manager
@@ -553,8 +571,8 @@ export class BatchInboundService {
       });
 
       return successResponse(
-        null,
-        'Insert batch + log + update inventory success',
+        {},
+        'Relocation Inbound to storage is successfuly',
         201,
       );
     } catch (error) {
@@ -631,21 +649,39 @@ export class BatchInboundService {
       const search = query.search?.toLowerCase() ?? '';
       const superadmin = query.superadmin?.toLowerCase() ?? '';
 
+      const baseWhere: string[] = ['r.reloc_status = false'];
+      const params: Record<string, any> = {};
+
+      if (superadmin !== 'yes') {
+        baseWhere.push('bi.picker_id = :pickerId');
+        params.pickerId = picker_id;
+      }
+
+      if (search) {
+        baseWhere.push('LOWER(r.uuid) LIKE :search');
+        params.search = `%${search}%`;
+      }
+
       const qb = this.dataSource
         .createQueryBuilder()
         .select([
           'r.batch_in_id AS batch_in_id',
-          'r.uuid AS batch',
+          'bi.barcode AS batch',
           'bi.inventory_id AS inventory_id',
           'i.inventory_name AS part_name',
           'i.inventory_code AS part_number',
           'i.inventory_internal_code AS part_number_internal',
-          'r.quantity AS quantity',
+          // 'SUM(r.quantity)::int AS quantity', // ✅ SUM
+          `(SUM(r.quantity) - COALESCE((
+              SELECT SUM(r2.quantity)
+              FROM relocation r2
+              WHERE r2.batch_in_id = r.batch_in_id AND r2.reloc_type = 'box-to-rack'
+            ), 0))::int AS quantity`,
           'r.reloc_to AS box_source_id',
           'sa2.storage_code AS box_source',
           'sa.storage_code AS rack_destination',
-          'r.uuid AS barcode',
-          `TO_CHAR(r."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
+          'bi.barcode AS barcode',
+          `TO_CHAR(MIN(r."createdAt"), 'YYYY-MM-DD HH24:MI') AS "createdAt"`, // ✅ ambil waktu pertama
           'bi.picker_id AS picker_id',
         ])
         .from('relocation', 'r')
@@ -653,39 +689,35 @@ export class BatchInboundService {
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
         .leftJoin('storage_area', 'sa', 'i.racks_id = sa.id')
         .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
-        .where('r.reloc_status = false');
+        .where(baseWhere.join(' AND '), params)
+        .groupBy(
+          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id',
+        )
+        .having(
+          `(SUM(r.quantity) - COALESCE((
+            SELECT SUM(r2.quantity)
+            FROM relocation r2
+            WHERE r2.batch_in_id = r.batch_in_id AND r2.reloc_type = 'box-to-rack'
+          ), 0)) > 0`,
+        )
+        .orderBy('MIN(r.id)', 'ASC') // sort by first created
+        .offset(skip)
+        .limit(limit);
 
-      if (superadmin !== 'yes') {
-        qb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
-      }
-
-      if (search) {
-        qb.andWhere('LOWER(r.uuid) LIKE :search', {
-          search: `%${search}%`,
-        });
-      }
-
-      qb.orderBy('r.id', 'ASC').offset(skip).limit(limit);
-
+      // ⚠️ Count total unique group (not just total rows)
       const countQb = this.dataSource
         .createQueryBuilder()
+        .select('COUNT(DISTINCT r.batch_in_id)', 'count')
         .from('relocation', 'r')
-        .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id');
+        .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
+        .where(baseWhere.join(' AND '), params);
 
-      countQb.where('r.reloc_status = false');
-      if (superadmin !== 'yes') {
-        countQb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
-      }
-      if (search) {
-        countQb.andWhere('LOWER(r.uuid) LIKE :search', {
-          search: `%${search}%`,
-        });
-      }
-
-      const [result, total] = await Promise.all([
+      const [result, countResult] = await Promise.all([
         qb.getRawMany(),
-        countQb.getCount(),
+        countQb.getRawOne(),
       ]);
+
+      const total = parseInt(countResult.count, 10);
 
       return paginateResponse(
         result,
@@ -715,13 +747,13 @@ export class BatchInboundService {
           .getRawOne();
 
         if (!storage) {
-          throwError(`Storage barcode ${data.storage_id} not found`, 400);
+          throwError(`Storage barcode ${data.storage_id} not found`, 404);
         }
 
         const storageId = storage.sa_id;
 
         // 2. INSERT ke relocation storage
-        await manager
+        const reloc = await manager
           .createQueryBuilder()
           .insert()
           .into('relocation')
@@ -737,7 +769,54 @@ export class BatchInboundService {
           })
           .execute();
 
-        await manager
+        const checkRelocQtyInboundB2R = await manager
+          .createQueryBuilder()
+          .select('SUM(r.quantity)', 'quantity')
+          .from('relocation', 'r')
+          .where('r.batch_in_id = :batch_in_id', {
+            batch_in_id: data.batch_in_id,
+          })
+          .andWhere(`r.reloc_status = false`)
+          .andWhere(`r.reloc_type = 'inbound'`)
+          .andWhere('r.deletedAt IS NULL')
+          .getRawOne();
+
+        const checkRelocQtyB2R = await manager
+          .createQueryBuilder()
+          .select('SUM(r.quantity)', 'quantity')
+          .from('relocation', 'r')
+          .where('r.batch_in_id = :batch_in_id', {
+            batch_in_id: data.batch_in_id,
+          })
+          .andWhere(`r.reloc_status = true`)
+          .andWhere(`r.reloc_type = 'box-to-rack'`)
+          .andWhere('r.deletedAt IS NULL')
+          .getRawOne();
+
+        if (checkRelocQtyInboundB2R.quantity === checkRelocQtyB2R.quantity) {
+          const updateRelocationB2RRelocStatus = await manager
+            .createQueryBuilder()
+            .update('relocation')
+            .set({
+              reloc_status: true,
+            })
+            .where('batch_in_id = :batch_in_id', {
+              batch_in_id: data.batch_in_id,
+            })
+            .andWhere(`reloc_status = false`)
+            .andWhere(`reloc_type = 'inbound'`)
+            .execute();
+
+          if (updateRelocationB2RRelocStatus.affected === 0) {
+            throwError(
+              'Inventory not found in relocation records. Please ensure your request body is correct',
+              404,
+            );
+          }
+        }
+
+        // update temp inbound
+        const updateQueue = await manager
           .createQueryBuilder()
           .update('temp_inbound_queue')
           .set({
@@ -750,6 +829,13 @@ export class BatchInboundService {
             storage_source_id: data.storage_source_id,
           })
           .execute();
+
+        if (updateQueue.affected === 0) {
+          throwError(
+            `Storage source id or inventory id not found, please makesure your request body `,
+            404,
+          );
+        }
 
         // Delete temp
         await manager
@@ -764,23 +850,9 @@ export class BatchInboundService {
           })
           .andWhere('quantity <= 0')
           .execute();
-
-        // 4. UPDATE batch_inbound change status inbound to storage
-        await manager
-          .createQueryBuilder()
-          .update('batch_inbound')
-          .set({
-            status_reloc: 'storage',
-          })
-          .where('id = :id', { id: data.batch_in_id })
-          .execute();
       });
 
-      return successResponse(
-        null,
-        'Insert batch + log + update inventory success',
-        201,
-      );
+      return successResponse({}, 'Relocation box to rack is successfuly', 201);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -938,7 +1010,7 @@ export class BatchInboundService {
           .getRawOne();
 
         if (!storage) {
-          throwError(`Storage barcode ${data.storage_id} not found`, 400);
+          throwError(`Storage barcode ${data.storage_id} not found`, 404);
         }
 
         const storageId = storage.sa_id;
@@ -1002,7 +1074,7 @@ export class BatchInboundService {
 
       return successResponse(
         null,
-        'Insert batch + log + update inventory success',
+        'Relocation rack to rack is successfuly',
         201,
       );
     } catch (error) {
