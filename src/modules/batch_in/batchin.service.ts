@@ -40,6 +40,100 @@ export class BatchInboundService {
     });
   }
 
+  async batchIn(batch_in_id: number) {
+    return this.dataSource
+      .createQueryBuilder()
+      .select([
+        'bi.id AS id',
+        'sa.storage_code AS rack_name',
+        'i.quantity AS on_hand',
+      ])
+      .from('batch_inbound', 'bi')
+      .leftJoin('inventory', 'i', 'bi.inventory_id=i.id')
+      .leftJoin('storage_area', 'sa', 'i.racks_id=sa.id')
+      .where('bi.id = :id', { id: batch_in_id })
+      .getRawOne();
+  }
+
+  async qtyOut(batch_in_id: number) {
+    return this.dataSource
+      .createQueryBuilder()
+      .select(['SUM(r.quantity)::int AS stock_out'])
+      .from('relocation', 'r')
+      .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+      .andWhere('r.reloc_type = :reloc_type', { reloc_type: 'outbound' })
+      .andWhere('r.reloc_status = true')
+      .andWhere('r."deletedAt" IS NULL')
+      .groupBy('r."deletedAt"')
+      .getRawOne();
+  }
+
+  async qtyOnHand(batch_in_id: number) {
+    const inbound = await this.dataSource
+      .createQueryBuilder()
+      .select('COALESCE(SUM(r.quantity), 0)', 'qty')
+      .from('relocation', 'r')
+      .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+      .andWhere("r.reloc_type = 'inbound'")
+      .andWhere('r."deletedAt" IS NULL')
+      .getRawOne();
+
+    const outbound = await this.dataSource
+      .createQueryBuilder()
+      .select('COALESCE(SUM(r.quantity), 0)', 'qty')
+      .from('relocation', 'r')
+      .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+      .andWhere("r.reloc_type = 'outbound'")
+      .andWhere('r.reloc_status = true')
+      .andWhere('r."deletedAt" IS NULL')
+      .getRawOne();
+
+    return {
+      qty_on_hand: parseInt(inbound.qty) - parseInt(outbound.qty),
+    };
+  }
+
+  async qtyInRack(batch_in_id: number) {
+    return this.dataSource
+      .createQueryBuilder()
+      .select(['SUM(r.quantity)::int AS quantity'])
+      .from('relocation', 'r')
+      .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+      .andWhere('r.reloc_type = :reloc_type', { reloc_type: 'inbound' })
+      .andWhere('r.reloc_status = true')
+      .andWhere('r."deletedAt" IS NULL')
+      .groupBy('r."deletedAt"')
+      .getRawOne();
+  }
+
+  async qtyInBox(batch_in_id: number) {
+    return this.dataSource
+      .createQueryBuilder()
+      .select([
+        'sa.storage_code AS box_name',
+        'SUM(r.quantity)::int AS quantity',
+      ])
+      .from('relocation', 'r')
+      .leftJoin('storage_area', 'sa', 'r.reloc_to=sa.id')
+      .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+      .andWhere('r.reloc_type = :reloc_type', { reloc_type: 'inbound' })
+      .andWhere('r.reloc_status = false')
+      .andWhere('r."deletedAt" IS NULL')
+      .groupBy('sa.storage_code,r."deletedAt"')
+      .getRawOne();
+  }
+
+  // async qtyInBox(batch_in_id: number) {
+  //   return this.repository
+  //     .createQueryBuilder('r')
+  //     .select(['r.reloc_to', 'SUM(r.quantity) AS quantity'])
+  //     .where('r.batch_in_id = :batch_in_id', { batch_in_id })
+  //     .andWhere('r.reloc_type = :reloc_type', { reloc_type: 'inbound' })
+  //     .andWhere('r.reloc_status = :reloc_status', { reloc_status: false })
+  //     .andWhere('bi.deletedAt IS NULL')
+  //     .getOne();
+  // }
+
   async findAll(query: ParamsDto): Promise<ApiResponse<BatchInbound[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
@@ -456,7 +550,7 @@ export class BatchInboundService {
       );
     }
   }
-
+  //relocation
   async createPDA(
     data: CreatePDABatchInDto,
     userId: number,
@@ -471,8 +565,20 @@ export class BatchInboundService {
           .andWhere('sa.deletedAt IS NULL')
           .getRawOne();
 
+        const rackDestination = await manager
+          .createQueryBuilder()
+          .select(['i.racks_id as racks_id'])
+          .from('inventory', 'i')
+          .where('i.id = :id', { id: data.inventory_id })
+          .andWhere('i.deletedAt IS NULL')
+          .getRawOne();
+
+        if (storage.sa_storage_type === 'rack') {
+          if (storage.sa_id !== rackDestination.racks_id)
+            throwError(`Rack mismatch, please scan the correct rack.`, 400);
+        }
         if (!storage) {
-          throwError(`Storage barcode ${data.storage_id} not found`, 400);
+          throwError(`Storage barcode ${data.storage_id} not found`, 404);
         }
         const storageId = storage.sa_id;
 
@@ -510,7 +616,7 @@ export class BatchInboundService {
           .where('id = :id', { id: data.inventory_id })
           .execute();
 
-        //4.UPDATE queue if quantity masih ada di queue
+        // 4.UPDATE queue if quantity masih ada di queue
         const updateQueue = await manager
           .createQueryBuilder()
           .update('temp_inbound_queue')
@@ -944,6 +1050,15 @@ export class BatchInboundService {
           'reloc_final.reloc_to = sa2.id AND sa2."deletedAt" IS NULL',
         )
         .where('i."deletedAt" IS NULL')
+        .andWhere(
+          // item di box masih ada tidak akan tampil di R2R
+          `NOT EXISTS (
+            SELECT 1 FROM relocation r3
+            WHERE r3.batch_in_id = bi.id
+            AND r3.reloc_status = false
+            AND r3."deletedAt" IS NULL
+          )`,
+        )
         .setParameters(subQuery.getParameters());
 
       if (superadmin !== 'yes') {
@@ -966,7 +1081,12 @@ export class BatchInboundService {
           'i',
           'bi.inventory_id = i.id AND i."deletedAt" IS NULL',
         )
-        .where('bi."deletedAt" IS NULL');
+        .where('bi."deletedAt" IS NULL').andWhere(`NOT EXISTS (
+              SELECT 1 FROM relocation r3
+              WHERE r3.batch_in_id = bi.id
+              AND r3.reloc_status = false
+              AND r3."deletedAt" IS NULL
+            )`);
 
       if (superadmin !== 'yes') {
         countQb.andWhere('bi.picker_id = :pickerId', { pickerId: picker_id });
@@ -1083,6 +1203,39 @@ export class BatchInboundService {
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );
+    }
+  }
+
+  // detail quantity relocation
+  async findAllQuantity(batch_id: number): Promise<ApiResponse<any>> {
+    try {
+      const batch = await this.batchIn(batch_id);
+      const out = await this.qtyOut(batch_id);
+      const on_hand = await this.qtyOnHand(batch_id);
+      const rack = await this.qtyInRack(batch_id);
+      const box = await this.qtyInBox(batch_id);
+
+      if (!batch) {
+        throwError(`Batch with ID ${batch_id} not found`, 404);
+      }
+      const response = {
+        quantity: {
+          ...(out ?? { stock_out: 0 }),
+          on_hand: on_hand?.qty_on_hand ?? 0, // jika on_hand null
+        },
+        rack: {
+          rack_name: batch.rack_name ?? null,
+          ...(rack ?? { quantity: 0 }), // jika rack null
+        },
+        box: box, // jika box null
+      };
+
+      return successResponse(response);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      console.log(error.stack);
+
+      throw new InternalServerErrorException('Failed to fetch Detail Quantity');
     }
   }
 }

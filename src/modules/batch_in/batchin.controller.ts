@@ -161,4 +161,15 @@ export class BatchInboundController {
   createPDAR2r(@Body() dto: CreatePDAStorageB2RDto, @Req() req) {
     return this.services.createPDAR2r(dto, req.user.id);
   }
+
+  //batch quantity details
+  @ApiTags('PDA Storage')
+  @ApiOperation({
+    summary: 'ITEM LIST RACK TO RACK (R2R)',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get('qty/details/:batchId')
+  findAllQuantityDetails(@Param('batchId') batchId: number) {
+    return this.services.findAllQuantity(batchId);
+  }
 }
