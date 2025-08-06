@@ -7,6 +7,7 @@ import { Users } from '../users/entities/users.entity';
 import { Inventory } from '../inventory/entities/inventory.entity';
 import { BatchOutbound } from '../work_order/entities/batch_outbound.entity';
 import { Storagearea } from '../master/storage/entities/storagearea.entity';
+import { S3Service } from '../../integrations/s3/s3.service';
 import { SppbListResponseDto, SppbDetailResponseDto } from './dto/response.dto';
 import { SppbListQueryDto } from './dto/query.dto';
 import {
@@ -31,6 +32,7 @@ export class SppbService {
     private readonly batchOutboundRepository: Repository<BatchOutbound>,
     @InjectRepository(Storagearea)
     private readonly storageareaRepository: Repository<Storagearea>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async getSppbList(
@@ -187,6 +189,45 @@ export class SppbService {
       return successResponse(result, 'Get SPPB detail successfully');
     } catch (error) {
       return throwError('Failed to fetch SPPB detail', 500);
+    }
+  }
+
+  async uploadMechanicPhoto(
+    sppbId: number,
+    file: Express.Multer.File,
+    userId: number,
+  ): Promise<ApiResponseType<{ mechanic_photo: string }>> {
+    try {
+      // Cek apakah SPPB exists
+      const sppb = await this.sppbRepository.findOne({
+        where: { id: sppbId },
+      });
+
+      if (!sppb) {
+        return throwError('SPPB not found', 404);
+      }
+
+      // Upload file ke S3
+      const uploaded = await this.s3Service.uploadFile(
+        file,
+        'sppb-mechanic-photos',
+      );
+
+      // Update SPPB dengan foto baru
+      await this.sppbRepository.update(
+        { id: sppbId },
+        {
+          mechanic_photo: uploaded.url,
+          updatedBy: userId,
+        },
+      );
+
+      return successResponse(
+        { mechanic_photo: uploaded.url },
+        'Mechanic photo uploaded successfully',
+      );
+    } catch (error) {
+      return throwError('Failed to upload mechanic photo', 500);
     }
   }
 } 

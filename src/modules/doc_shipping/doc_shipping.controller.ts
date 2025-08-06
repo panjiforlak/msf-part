@@ -26,9 +26,9 @@ import { CreateDocShipDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
-import { MemoryFileInterceptor } from 'src/common/interceptors/logger.interceptor';
+import { MemoryFileInterceptor } from '../../common/interceptors/logger.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { throwError } from 'src/common/helpers/response.helper';
+import { throwError } from '../../common/helpers/response.helper';
 
 @ApiTags('DocShipping')
 @ApiBearerAuth('jwt')
