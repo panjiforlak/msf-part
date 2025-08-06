@@ -14,7 +14,7 @@ export class S3Service {
 
   constructor() {
     this.s3 = new S3Client({
-      endpoint: s3Config.endPoint, // http://iti.ddns.net:9508
+      endpoint: s3Config.endPoint, // https://minio-bucket.motorsights.com
       region: s3Config.region,
       forcePathStyle: true,
       credentials: {
@@ -44,10 +44,11 @@ export class S3Service {
       }),
     );
 
-    const endpoint = s3Config.endPoint.replace(/^https?:\/\//, '');
+    // Gunakan URL publik yang baru
+    const publicUrl = 'https://minio-bucket.motorsights.com';
     return {
       key,
-      url: `http://${endpoint}/${s3Config.bucket}/${key}`,
+      url: `${publicUrl}/${s3Config.bucket}/${key}`,
     };
   }
 
