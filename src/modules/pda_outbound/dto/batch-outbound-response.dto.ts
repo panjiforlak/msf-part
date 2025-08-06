@@ -37,4 +37,7 @@ export class BatchOutboundResponseDto {
 
   @ApiProperty()
   label_wo: string;
+
+  @ApiProperty()
+  quantity_queue: number;
 } 
