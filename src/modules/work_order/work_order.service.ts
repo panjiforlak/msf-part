@@ -713,15 +713,8 @@ export class WorkOrderService {
           status: WorkOrderStatus.IN_PROGRESS,
           approvalBy: userId,
           approvalAt: new Date(),
+          approvalRemark: approvalDto.remark || null, // Simpan remark ke approval_remark
         });
-
-        // Update remarks di tabel batch_outbound jika ada remark
-        if (approvalDto.remark) {
-          await this.batchOutboundRepository.update(
-            { order_form_id: id },
-            { remarks: approvalDto.remark },
-          );
-        }
 
         return successResponse(
           {} as WorkOrderResponseDto,
@@ -743,6 +736,7 @@ export class WorkOrderService {
           status: WorkOrderStatus.REJECTED,
           approvalBy: null,
           approvalAt: null,
+          approvalRemark: approvalDto.remark || null, // Simpan remark ke approval_remark untuk rejection juga
         });
 
         return successResponse(
