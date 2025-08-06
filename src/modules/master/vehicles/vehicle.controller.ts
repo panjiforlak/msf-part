@@ -35,30 +35,31 @@ export class VehicleController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all vehicles',
-    description: 'Retrieve a paginated list of all vehicles with optional search functionality'
+    description:
+      'Retrieve a paginated list of all vehicles with optional search functionality',
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
-    type: String, 
-    description: 'Page number for pagination' 
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Page number for pagination',
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
-    type: String, 
-    description: 'Number of items per page' 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Number of items per page',
   })
-  @ApiQuery({ 
-    name: 'search', 
-    required: false, 
-    type: String, 
-    description: 'Search term for VIN number or vehicle number' 
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term for VIN number or vehicle number',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved vehicles list',
     schema: {
       type: 'object',
@@ -76,9 +77,9 @@ export class VehicleController {
               brand: { type: 'string', example: 'Toyota' },
               type: { type: 'string', example: 'Truck' },
               capacity_ton: { type: 'string', example: '5' },
-              status: { type: 'string', example: 'active' }
-            }
-          }
+              status: { type: 'string', example: 'active' },
+            },
+          },
         },
         meta: {
           type: 'object',
@@ -86,11 +87,11 @@ export class VehicleController {
             total: { type: 'number', example: 10 },
             page: { type: 'number', example: 1 },
             limit: { type: 'number', example: 10 },
-            totalPages: { type: 'number', example: 1 }
-          }
-        }
-      }
-    }
+            totalPages: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -100,18 +101,18 @@ export class VehicleController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get vehicle by ID',
-    description: 'Retrieve a specific vehicle by its ID'
+    description: 'Retrieve a specific vehicle by its ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Vehicle ID',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved vehicle',
     schema: {
       type: 'object',
@@ -125,11 +126,11 @@ export class VehicleController {
             vin_number: { type: 'string', example: 'VIN123456789' },
             vehicle_number: { type: 'string', example: 'B1234ABC' },
             brand: { type: 'string', example: 'Toyota' },
-            type: { type: 'string', example: 'Truck' }
-          }
-        }
-      }
-    }
+            type: { type: 'string', example: 'Truck' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
@@ -140,11 +141,11 @@ export class VehicleController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create new vehicle',
-    description: 'Create a new vehicle with the provided information'
+    description: 'Create a new vehicle with the provided information',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateVehiclesDto,
     description: 'Vehicle data to create',
     examples: {
@@ -156,19 +157,22 @@ export class VehicleController {
           brand: 'Toyota',
           type: 'Truck',
           capacity_ton: '5',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Vehicle created successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Create new vehicles successfully' },
+        message: {
+          type: 'string',
+          example: 'Create new vehicles successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -176,14 +180,17 @@ export class VehicleController {
             vin_number: { type: 'string', example: 'VIN123456789' },
             vehicle_number: { type: 'string', example: 'B1234ABC' },
             brand: { type: 'string', example: 'Toyota' },
-            type: { type: 'string', example: 'Truck' }
-          }
-        }
-      }
-    }
+            type: { type: 'string', example: 'Truck' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 409, description: 'VIN number or vehicle number already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'VIN number or vehicle number already exists',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   create(@Body() dto: CreateVehiclesDto) {
     return this.vehicleService.create(dto);
@@ -191,17 +198,17 @@ export class VehicleController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update vehicle',
-    description: 'Update an existing vehicle by ID'
+    description: 'Update an existing vehicle by ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Vehicle ID to update',
-    example: 1
+    example: 1,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateVehiclesDto,
     description: 'Updated vehicle data',
     examples: {
@@ -213,13 +220,13 @@ export class VehicleController {
           brand: 'Toyota',
           type: 'Truck',
           capacity_ton: '5',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Vehicle updated successfully',
     schema: {
       type: 'object',
@@ -233,15 +240,18 @@ export class VehicleController {
             vin_number: { type: 'string', example: 'VIN123456789' },
             vehicle_number: { type: 'string', example: 'B1234ABC' },
             brand: { type: 'string', example: 'Toyota' },
-            type: { type: 'string', example: 'Truck' }
-          }
-        }
-      }
-    }
+            type: { type: 'string', example: 'Truck' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
-  @ApiResponse({ status: 409, description: 'VIN number already in use by another vehicle' })
+  @ApiResponse({
+    status: 409,
+    description: 'VIN number already in use by another vehicle',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   update(@Param('id') id: number, @Body() dto: CreateVehiclesDto) {
     return this.vehicleService.update(id, dto);
@@ -249,27 +259,28 @@ export class VehicleController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete vehicle',
-    description: 'Soft delete a vehicle by ID (marks as deleted but keeps in database)'
+    description:
+      'Soft delete a vehicle by ID (marks as deleted but keeps in database)',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Vehicle ID to delete',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Vehicle deleted successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
         message: { type: 'string', example: 'vehicles deleted successfully' },
-        data: { type: 'null', example: null }
-      }
-    }
+        data: { type: 'null', example: null },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
