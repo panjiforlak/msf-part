@@ -602,7 +602,7 @@ export class BatchInboundService {
             reloc_type: 'inbound',
             reloc_status: statusBox,
             picker_id: userId,
-            created_by: userId,
+            createdBy: userId,
           })
           .execute();
 
@@ -871,7 +871,8 @@ export class BatchInboundService {
             reloc_date: new Date(),
             reloc_type: 'box-to-rack',
             reloc_status: true,
-            created_by: userId,
+            picker_id: userId,
+            createdBy: userId,
           })
           .execute();
 
@@ -905,6 +906,7 @@ export class BatchInboundService {
             .update('relocation')
             .set({
               reloc_status: true,
+              updatedBy: userId,
             })
             .where('batch_in_id = :batch_in_id', {
               batch_in_id: data.batch_in_id,
@@ -1149,7 +1151,8 @@ export class BatchInboundService {
             reloc_date: new Date(),
             reloc_type: 'rack-to-rack',
             reloc_status: true,
-            created_by: userId,
+            picker_id: userId,
+            createdBy: userId,
           })
           .execute();
 

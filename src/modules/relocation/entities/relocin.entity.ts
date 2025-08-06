@@ -39,7 +39,7 @@ export class RelocInbound {
   @Column({ type: 'int', default: 0 })
   quantity_temp_outbound: number;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', default: 0 })
   picker_id: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
