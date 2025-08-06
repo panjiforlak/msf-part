@@ -284,7 +284,7 @@ export class WorkOrderService {
                 .getRawOne();
 
               if (!vehicleExists) {
-                throwError(
+                return throwError(
                   'Vehicle ID not found in vehicles table',
                   400,
                 );
@@ -300,7 +300,7 @@ export class WorkOrderService {
               .getRawOne();
 
             if (!driverExists) {
-              throwError('Driver ID not found in users table', 400);
+              return throwError('Driver ID not found in users table', 400);
             }
 
             // 3. Check mechanic from users table
@@ -314,7 +314,7 @@ export class WorkOrderService {
               .getRawOne();
 
             if (!mechanicExists) {
-              throwError(
+              return throwError(
                 'Mechanic ID not found in users table',
                 400,
               );
@@ -334,7 +334,7 @@ export class WorkOrderService {
               .getRawOne();
 
             if (!inventoryExists) {
-              throwError(
+              return throwError(
                 `Inventory ID ${sparepart.inventory_id} not found in inventory table`,
                 400,
               );
@@ -344,7 +344,7 @@ export class WorkOrderService {
 
             // 7. Check quantity from inventory table (only for sparepart orders)
             if (!isNonSparepart && sparepart.quantity > inventoryExists.quantity) {
-              throwError(
+              return throwError(
                 `Quantity ${sparepart.quantity} exceeds available quantity ${inventoryExists.quantity} for inventory ID ${sparepart.inventory_id}`,
                 400,
               );
@@ -362,7 +362,7 @@ export class WorkOrderService {
             .getRawOne();
 
           if (!requestExists) {
-            throwError('Request ID not found in users table', 400);
+            return throwError('Request ID not found in users table', 400);
           }
 
           // 8. Create order form
@@ -514,20 +514,20 @@ export class WorkOrderService {
       // Check for specific database errors
       if (error.code === '23505') {
         // Unique constraint violation
-        throwError('Work order with this data already exists', 400);
+        return throwError('Work order with this data already exists', 400);
       } else if (error.code === '23503') {
         // Foreign key constraint violation
-        throwError(
+        return throwError(
           'Invalid reference data (vehicle, employee, or inventory not found)',
           400,
         );
       } else if (error.code === '22P02') {
         // Invalid text representation
-        throwError('Invalid data format provided', 400);
+        return throwError('Invalid data format provided', 400);
       }
 
       if (error instanceof HttpException) throw error;
-      throwError('Failed to create work order', 500);
+      return throwError('Failed to create work order', 500);
     }
   }
 
@@ -543,7 +543,8 @@ export class WorkOrderService {
       });
 
       if (!orderForm) {
-        throwError('Work order not found', 404);
+        return throwError('Work order not found', 404);
+
       }
 
       await this.dataSource.transaction(async (manager) => {
@@ -637,7 +638,8 @@ export class WorkOrderService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throwError('Failed to update work order', 500);
+      return throwError('Failed to update work order', 500);
+
     }
   }
 
@@ -649,7 +651,8 @@ export class WorkOrderService {
       });
 
       if (!orderForm) {
-        throwError('Work order not found', 404);
+        return throwError('Work order not found', 404);
+
       }
 
       await this.dataSource.transaction(async (manager) => {
@@ -683,7 +686,8 @@ export class WorkOrderService {
       return successResponse(null, 'Work order deleted successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throwError('Failed to delete work order', 500);
+      return throwError('Failed to delete work order', 500);
+
     }
   }
 
@@ -699,7 +703,8 @@ export class WorkOrderService {
       });
 
       if (!orderForm) {
-        throwError('Work order not found', 404);
+        return throwError('Work order not found', 404);
+
       }
 
       // Jika status approval, update status menjadi 'in_progress'
@@ -727,7 +732,7 @@ export class WorkOrderService {
       if (approvalDto.status === ApprovalStatus.REJECTED) {
         // Jika reject, cek apakah picker_id sudah diassign
         if (orderForm!.picker_id && orderForm!.picker_id !== 0) {
-          throwError(
+          return throwError(
             'Work order tidak dapat di-reject karena sudah di-assign picker',
             400,
           );
@@ -746,11 +751,13 @@ export class WorkOrderService {
         );
       }
       
-      throwError('Invalid approval status', 400);
+      return throwError('Invalid approval status', 400);
+
     } catch (error) {
       console.error('Approval error:', error);
       if (error instanceof HttpException) throw error;
-      throwError('Failed to process approval', 500);
+      return throwError('Failed to process approval', 500);
+
     }
   }
 
@@ -767,7 +774,8 @@ export class WorkOrderService {
       });
 
       if (!orderForm) {
-        throwError('Work order not found', 404);
+        return throwError('Work order not found', 404);
+
       }
 
       // Validasi picker_id exists di tabel users
@@ -779,7 +787,8 @@ export class WorkOrderService {
         .getRawOne();
 
       if (!userExists) {
-        throwError('Picker ID tidak ditemukan di tabel users', 400);
+        return throwError('Picker ID tidak ditemukan di tabel users', 400);
+
       }
 
       // Update picker_id di tabel order_form
@@ -799,7 +808,8 @@ export class WorkOrderService {
     } catch (error) {
       console.error('Assign picker error:', error);
       if (error instanceof HttpException) throw error;
-      throwError('Failed to assign picker', 500);
+      return throwError('Failed to assign picker', 500);
+
     }
   }
 

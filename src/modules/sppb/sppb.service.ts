@@ -96,7 +96,8 @@ export class SppbService {
         'Get SPPB list successfully',
       );
     } catch (error) {
-      throwError('Failed to fetch SPPB list', 500);
+      return throwError('Failed to fetch SPPB list', 500);
+
     }
   }
 } 
