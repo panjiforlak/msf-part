@@ -16,6 +16,7 @@ export enum WorkOrderStatus {
   IN_PROGRESS = 'on progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
+  REJECTED = 'rejected',
 }
 
 export enum OrderType {
@@ -115,9 +116,9 @@ export class OrderForm {
 
   @ApiProperty()
   @Column({ name: 'approval_by', type: 'int', nullable: true })
-  approvalBy: number;
+  approvalBy: number | null;
 
   @ApiProperty()
   @Column({ name: 'approval_at', type: 'timestamptz', nullable: true })
-  approvalAt: Date;
+  approvalAt: Date | null;
 }
