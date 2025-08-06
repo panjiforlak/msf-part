@@ -121,4 +121,8 @@ export class OrderForm {
   @ApiProperty()
   @Column({ name: 'approval_at', type: 'timestamptz', nullable: true })
   approvalAt: Date | null;
+
+  @ApiProperty()
+  @Column({ name: 'approval_remark', type: 'text', nullable: true })
+  approvalRemark: string | null;
 }

@@ -20,6 +20,7 @@ import {
   GetAreaOutboundResponseDto,
 } from './dto/get-area-outbound.dto';
 import { RelocationHistoryResponseDto, RelocationHistoryQueryDto } from './dto/relocation-history.dto';
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class PdaOutboundService {
@@ -137,9 +138,9 @@ export class PdaOutboundService {
     });
 
     if (!batchInbound) {
-      throw new HttpException(
+      throwError(
         `Barcode inbound '${createRelocationDto.barcode_inbound}' tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -149,9 +150,9 @@ export class PdaOutboundService {
     });
 
     if (!batchOutbound) {
-      throw new HttpException(
+      throwError(
         `Batch outbound dengan ID ${createRelocationDto.batch_outbound_id} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -164,10 +165,7 @@ export class PdaOutboundService {
     });
 
     if (!inventory) {
-      throw new HttpException(
-        `Inventory dengan ID ${inventoryId} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
-      );
+      throwError(`Inventory dengan ID ${inventoryId} tidak ditemukan`, 404);
     }
 
     const racksId = inventory.racks_id;
@@ -211,9 +209,9 @@ export class PdaOutboundService {
     });
 
     if (!batchInbound) {
-      throw new HttpException(
+      throwError(
         `Batch inbound dengan barcode '${scanDestinationDto.batch_in_barcode}' tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -226,9 +224,9 @@ export class PdaOutboundService {
     });
 
     if (!existingRelocation) {
-      throw new HttpException(
+      throwError(
         `Relocation dengan batch_in_id ${batchInbound.id} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -238,9 +236,9 @@ export class PdaOutboundService {
     });
 
     if (!inboundOutboundArea) {
-      throw new HttpException(
+      throwError(
         `Inbound outbound area dengan ID ${scanDestinationDto.inbound_outbound_area_id} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -250,9 +248,9 @@ export class PdaOutboundService {
     });
 
     if (!batchOutbound) {
-      throw new HttpException(
+      throwError(
         `Batch outbound dengan ID ${scanDestinationDto.batch_outbound_id} tidak ditemukan`,
-        HttpStatus.NOT_FOUND,
+        404,
       );
     }
 
@@ -276,9 +274,9 @@ export class PdaOutboundService {
     });
 
     if (!updatedRelocation) {
-      throw new HttpException(
+      throwError(
         'Gagal mengambil data relocation yang diupdate',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        500,
       );
     }
 
@@ -444,9 +442,9 @@ export class PdaOutboundService {
     });
 
     if (!areaExists) {
-      throw new HttpException(
+      throwError(
         `Barcode area '${getAreaOutboundDto.barcode_area}' tidak ditemukan di tabel inbound_outbound_area`,
-        HttpStatus.BAD_REQUEST,
+        400,
       );
     }
 
