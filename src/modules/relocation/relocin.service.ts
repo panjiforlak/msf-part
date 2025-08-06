@@ -58,9 +58,7 @@ export class RelocInboundService {
     } catch (error) {
       console.log(error.stack);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch Relocation Inbound',
-      );
+      throwError('Failed to fetch Relocation Inbound', 500);
     }
   }
 
@@ -92,9 +90,7 @@ export class RelocInboundService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch relocation inbound',
-      );
+      throwError('Failed to fetch relocation inbound', 500);
     }
   }
 
@@ -125,9 +121,7 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Failed to get relocation inbound',
-      );
+      throwError('Failed to get relocation inbound', 500);
     }
   }
 
@@ -153,9 +147,7 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Failed to create relocation inbound',
-      );
+      throwError('Failed to create relocation inbound', 500);
     }
   }
 
@@ -183,7 +175,7 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to create batch inbound');
+      throwError('Failed to create batch inbound', 500);
     }
   }
 
@@ -218,7 +210,7 @@ export class RelocInboundService {
         throw error;
       }
       console.log(error.stack);
-      throw new InternalServerErrorException('Failed to update Doc Batch');
+      throwError('Failed to update Doc Batch', 500);
     }
   }
 
@@ -243,7 +235,7 @@ export class RelocInboundService {
         throw error;
       }
       console.log(error.stack);
-      throw new InternalServerErrorException('Failed to delete batch inbound');
+      throwError('Failed to delete batch inbound', 500);
     }
   }
 }

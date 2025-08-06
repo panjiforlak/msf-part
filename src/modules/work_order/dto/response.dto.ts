@@ -76,6 +76,9 @@ export class WorkOrderResponseDto {
   @ApiProperty()
   approval_by: string;
 
+  @ApiProperty()
+  approval_remark: string;
+
   @ApiProperty({ type: [SparepartResponseDto] })
   sparepart_list: SparepartResponseDto[];
 

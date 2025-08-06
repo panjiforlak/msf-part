@@ -9,6 +9,7 @@ import { SppbListQueryDto } from './dto/query.dto';
 import {
   ApiResponse as ApiResponseType,
   successResponse,
+  throwError,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
@@ -95,7 +96,7 @@ export class SppbService {
         'Get SPPB list successfully',
       );
     } catch (error) {
-      throw new InternalServerErrorException('Failed to fetch SPPB list');
+      throwError('Failed to fetch SPPB list', 500);
     }
   }
 } 
