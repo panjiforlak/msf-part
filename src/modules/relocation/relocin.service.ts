@@ -144,7 +144,7 @@ export class RelocInboundService {
       return successResponse(
         response,
         'Create new relocation inbound successfully',
-        201,
+        200,
       );
     } catch (error) {
       if (error instanceof HttpException) {
@@ -173,7 +173,7 @@ export class RelocInboundService {
       return successResponse(
         response,
         'Create batch inbound(s) successfully',
-        201,
+        200,
       );
     } catch (error) {
       if (error instanceof HttpException) {

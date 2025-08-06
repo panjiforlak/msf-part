@@ -40,4 +40,7 @@ export class BatchOutboundResponseDto {
 
   @ApiProperty()
   quantity_queue: number;
+
+  @ApiProperty()
+  barcode_inbound: string;
 } 

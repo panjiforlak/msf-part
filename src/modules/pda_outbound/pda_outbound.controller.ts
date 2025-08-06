@@ -67,7 +67,7 @@ export class PdaOutboundController {
     description: 'Membuat data relocation berdasarkan barcode inbound'
   })
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Relocation berhasil dibuat'
   })
   @ApiResponse({
@@ -80,7 +80,7 @@ export class PdaOutboundController {
   ) {
     const userId = req.user.id;
     const data = await this.pdaOutboundService.createRelocation(createRelocationDto, userId);
-    return successResponse(data, 'Relocation berhasil dibuat', 201);
+    return successResponse(data, 'Relocation berhasil dibuat', 200);
   }
 
   @Post('scan-destination')
