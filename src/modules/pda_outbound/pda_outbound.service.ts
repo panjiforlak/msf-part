@@ -125,6 +125,14 @@ export class PdaOutboundService {
         'bo.status AS status',
         'sa.storage_code AS racks_name',
       ])
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COALESCE(SUM(r.quantity_temp_outbound), 0)')
+          .from('relocation', 'r')
+          .innerJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
+          .where('bi.inventory_id = bo.inventory_id')
+          .andWhere("r.reloc_type = 'outbound'");
+      }, 'quantity_queue')
       .where('bo.order_form_id = :orderFormId', { orderFormId })
       .andWhere('bo."deletedAt" IS NULL')
       .orderBy('bo.id', 'DESC')
