@@ -41,7 +41,7 @@ export class PdaOutboundController {
   @Get(':orderFormId/batch-outbound')
   @ApiOperation({
     summary: 'Get Batch Outbound Data by Order Form ID',
-    description: 'Mengambil data batch outbound berdasarkan order form ID'
+    description: 'Mengambil data batch outbound berdasarkan order form ID. Jika parameter is_queue=true, hanya menampilkan data yang sudah masuk ke tabel relocation (flag_queue=true)'
   })
   @ApiParam({
     name: 'orderFormId',
@@ -55,11 +55,13 @@ export class PdaOutboundController {
     type: [BatchOutboundResponseDto]
   })
   async findBatchOutboundByOrderFormId(
-    @Param('orderFormId', ParseIntPipe) orderFormId: number
+    @Param('orderFormId', ParseIntPipe) orderFormId: number,
+    @Query('is_queue') isQueue?: string
   ) {
-          const data = await this.pdaOutboundService.findBatchOutboundByOrderFormId(orderFormId);
-      return successResponse(data, 'Data Batch Outbound berhasil diambil');
-    }
+    const isQueueBoolean = isQueue === 'true';
+    const data = await this.pdaOutboundService.findBatchOutboundByOrderFormId(orderFormId, isQueueBoolean);
+    return successResponse(data, 'Data Batch Outbound berhasil diambil');
+  }
 
   @Post('relocation')
   @ApiOperation({
