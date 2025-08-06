@@ -58,7 +58,7 @@ export class RelocInboundService {
     } catch (error) {
       console.log(error.stack);
       if (error instanceof HttpException) throw error;
-      throwError('Failed to fetch Relocation Inbound', 500);
+      return throwError('Failed to fetch Relocation Inbound', 500);
     }
   }
 
@@ -90,7 +90,8 @@ export class RelocInboundService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throwError('Failed to fetch relocation inbound', 500);
+      return throwError('Failed to fetch relocation inbound', 500);
+
     }
   }
 
@@ -101,7 +102,8 @@ export class RelocInboundService {
       });
 
       if (!result) {
-        throwError('relocation inbound Area not found', 404);
+        return throwError('relocation inbound Area not found', 404);
+  
       }
 
       const response: any = {
@@ -121,7 +123,8 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throwError('Failed to get relocation inbound', 500);
+      return throwError('Failed to get relocation inbound', 500);
+
     }
   }
 
@@ -147,7 +150,8 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throwError('Failed to create relocation inbound', 500);
+      return throwError('Failed to create relocation inbound', 500);
+
     }
   }
 
@@ -175,7 +179,8 @@ export class RelocInboundService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throwError('Failed to create batch inbound', 500);
+      return throwError('Failed to create batch inbound', 500);
+
     }
   }
 
@@ -190,7 +195,8 @@ export class RelocInboundService {
       });
 
       if (!params) {
-        throwError('Batch Inbound not found', 404);
+        return throwError('Batch Inbound not found', 404);
+  
       }
 
       const updatedBody = this.repository.merge(params!, updateDto, {
@@ -210,7 +216,8 @@ export class RelocInboundService {
         throw error;
       }
       console.log(error.stack);
-      throwError('Failed to update Doc Batch', 500);
+      return throwError('Failed to update Doc Batch', 500);
+
     }
   }
 
@@ -221,7 +228,8 @@ export class RelocInboundService {
       });
 
       if (!items) {
-        throwError('Batch inbound not found', 404);
+        return throwError('Batch inbound not found', 404);
+  
       }
 
       items!.deletedBy = userId;
@@ -235,7 +243,8 @@ export class RelocInboundService {
         throw error;
       }
       console.log(error.stack);
-      throwError('Failed to delete batch inbound', 500);
+      return throwError('Failed to delete batch inbound', 500);
+
     }
   }
 }
