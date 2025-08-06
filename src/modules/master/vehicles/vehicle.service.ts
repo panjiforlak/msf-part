@@ -73,6 +73,7 @@ export class VehicleService {
         'Get all vehicle susccessfuly',
       );
     } catch (error) {
+      console.log(error.stack);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch vehicles');
     }
@@ -96,6 +97,7 @@ export class VehicleService {
         id: result.id,
         vin_number: result.vin_number,
         vehicle_number: result.vehicle_number,
+        engine_number: result.engine_number,
         brand: result.brand,
         type: result.type,
       };
@@ -130,6 +132,7 @@ export class VehicleService {
         id: result.id,
         vin_number: result.vin_number,
         vehicle_number: result.vehicle_number,
+        engine_number: result.engine_number,
         brand: result.brand,
         type: result.type,
       };

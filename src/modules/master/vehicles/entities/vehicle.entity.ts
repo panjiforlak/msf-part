@@ -24,6 +24,10 @@ export class Vehicles {
 
   @Expose()
   @Column()
+  engine_number: string;
+
+  @Expose()
+  @Column()
   brand: string;
 
   @Expose()
