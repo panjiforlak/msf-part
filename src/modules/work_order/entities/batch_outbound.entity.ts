@@ -65,6 +65,10 @@ export class BatchOutbound {
   remarks: string;
 
   @ApiProperty()
+  @Column({ type: 'boolean', default: false })
+  flag_queue: boolean;
+
+  @ApiProperty()
   @Column({ name: 'createdBy', type: 'int', default: 0 })
   createdBy: number;
 

@@ -19,7 +19,10 @@ import {
   GetAreaOutboundDto,
   GetAreaOutboundResponseDto,
 } from './dto/get-area-outbound.dto';
-import { RelocationHistoryResponseDto, RelocationHistoryQueryDto } from './dto/relocation-history.dto';
+import {
+  RelocationHistoryResponseDto,
+  RelocationHistoryQueryDto,
+} from './dto/relocation-history.dto';
 import { throwError } from '../../common/helpers/response.helper';
 
 @Injectable()
@@ -105,8 +108,11 @@ export class PdaOutboundService {
     }));
   }
 
-  async findBatchOutboundByOrderFormId(orderFormId: number): Promise<BatchOutboundResponseDto[]> {
-    const batchOutbounds = await this.batchOutboundRepository
+  async findBatchOutboundByOrderFormId(
+    orderFormId: number,
+    isQueue?: boolean,
+  ): Promise<BatchOutboundResponseDto[]> {
+    const queryBuilder = this.batchOutboundRepository
       .createQueryBuilder('bo')
       .leftJoin('inventory', 'i', 'bo.inventory_id = i.id')
       .leftJoin('components', 'c', 'i.component_id = c.id')
@@ -141,18 +147,28 @@ export class PdaOutboundService {
           .limit(1);
       }, 'barcode_inbound')
       .where('bo.order_form_id = :orderFormId', { orderFormId })
-      .andWhere('bo."deletedAt" IS NULL')
+      .andWhere('bo."deletedAt" IS NULL');
+
+    // Jika isQueue = true, hanya tampilkan data yang flag_queue = true
+    if (isQueue === true) {
+      queryBuilder.andWhere('bo.flag_queue = :flagQueue', { flagQueue: true });
+    }
+
+    const batchOutbounds = await queryBuilder
       .orderBy('bo.id', 'DESC')
       .getRawMany();
 
     // Transform data dan tambahkan label_wo
-    return batchOutbounds.map(batchOutbound => ({
+    return batchOutbounds.map((batchOutbound) => ({
       ...batchOutbound,
       label_wo: `WO-${orderFormId}`,
     }));
   }
 
-  async createRelocation(createRelocationDto: CreateRelocationDto, userId: number): Promise<any> {
+  async createRelocation(
+    createRelocationDto: CreateRelocationDto,
+    userId: number,
+  ): Promise<any> {
     // 1. Cek barcode_inbound ada di tabel batch_inbound atau tidak
     const batchInbound = await this.batchInboundRepository.findOne({
       where: { barcode: createRelocationDto.barcode_inbound },
@@ -208,6 +224,12 @@ export class PdaOutboundService {
     });
 
     const savedRelocation = await this.relocInboundRepository.save(relocation);
+
+    // 6. Update flag_queue menjadi true di tabel batch_outbound
+    await this.batchOutboundRepository.update(
+      { id: createRelocationDto.batch_outbound_id },
+      { flag_queue: true, updatedBy: userId },
+    );
 
     return {
       id: savedRelocation.id,
