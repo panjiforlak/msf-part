@@ -79,9 +79,20 @@ export class WorkOrderService {
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
-          qb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
-            search: `%${query.search.toLowerCase()}%`,
-          });
+          const searchTerm = `%${query.search.toLowerCase()}%`;
+          qb.andWhere(
+            `(
+              CAST(of.id AS TEXT) LIKE :search OR
+              LOWER(COALESCE(v.vin_number, '')) LIKE :search OR
+              LOWER(COALESCE(dr.name, '')) LIKE :search OR
+              LOWER(COALESCE(mc.name, '')) LIKE :search OR
+              LOWER(COALESCE(pk.name, '')) LIKE :search OR
+              LOWER(COALESCE(req.name, '')) LIKE :search OR
+              LOWER(COALESCE(ap.name, '')) LIKE :search OR
+              LOWER(COALESCE(of.departement, '')) LIKE :search
+            )`,
+            { search: searchTerm }
+          );
         }
 
         if (query.order_type) {
@@ -110,9 +121,20 @@ export class WorkOrderService {
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
-          countQb.andWhere("LOWER(COALESCE(v.vin_number, '')) LIKE :search", {
-            search: `%${query.search.toLowerCase()}%`,
-          });
+          const searchTerm = `%${query.search.toLowerCase()}%`;
+          countQb.andWhere(
+            `(
+              CAST(of.id AS TEXT) LIKE :search OR
+              LOWER(COALESCE(v.vin_number, '')) LIKE :search OR
+              LOWER(COALESCE(dr.name, '')) LIKE :search OR
+              LOWER(COALESCE(mc.name, '')) LIKE :search OR
+              LOWER(COALESCE(pk.name, '')) LIKE :search OR
+              LOWER(COALESCE(req.name, '')) LIKE :search OR
+              LOWER(COALESCE(ap.name, '')) LIKE :search OR
+              LOWER(COALESCE(of.departement, '')) LIKE :search
+            )`,
+            { search: searchTerm }
+          );
         }
 
         if (query.order_type) {
