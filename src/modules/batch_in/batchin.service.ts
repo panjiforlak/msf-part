@@ -669,9 +669,9 @@ export class BatchInboundService {
               status_reloc: 'storage',
             })
             .where('id = :id', { id: data.batch_in_id })
-            .andWhere('quantity = :quantity', {
-              quantity: checkQtyReloc.total_quantity,
-            })
+            // .andWhere('quantity = :quantity', {
+            //   quantity: checkQtyReloc.total_quantity,
+            // })
             .execute();
         }
       });
