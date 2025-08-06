@@ -59,6 +59,12 @@ export class PdaOutboundService {
       query = query.where('order_form.picker_id = :userId', { userId });
     }
 
+    // Tambahkan validasi untuk hanya menampilkan data yang belum memiliki SPPB
+    // Menggunakan NOT EXISTS untuk mengecualikan order_form yang sudah ada di tabel sppb
+    query = query.andWhere(
+      'NOT EXISTS (SELECT 1 FROM sppb s WHERE s.order_form_id = order_form.id)',
+    );
+
     const orderForms = await query
       .leftJoin('vehicles', 'v', 'order_form.vehicle_id = v.id')
       .leftJoin('users', 'admin_user', 'order_form.admin_id = admin_user.id')
@@ -142,7 +148,6 @@ export class PdaOutboundService {
         `Barcode inbound '${createRelocationDto.barcode_inbound}' tidak ditemukan`,
         404,
       );
-
     }
 
     // 2. Cek batch_outbound_id ada di tabel batch_outbound atau tidak
@@ -155,11 +160,10 @@ export class PdaOutboundService {
         `Batch outbound dengan ID ${createRelocationDto.batch_outbound_id} tidak ditemukan`,
         404,
       );
-
     }
 
     // 3. Ambil inventory_id dari batch_inbound
-    const inventoryId = batchInbound!.inventory_id;
+    const inventoryId = batchInbound.inventory_id;
 
     // 4. Cek di tabel inventory dan ambil racks_id
     const inventory = await this.inventoryRepository.findOne({
@@ -167,19 +171,21 @@ export class PdaOutboundService {
     });
 
     if (!inventory) {
-      return throwError(`Inventory dengan ID ${inventoryId} tidak ditemukan`, 404);
-
+      return throwError(
+        `Inventory dengan ID ${inventoryId} tidak ditemukan`,
+        404,
+      );
     }
 
-    const racksId = inventory!.racks_id;
+    const racksId = inventory.racks_id;
 
     // 5. Buat data relocation dengan quantity dari batch_outbound
     const relocation = this.relocInboundRepository.create({
-      batch_in_id: batchInbound!.id, // id dari tabel batch_inbound
+      batch_in_id: batchInbound.id, // id dari tabel batch_inbound
       reloc_from: racksId, // racks_id dari tabel inventory
       reloc_to: 0, // dikosongkan
       reloc_type: 'outbound', // diisi dengan "outbound"
-      quantity: batchOutbound!.quantity, // quantity dari batch_outbound
+      quantity: batchOutbound.quantity, // quantity dari batch_outbound
       picker_id: userId, // user_id dari bearer token
       reloc_status: false, // false saja
       reloc_date: new Date(), // waktu saat ini
@@ -222,14 +228,14 @@ export class PdaOutboundService {
     // 1. Cari relocation berdasarkan batch_in_id yang didapat dari batch_inbound
     const existingRelocation = await this.relocInboundRepository.findOne({
       where: {
-        batch_in_id: batchInbound!.id,
+        batch_in_id: batchInbound.id,
         reloc_type: 'outbound',
       },
     });
 
     if (!existingRelocation) {
       return throwError(
-        `Relocation dengan batch_in_id ${batchInbound!.id} tidak ditemukan`,
+        `Relocation dengan batch_in_id ${batchInbound.id} tidak ditemukan`,
         404,
       );
 
@@ -245,7 +251,6 @@ export class PdaOutboundService {
         `Inbound outbound area dengan ID ${scanDestinationDto.inbound_outbound_area_id} tidak ditemukan`,
         404,
       );
-
     }
 
     // 3. Cek batch_outbound_id ada atau tidak
@@ -258,16 +263,15 @@ export class PdaOutboundService {
         `Batch outbound dengan ID ${scanDestinationDto.batch_outbound_id} tidak ditemukan`,
         404,
       );
-
     }
 
     // 4. Update quantity_temp_outbound di tabel relocation
-    const currentTempQuantity = existingRelocation!.quantity_temp_outbound || 0;
+    const currentTempQuantity = existingRelocation.quantity_temp_outbound || 0;
     const newTempQuantity = currentTempQuantity + scanDestinationDto.quantity;
 
     // Update relocation dengan quantity_temp_outbound baru dan reloc_to
     await this.relocInboundRepository.update(
-      { id: existingRelocation!.id },
+      { id: existingRelocation.id },
       {
         quantity_temp_outbound: newTempQuantity,
         reloc_to: scanDestinationDto.inbound_outbound_area_id,
@@ -277,25 +281,23 @@ export class PdaOutboundService {
 
     // 5. Cek apakah quantity_temp_outbound sudah sama dengan quantity
     const updatedRelocation = await this.relocInboundRepository.findOne({
-      where: { id: existingRelocation!.id },
+      where: { id: existingRelocation.id },
     });
 
     if (!updatedRelocation) {
-      return throwError(
-        'Gagal mengambil data relocation yang diupdate',
-        500,
-      );
-
+      return throwError('Gagal mengambil data relocation yang diupdate', 500);
     }
 
     let isCompleted = false;
     let sppbId: number | null = null;
     let sppbNumber: string | null = null;
 
-    if (updatedRelocation!.quantity_temp_outbound >= updatedRelocation!.quantity) {
+    if (
+      updatedRelocation.quantity_temp_outbound >= updatedRelocation.quantity
+    ) {
       // Update reloc_status menjadi true
       await this.relocInboundRepository.update(
-        { id: existingRelocation!.id },
+        { id: existingRelocation.id },
         {
           reloc_status: true,
           updatedBy: userId,
@@ -303,7 +305,7 @@ export class PdaOutboundService {
       );
 
       // 6. Cari order_form_id dari tabel batch_outbound berdasarkan batch_outbound_id
-      const orderFormId = batchOutbound!.order_form_id || 0;
+      const orderFormId = batchOutbound.order_form_id || 0;
 
       // 7. Cek di tabel relocation yang memiliki order_form_id yang sama
       // Caranya: ambil semua batch_outbound yang memiliki order_form_id yang sama
@@ -330,7 +332,9 @@ export class PdaOutboundService {
           const allRelatedRelocations = await this.relocInboundRepository
             .createQueryBuilder('reloc')
             .where('reloc.batch_in_id IN (:...batchInIds)', { batchInIds })
-            .andWhere('reloc.reloc_type = :relocType', { relocType: 'outbound' })
+            .andWhere('reloc.reloc_type = :relocType', {
+              relocType: 'outbound',
+            })
             .getMany();
 
           // Cek apakah semua relocation sudah memiliki reloc_status = true
@@ -376,12 +380,12 @@ export class PdaOutboundService {
     }
 
     return {
-      id: existingRelocation!.id,
-      batch_in_id: batchInbound!.id,
+      id: existingRelocation.id,
+      batch_in_id: batchInbound.id,
       inbound_outbound_area_id: scanDestinationDto.inbound_outbound_area_id,
       quantity: scanDestinationDto.quantity,
       quantity_temp_outbound: newTempQuantity,
-      target_quantity: updatedRelocation!.quantity,
+      target_quantity: updatedRelocation.quantity,
       is_completed: isCompleted,
       sppb_id: sppbId,
       sppb_number: sppbNumber,
@@ -397,7 +401,11 @@ export class PdaOutboundService {
       .leftJoin('inventory', 'inv', 'bi.inventory_id = inv.id')
       .leftJoin('users', 'picker', 'reloc.picker_id = picker.id')
       .leftJoin('storage_area', 'rack', 'reloc.reloc_from = rack.id')
-      .leftJoin('inbound_outbound_area', 'outbound', 'reloc.reloc_to = outbound.id')
+      .leftJoin(
+        'inbound_outbound_area',
+        'outbound',
+        'reloc.reloc_to = outbound.id',
+      )
       .where('reloc.reloc_type = :relocType', { relocType: 'outbound' })
       .select([
         'reloc.id as relocation_id',
@@ -454,7 +462,6 @@ export class PdaOutboundService {
         `Barcode area '${getAreaOutboundDto.barcode_area}' tidak ditemukan di tabel inbound_outbound_area`,
         400,
       );
-
     }
 
     // 2. Ambil data yang sesuai dengan barcode_area yang dikirimkan
@@ -467,4 +474,4 @@ export class PdaOutboundService {
 
     return area ? [area] : [];
   }
-} 
+}
