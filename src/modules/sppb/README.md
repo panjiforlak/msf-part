@@ -107,6 +107,72 @@ curl -X 'GET' 'http://localhost:9596/api/sppb/list?month=1&keyword=Maintenance&p
 - `start_date` - dari tabel `sppb` kolom `start_date`
 - `end_date` - dari tabel `sppb` kolom `end_date`
 
+### 2. GET /api/sppb/:id
+**Deskripsi**: Mendapatkan detail SPPB berdasarkan ID
+
+**Headers**:
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters**:
+- `id` (required): ID SPPB
+
+**Contoh Request**:
+```bash
+curl -X 'GET' 'http://localhost:9596/api/sppb/1' \
+  -H 'Authorization: Bearer <jwt_token>'
+```
+
+**Response**:
+```json
+{
+  "statusCode": 200,
+  "message": "Get SPPB detail successfully",
+  "data": {
+    "sppb_id": 1,
+    "sppb_number": "WHO001",
+    "mechanic_photo": "https://example.com/photo.jpg",
+    "status": "waiting",
+    "author": "John Doe",
+    "picker": "Jane Smith",
+    "department": "Maintenance",
+    "start_date": "2024-01-15T08:00:00.000Z",
+    "end_date": "2024-01-15T17:00:00.000Z",
+    "sparepart_list": [
+      {
+        "inventory_id": 1,
+        "tanggal": "2024-01-15T08:00:00.000Z",
+        "part_number": "FUEL-PUMP-001",
+        "part_name": "Fuel Pump",
+        "quantity": 2,
+        "uom": "pcs",
+        "rack": "R4"
+      }
+    ]
+  }
+}
+```
+
+**Relasi Database untuk Detail SPPB**:
+- `sppb_id` - dari tabel `sppb` kolom `id`
+- `sppb_number` - dari tabel `sppb` kolom `sppb_number`
+- `mechanic_photo` - dari tabel `sppb` kolom `mechanic_photo`
+- `status` - dari tabel `sppb` kolom `status`
+- `author` - dari tabel `sppb` kolom `author` di-join ke tabel `users` kolom `name`
+- `picker` - dari tabel `order_form` kolom `picker_id` di-join ke tabel `users` kolom `name`
+- `department` - dari tabel `order_form` kolom `departement`
+- `start_date` - dari tabel `sppb` kolom `start_date`
+- `end_date` - dari tabel `sppb` kolom `end_date`
+- `sparepart_list` - array dari data sparepart yang terkait:
+  - `inventory_id` - dari tabel `batch_outbound` kolom `inventory_id`
+  - `tanggal` - dari tabel `sppb` kolom `start_date`
+  - `part_number` - dari tabel `inventory` kolom `inventory_internal_code`
+  - `part_name` - dari tabel `inventory` kolom `inventory_name`
+  - `quantity` - dari tabel `batch_outbound` kolom `quantity`
+  - `uom` - dari tabel `inventory` kolom `uom`
+  - `rack` - dari tabel `storage_area` kolom `storage_code` (melalui join `inventory.racks_id`)
+
 ## Struktur File
 
 ```
@@ -124,7 +190,9 @@ src/modules/sppb/
 ## Cara Penggunaan
 
 1. Module sudah terdaftar di `app.module.ts`
-2. Endpoint dapat diakses di `GET /api/sppb/list`
+2. Endpoint dapat diakses di:
+   - `GET /api/sppb/list` - untuk mendapatkan daftar SPPB
+   - `GET /api/sppb/:id` - untuk mendapatkan detail SPPB
 3. **Authentication**: Endpoint memerlukan JWT token di header `Authorization: Bearer <token>`
 4. **Pagination**: 
    - Menggunakan parameter `page` dan `limit`
@@ -133,4 +201,4 @@ src/modules/sppb/
    - Filter berdasarkan bulan menggunakan parameter `month` (1-12)
    - Filter berdasarkan keyword menggunakan parameter `keyword`
    - Kedua filter dapat dikombinasikan
-6. Response akan menampilkan data SPPB dengan relasi ke tabel `order_form` dan `users` dalam format yang konsisten dengan module lainnya 
+6. Response akan menampilkan data SPPB dengan relasi ke tabel `order_form`, `users`, `inventory`, `batch_outbound`, dan `storage_area` dalam format yang konsisten dengan module lainnya 
