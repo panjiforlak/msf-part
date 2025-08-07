@@ -8,6 +8,7 @@ import {
   MinLength,
   IsOptional,
   IsNumberString,
+  Matches,
 } from 'class-validator';
 import { JoinColumn, ManyToOne } from 'typeorm';
 
@@ -15,6 +16,10 @@ export class CreateUserDto {
   @ApiProperty({ example: 'usertest' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^[a-zA-Z0-9]+$/, {
+    message:
+      'Username hanya boleh mengandung huruf dan angka, tanpa spasi atau simbol',
+  })
   username: string;
 
   @ApiProperty({ example: '******' })
@@ -23,9 +28,8 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'User Testing' })
+  @ApiProperty({ example: 'User Example' })
   @IsString()
-  @IsNotEmpty()
   name: string;
 
   @ApiProperty({ example: 'john@example.com' })
@@ -36,11 +40,13 @@ export class CreateUserDto {
   @ApiProperty({ example: 1 })
   @Type(() => Number)
   @IsNumber()
+  @IsNotEmpty()
   roleId: number;
 
   @ApiProperty({ example: 1 })
   @Type(() => Number)
   @IsNumber()
+  @IsOptional()
   employee_id: number;
 }
 
@@ -72,26 +78,35 @@ export class GetUsersQueryDto {
 }
 
 export class UpdateUserDto {
+  @ApiProperty({ example: 'usertest' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
+  @ApiProperty({ example: 1, description: 'ID unik dari role.' })
   @Type(() => Number)
   @IsNumber()
   roleId?: number;
 
+  @ApiProperty({
+    example: 1,
+    description: 'ID unik dari employee.',
+  })
   @Type(() => Number)
   @IsNumber()
   employee_id?: number;
 
   @IsString()
+  @IsOptional()
   reset_password_token?: string | null;
 
   @Type(() => Date)
+  @IsOptional()
   reset_password_expires?: Date | null;
 }
 export class ForgotPassDto {

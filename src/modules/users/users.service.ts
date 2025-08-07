@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
-import { FindOneOptions, ILike, Repository } from 'typeorm';
+import { FindOneOptions, ILike, Not, Repository } from 'typeorm';
 import { RabbitmqService } from '../../integrations/rabbitmq/rabbitmq.service';
 import {
   ApiResponse,
@@ -171,7 +171,6 @@ export class UsersService {
       if (error instanceof HttpException) {
         throw error;
       }
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to create user');
     }
   }
@@ -189,6 +188,21 @@ export class UsersService {
 
       if ('password' in updateDto) {
         delete updateDto.password;
+      }
+
+      if (updateDto.email) {
+        const existingVin = await this.userRepository.findOne({
+          where: {
+            email: updateDto.email,
+            id: Not(id),
+          },
+        });
+        if (existingVin) {
+          throwError(
+            `Email ${updateDto.email} already in use by another user`,
+            409,
+          );
+        }
       }
 
       const updatedUser = this.userRepository.merge(user!, updateDto);
