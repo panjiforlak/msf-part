@@ -102,10 +102,19 @@ export class PdaOutboundService {
       .getRawMany();
 
     // Transform data dan tambahkan label_wo
-    return orderForms.map((orderForm) => ({
+    const transformedData = orderForms.map((orderForm) => ({
       ...orderForm,
       label_wo: `WO-${orderForm.id}`,
     }));
+
+    // Jika semua data memiliki status yang sama (semua sudah memiliki SPPB), return empty array
+    // Karena query sudah menggunakan NOT EXISTS untuk mengecualikan data yang sudah memiliki SPPB,
+    // maka jika tidak ada data yang ditampilkan, berarti semua data sudah memiliki SPPB
+    if (transformedData.length === 0) {
+      return [];
+    }
+
+    return transformedData;
   }
 
   async findBatchOutboundByOrderFormId(
@@ -209,6 +218,18 @@ export class PdaOutboundService {
       return transformedData.filter(
         (item) => item.status_progres !== 'on_destination',
       );
+    }
+
+    // Jika isQueue = false, cek apakah semua data memiliki status_progres = 'on_destination'
+    if (isQueue === false) {
+      const allOnDestination = transformedData.every(
+        (item) => item.status_progres === 'on_destination',
+      );
+
+      // Jika semua data memiliki status on_destination, return empty array
+      if (allOnDestination && transformedData.length > 0) {
+        return [];
+      }
     }
 
     return transformedData;
