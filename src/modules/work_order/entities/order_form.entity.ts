@@ -78,9 +78,9 @@ export class OrderForm {
   @Column({ type: 'timestamptz' })
   start_date: Date;
 
-  @ApiProperty()
-  @Column({ type: 'timestamptz' })
-  end_date: Date;
+  @ApiProperty({ required: false })
+  @Column({ type: 'timestamptz', nullable: true })
+  end_date: Date | null;
 
   @ApiProperty({ enum: WorkOrderStatus })
   @Column({

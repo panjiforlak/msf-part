@@ -60,7 +60,7 @@ export class WorkOrderController {
               departement: { type: 'string' },
               remark: { type: 'string' },
               start_date: { type: 'string', format: 'date-time' },
-              end_date: { type: 'string', format: 'date-time' },
+              end_date: { type: 'string', format: 'date-time', nullable: true },
               status: {
                 type: 'string',
                 enum: ['pending', 'on progress', 'completed', 'cancelled'],
@@ -116,7 +116,7 @@ export class WorkOrderController {
             departement: { type: 'string' },
             remark: { type: 'string' },
             start_date: { type: 'string', format: 'date-time' },
-            end_date: { type: 'string', format: 'date-time' },
+            end_date: { type: 'string', format: 'date-time', nullable: true },
             status: {
               type: 'string',
               enum: ['pending', 'on progress', 'completed', 'cancelled'],
