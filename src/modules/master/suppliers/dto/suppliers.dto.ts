@@ -1,5 +1,11 @@
 import { Expose, Exclude, Type } from 'class-transformer';
-import { IsOptional, IsNumberString, IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import {
+  IsOptional,
+  IsNumberString,
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JoinColumn, ManyToOne } from 'typeorm';
 
@@ -16,15 +22,24 @@ export class GetSuppliersQueryDto {
   @Expose()
   item_id?: number;
 
-  @ApiPropertyOptional({ description: 'Supplier name', example: 'PT Supplier ABC' })
+  @ApiPropertyOptional({
+    description: 'Supplier name',
+    example: 'PT Supplier ABC',
+  })
   @Expose()
   supplier_name?: string;
 
-  @ApiPropertyOptional({ description: 'Supplier address', example: 'Jl. Supplier No. 123' })
+  @ApiPropertyOptional({
+    description: 'Supplier address',
+    example: 'Jl. Supplier No. 123',
+  })
   @Expose()
   supplier_address?: string;
 
-  @ApiPropertyOptional({ description: 'Remarks', example: 'Preferred supplier' })
+  @ApiPropertyOptional({
+    description: 'Remarks',
+    example: 'Preferred supplier',
+  })
   @Expose()
   remarks?: string;
 
@@ -51,28 +66,28 @@ export class GetSuppliersQueryDto {
 }
 
 export class QueryParamDto {
-  @ApiPropertyOptional({ 
-    description: 'Page number for pagination', 
+  @ApiPropertyOptional({
+    description: 'Page number for pagination',
     example: '1',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsNumberString()
   page?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Number of items per page', 
+  @ApiPropertyOptional({
+    description: 'Number of items per page',
     example: '10',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsNumberString()
   limit?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Search term for supplier name', 
+  @ApiPropertyOptional({
+    description: 'Search term for supplier name',
     example: 'ABC',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsString()
@@ -80,37 +95,37 @@ export class QueryParamDto {
 }
 
 export class CreateSuppliersDto {
-  @ApiProperty({ 
-    description: 'Supplier name', 
+  @ApiProperty({
+    description: 'Supplier name',
     example: 'PT Supplier ABC',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   supplier_name: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Supplier address', 
+  @ApiPropertyOptional({
+    description: 'Supplier address',
     example: 'Jl. Supplier No. 123',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsString()
   supplier_address?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Item ID', 
+  @ApiPropertyOptional({
+    description: 'Item ID',
     example: 1,
-    type: Number 
+    type: Number,
   })
   @IsOptional()
   @IsNumber()
   item_id?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Remarks', 
+  @ApiPropertyOptional({
+    description: 'Remarks',
     example: 'Preferred supplier',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsString()
@@ -142,16 +157,25 @@ export class ReturnResponseDto {
   @ApiPropertyOptional({ description: 'Supplier UUID', example: 'uuid-12345' })
   uuid?: string;
 
-  @ApiPropertyOptional({ description: 'Supplier name', example: 'PT Supplier ABC' })
+  @ApiPropertyOptional({
+    description: 'Supplier name',
+    example: 'PT Supplier ABC',
+  })
   supplier_name?: string;
 
-  @ApiPropertyOptional({ description: 'Supplier address', example: 'Jl. Supplier No. 123' })
+  @ApiPropertyOptional({
+    description: 'Supplier address',
+    example: 'Jl. Supplier No. 123',
+  })
   supplier_address?: string;
 
   @ApiPropertyOptional({ description: 'Item ID', example: 1 })
   item_id?: number;
 
-  @ApiPropertyOptional({ description: 'Remarks', example: 'Preferred supplier' })
+  @ApiPropertyOptional({
+    description: 'Remarks',
+    example: 'Preferred supplier',
+  })
   remarks?: string;
 
   @ApiPropertyOptional({ description: 'Created by user ID', example: 1 })

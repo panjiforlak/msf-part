@@ -20,7 +20,7 @@ export class ParamsDto {
   @ApiPropertyOptional({
     description: 'Filter by order type',
     enum: ['sparepart', 'non sparepart'],
-    example: 'sparepart'
+    example: 'sparepart',
   })
   @IsOptional()
   @IsString()

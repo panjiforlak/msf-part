@@ -4,7 +4,7 @@ import { IsNumber, IsNotEmpty, IsString } from 'class-validator';
 export class ScanDestinationDto {
   @ApiProperty({
     description: 'Barcode dari batch inbound',
-    example: 'abc123def456'
+    example: 'abc123def456',
   })
   @IsString()
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class ScanDestinationDto {
 
   @ApiProperty({
     description: 'ID dari inbound outbound area',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -20,7 +20,7 @@ export class ScanDestinationDto {
 
   @ApiProperty({
     description: 'Quantity yang akan di-scan',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -28,9 +28,9 @@ export class ScanDestinationDto {
 
   @ApiProperty({
     description: 'ID dari batch outbound',
-    example: 18
+    example: 18,
   })
   @IsNumber()
   @IsNotEmpty()
   batch_outbound_id: number;
-} 
+}

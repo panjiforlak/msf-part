@@ -45,10 +45,11 @@ export class SppbListQueryDto {
   month?: MonthFilter;
 
   @ApiPropertyOptional({
-    description: 'Filter berdasarkan keyword (mencari di sppb_number, department_name, author, picker)',
+    description:
+      'Filter berdasarkan keyword (mencari di sppb_number, department_name, author, picker)',
     example: 'WHO001',
   })
   @IsOptional()
   @IsString()
   keyword?: string;
-} 
+}
