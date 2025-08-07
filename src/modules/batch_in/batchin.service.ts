@@ -141,6 +141,7 @@ export class BatchInboundService {
       const skip = (page - 1) * limit;
 
       const search = query.search?.toLowerCase() ?? '';
+      const doc_ship_id = query.doc_ship_id;
 
       const qb = this.dataSource
         .createQueryBuilder()
@@ -149,6 +150,7 @@ export class BatchInboundService {
           'bi.barcode AS batch',
           `TO_CHAR(bi."arrival_date", 'YYYY-MM-DD HH24:MI') AS "arrival_date"`,
           'bi.price AS price',
+          'bi.doc_ship_id AS doc_ship_id',
           'ds.uuid AS doc_ship',
           'bi.inventory_id AS inventory_id',
           'i.inventory_name AS part_name',
@@ -174,6 +176,10 @@ export class BatchInboundService {
         );
       }
 
+      if (doc_ship_id) {
+        qb.andWhere(`doc_ship_id = :doc_ship_id`, { doc_ship_id });
+      }
+
       qb.orderBy('bi.id', 'DESC').offset(skip).limit(limit);
 
       const [result, total] = await Promise.all([
@@ -188,6 +194,10 @@ export class BatchInboundService {
               ? `(LOWER(bi.barcode) LIKE :search OR CAST(ds.uuid AS TEXT) ILIKE :search)`
               : 'TRUE',
             search ? { search: `%${search}%` } : {},
+          )
+          .andWhere(
+            doc_ship_id ? 'bi.doc_ship_id = :doc_ship_id' : 'TRUE',
+            doc_ship_id ? { doc_ship_id } : {},
           )
           .getCount(),
       ]);

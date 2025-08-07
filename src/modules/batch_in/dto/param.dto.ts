@@ -19,6 +19,14 @@ export class ParamsDto {
   search?: string;
 
   @ApiPropertyOptional({
+    description: 'Search doc ship id',
+  })
+  @ApiProperty({ example: 'example : IUuihSZuih' })
+  @IsOptional()
+  @IsString()
+  doc_ship_id?: number;
+
+  @ApiPropertyOptional({
     description: 'Storage = b2r',
   })
   @ApiProperty({ example: 'example : IUuihSZuih' })
