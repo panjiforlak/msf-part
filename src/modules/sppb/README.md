@@ -45,7 +45,7 @@ curl -X POST http://localhost:9596/api/sppb/upload-photo \
 ```json
 {
   "statusCode": 200,
-  "message": "Mechanic photo uploaded successfully",
+  "message": "Mechanic photo uploaded successfully and SPPB status updated to completed",
   "data": {
     "mechanic_photo": "https://minio-bucket.motorsights.com/bucket/sppb-mechanic-photos/uuid-filename.jpg"
   }
@@ -62,6 +62,7 @@ curl -X POST http://localhost:9596/api/sppb/upload-photo \
 - Upload foto mekanik untuk SPPB
 - Foto akan disimpan di S3 storage dengan folder `sppb-mechanic-photos`
 - URL foto akan diupdate di database SPPB kolom `mechanic_photo`
+- **Status SPPB akan diupdate menjadi "completed" setelah foto berhasil diupload**
 - Validasi SPPB exists sebelum upload
 - File size limit: 5MB
 - Supported formats: JPG, PNG, GIF, etc.
