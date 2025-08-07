@@ -77,14 +77,14 @@ export class CreateWorkOrderDto {
   @IsNotEmpty()
   start_date: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: String,
     format: 'date',
-    description: 'End date in YYYY-MM-DD format',
+    description: 'End date in YYYY-MM-DD format (optional)',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  end_date: string;
+  end_date?: string;
 
   @ApiProperty({ enum: WorkOrderStatus, description: 'Work order status' })
   @IsEnum(WorkOrderStatus)

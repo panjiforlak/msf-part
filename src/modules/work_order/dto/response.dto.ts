@@ -67,8 +67,8 @@ export class WorkOrderResponseDto {
   @ApiProperty()
   start_date: Date;
 
-  @ApiProperty()
-  end_date: Date;
+  @ApiProperty({ required: false })
+  end_date: Date | null;
 
   @ApiProperty({ enum: WorkOrderStatus })
   status: WorkOrderStatus;

@@ -353,6 +353,7 @@ export class WorkOrderService {
               .where('i.id = :inventoryId', {
                 inventoryId: sparepart.inventory_id,
               })
+              .andWhere('i."deletedAt" IS NULL')
               .getRawOne();
 
             if (!inventoryExists) {
@@ -399,7 +400,9 @@ export class WorkOrderService {
             remark: createWorkOrderDto.remark,
             order_type: createWorkOrderDto.order_type,
             start_date: new Date(createWorkOrderDto.start_date),
-            end_date: new Date(createWorkOrderDto.end_date),
+            end_date: createWorkOrderDto.end_date
+              ? new Date(createWorkOrderDto.end_date)
+              : null,
             status: createWorkOrderDto.status,
             createdBy: userId,
           });
@@ -466,6 +469,7 @@ export class WorkOrderService {
               .select('i.racks_id')
               .from('inventory', 'i')
               .where('i.id = :id', { id: sparepart.inventory_id })
+              .andWhere('i."deletedAt" IS NULL')
               .getOne();
 
             console.log('Inventory found:', inventory);
@@ -635,6 +639,7 @@ export class WorkOrderService {
               .select('i.racks_id')
               .from('inventory', 'i')
               .where('i.id = :id', { id: sparepart.inventory_id })
+              .andWhere('i."deletedAt" IS NULL')
               .getOne();
 
             // Create reloc outbound untuk setiap batch_inbound
