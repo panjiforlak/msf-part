@@ -57,6 +57,7 @@ export class SppbService {
           'picker_user.name as picker',
           'of.start_date as start_date',
           'sppb.end_date as end_date',
+          'sppb.status as status',
         ])
         .where('sppb.deletedAt IS NULL');
 
@@ -97,6 +98,7 @@ export class SppbService {
         picker: item.picker || '',
         start_date: item.start_date,
         end_date: item.end_date,
+        status: item.status || 'waiting',
       }));
 
       return paginateResponse(
