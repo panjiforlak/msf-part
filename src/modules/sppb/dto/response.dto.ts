@@ -24,6 +24,13 @@ export class SppbListResponseDto {
 
   @ApiProperty({ description: 'End Date', example: '2024-01-15T10:00:00Z' })
   end_date: Date;
+
+  @ApiProperty({
+    description: 'Status',
+    example: 'completed',
+    enum: ['waiting', 'completed'],
+  })
+  status: string;
 }
 
 export class SparepartListItemDto {

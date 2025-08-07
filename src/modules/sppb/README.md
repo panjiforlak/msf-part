@@ -11,6 +11,17 @@
   - `month` (optional): Filter by month (1-12)
   - `keyword` (optional): Search keyword
 
+**Response includes:**
+- `sppb_id`: SPPB ID
+- `sppb_number`: SPPB Number
+- `sppb_date`: SPPB Date
+- `department_name`: Department Name
+- `author`: Author Name
+- `picker`: Picker Name
+- `start_date`: Start Date
+- `end_date`: End Date
+- `status`: Status (waiting/completed)
+
 ### 2. Get SPPB Detail
 - **Method**: GET
 - **Path**: `/sppb/:id`
