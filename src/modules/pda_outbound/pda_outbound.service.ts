@@ -8,7 +8,7 @@ import { Inventory } from '../inventory/entities/inventory.entity';
 import { RelocInbound } from '../relocation/entities/relocin.entity';
 import { Vehicles } from '../master/vehicles/entities/vehicle.entity';
 import { Users } from '../users/entities/users.entity';
-import { Sppb } from './entities/sppb.entity';
+import { Sppb } from '../sppb/entities/sppb.entity';
 import { InboundOutboundArea } from '../master/inoutarea/entities/inout.entity';
 import { Storagearea } from '../master/storage/entities/storagearea.entity';
 import { PdaOutboundResponseDto } from './dto/response.dto';
@@ -158,11 +158,60 @@ export class PdaOutboundService {
       .orderBy('bo.id', 'DESC')
       .getRawMany();
 
-    // Transform data dan tambahkan label_wo
-    return batchOutbounds.map((batchOutbound) => ({
-      ...batchOutbound,
-      label_wo: `WO-${orderFormId}`,
-    }));
+    // Transform data dan tambahkan label_wo dan status_progres
+    const transformedData = await Promise.all(
+      batchOutbounds.map(async (batchOutbound) => {
+        // Cek status_progres berdasarkan kondisi di tabel relocation
+        let statusProgres = 'pending';
+
+        // Cari batch_inbound yang memiliki inventory_id yang sama
+        const batchInbounds = await this.batchInboundRepository
+          .createQueryBuilder('bi')
+          .where('bi.inventory_id = :inventoryId', {
+            inventoryId: batchOutbound.inventory_id,
+          })
+          .getMany();
+
+        if (batchInbounds.length > 0) {
+          const batchInIds = batchInbounds.map((bi) => bi.id);
+
+          // Cari relocation yang terkait dengan batch_in_id tersebut
+          const relocations = await this.relocInboundRepository
+            .createQueryBuilder('r')
+            .where('r.batch_in_id IN (:...batchInIds)', { batchInIds })
+            .andWhere("r.reloc_type = 'outbound'")
+            .getMany();
+
+          if (relocations.length > 0) {
+            // Jika ada relocation, cek reloc_status
+            const allCompleted = relocations.every(
+              (reloc) => reloc.reloc_status === true,
+            );
+            if (allCompleted) {
+              statusProgres = 'on_destination';
+            } else {
+              statusProgres = 'on_queue';
+            }
+          }
+        }
+
+        return {
+          ...batchOutbound,
+          label_wo: `WO-${orderFormId}`,
+          status_progres: statusProgres,
+        };
+      }),
+    );
+
+    // Filter data berdasarkan isQueue parameter
+    if (isQueue === true) {
+      // Jika isQueue = true, jangan tampilkan data dengan status on_destination
+      return transformedData.filter(
+        (item) => item.status_progres !== 'on_destination',
+      );
+    }
+
+    return transformedData;
   }
 
   async createRelocation(
@@ -259,7 +308,6 @@ export class PdaOutboundService {
         `Batch inbound dengan barcode '${scanDestinationDto.batch_in_barcode}' tidak ditemukan`,
         404,
       );
-
     }
 
     // 1. Cari relocation berdasarkan batch_in_id yang didapat dari batch_inbound
@@ -275,13 +323,13 @@ export class PdaOutboundService {
         `Relocation dengan batch_in_id ${batchInbound.id} tidak ditemukan`,
         404,
       );
-
     }
 
     // 2. Cek apakah samakan id di tabel inbound_outbound_area dengan body request inbound_outbound_area_id
-    const inboundOutboundArea = await this.inboundOutboundAreaRepository.findOne({
-      where: { id: scanDestinationDto.inbound_outbound_area_id },
-    });
+    const inboundOutboundArea =
+      await this.inboundOutboundAreaRepository.findOne({
+        where: { id: scanDestinationDto.inbound_outbound_area_id },
+      });
 
     if (!inboundOutboundArea) {
       return throwError(
@@ -400,11 +448,13 @@ export class PdaOutboundService {
             const sppbNumberStr = `WHO${nextNumber.toString().padStart(3, '0')}`;
 
             // Buat data SPPB
+            const currentDate = new Date();
             const sppb = this.sppbRepository.create({
               order_form_id: orderFormId,
               sppb_number: sppbNumberStr,
               mechanic_photo: null,
               status: 'waiting',
+              start_date: currentDate,
               createdBy: userId,
             });
 
