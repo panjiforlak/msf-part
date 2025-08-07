@@ -1,15 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 
 export class FinishingWorkOrderDto {
   @ApiProperty({
-    description: 'Tanggal selesai work order',
-    example: '2024-01-15T10:30:00Z',
+    description:
+      'Tanggal selesai work order (format: YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ssZ)',
+    example: '2024-08-15',
   })
   @IsNotEmpty({ message: 'End date tidak boleh kosong' })
-  @IsDateString(
-    {},
-    { message: 'End date harus berupa format tanggal yang valid' },
-  )
+  @IsString({ message: 'End date harus berupa string' })
+  @Matches(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/, {
+    message:
+      'End date harus berupa format tanggal yang valid (YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ssZ)',
+  })
   end_date: string;
 }

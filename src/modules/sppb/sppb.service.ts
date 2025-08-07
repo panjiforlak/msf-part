@@ -209,11 +209,92 @@ export class SppbService {
         return throwError('SPPB not found', 404);
       }
 
+      // Check if SPPB is already completed
+      if (sppb.status === 'completed') {
+        return throwError('SPPB is already completed', 400);
+      }
+
       // Upload file ke S3
       const uploaded = await this.s3Service.uploadFile(
         file,
         'sppb-mechanic-photos',
       );
+
+      // Get batch_outbound data for this SPPB's order_form_id
+      const batchOutboundData = await this.batchOutboundRepository
+        .createQueryBuilder('bo')
+        .select('bo.inventory_id, bo.quantity')
+        .where('bo.order_form_id = :orderFormId', {
+          orderFormId: sppb.order_form_id,
+        })
+        .andWhere('bo.deletedAt IS NULL')
+        .getRawMany();
+
+      console.log(
+        'Batch outbound data for order_form_id:',
+        sppb.order_form_id,
+        batchOutboundData,
+      );
+
+      // Reduce quantity in inventory for each batch_outbound item
+      const inventoryUpdates: Array<{
+        inventory_id: number;
+        old_quantity: number;
+        new_quantity: number;
+        reduced_quantity: number;
+      }> = [];
+
+      if (batchOutboundData && batchOutboundData.length > 0) {
+        for (const batchItem of batchOutboundData) {
+          const inventoryId = batchItem.inventory_id;
+          const quantityToReduce = batchItem.quantity;
+
+          if (!inventoryId || !quantityToReduce) {
+            console.warn(
+              `Invalid batch_outbound data: inventory_id=${inventoryId}, quantity=${quantityToReduce}`,
+            );
+            continue;
+          }
+
+          // Get current inventory
+          const inventory = await this.inventoryRepository.findOne({
+            where: { id: inventoryId },
+          });
+
+          if (inventory) {
+            // Calculate new quantity (current - quantity to reduce)
+            const newQuantity = Math.max(
+              0,
+              inventory.quantity - quantityToReduce,
+            );
+
+            console.log(
+              `Reducing inventory ID ${inventoryId}: ${inventory.quantity} - ${quantityToReduce} = ${newQuantity}`,
+            );
+
+            // Update inventory quantity
+            await this.inventoryRepository.update(
+              { id: inventoryId },
+              {
+                quantity: newQuantity,
+                updatedBy: userId,
+                updatedAt: new Date(),
+              },
+            );
+
+            inventoryUpdates.push({
+              inventory_id: inventoryId,
+              old_quantity: inventory.quantity,
+              new_quantity: newQuantity,
+              reduced_quantity: quantityToReduce,
+            });
+          } else {
+            console.warn(`Inventory with ID ${inventoryId} not found`);
+          }
+        }
+      } else {
+        console.log('No batch_outbound data found for this SPPB');
+      }
 
       // Update SPPB dengan foto baru, status completed, end_date, dan author
       await this.sppbRepository.update(
@@ -227,11 +308,20 @@ export class SppbService {
         },
       );
 
+      const message =
+        inventoryUpdates.length > 0
+          ? `Mechanic photo uploaded successfully and SPPB status updated to completed. ${inventoryUpdates.length} inventory items have been updated.`
+          : 'Mechanic photo uploaded successfully and SPPB status updated to completed. No inventory updates were needed.';
+
       return successResponse(
-        { mechanic_photo: uploaded.url },
-        'Mechanic photo uploaded successfully and SPPB status updated to completed',
+        {
+          mechanic_photo: uploaded.url,
+          inventory_updates: inventoryUpdates,
+        },
+        message,
       );
     } catch (error) {
+      console.error('Error in uploadMechanicPhoto:', error);
       return throwError('Failed to upload mechanic photo', 500);
     }
   }
