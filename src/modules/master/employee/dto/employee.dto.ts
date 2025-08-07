@@ -1,5 +1,11 @@
 import { Expose, Exclude, Type } from 'class-transformer';
-import { IsOptional, IsNumberString, IsEnum, IsString, IsNotEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsNumberString,
+  IsEnum,
+  IsString,
+  IsNotEmpty,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JoinColumn, ManyToOne } from 'typeorm';
 import { EmploymentStatus } from '../entities/employee.entity';
@@ -33,34 +39,38 @@ export class GetEmployeeQueryDto {
   @Expose()
   sallary: string;
 
-  @ApiProperty({ description: 'Employee status', example: 'active', enum: ['active', 'inactive'] })
+  @ApiProperty({
+    description: 'Employee status',
+    example: 'active',
+    enum: ['active', 'inactive'],
+  })
   @Expose()
   status: string;
 }
 
 export class QueryParamDto {
-  @ApiPropertyOptional({ 
-    description: 'Page number for pagination', 
+  @ApiPropertyOptional({
+    description: 'Page number for pagination',
     example: '1',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsNumberString()
   page?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Number of items per page', 
+  @ApiPropertyOptional({
+    description: 'Number of items per page',
     example: '10',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsNumberString()
   limit?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Search term for employee name or NIP', 
+  @ApiPropertyOptional({
+    description: 'Search term for employee name or NIP',
     example: 'John',
-    type: String 
+    type: String,
   })
   @IsOptional()
   @IsString()
@@ -68,65 +78,65 @@ export class QueryParamDto {
 }
 
 export class CreateEmployeeDto {
-  @ApiProperty({ 
-    description: 'Employee NIP (Nomor Induk Pegawai)', 
+  @ApiProperty({
+    description: 'Employee NIP (Nomor Induk Pegawai)',
     example: '123456789',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   nip: string;
 
-  @ApiProperty({ 
-    description: 'Employee first name', 
+  @ApiProperty({
+    description: 'Employee first name',
     example: 'John',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   first_name: string;
 
-  @ApiProperty({ 
-    description: 'Employee last name', 
+  @ApiProperty({
+    description: 'Employee last name',
     example: 'Doe',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   last_name: string;
 
-  @ApiProperty({ 
-    description: 'Employee division', 
+  @ApiProperty({
+    description: 'Employee division',
     example: 'IT',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   division: string;
 
-  @ApiProperty({ 
-    description: 'Employee position', 
+  @ApiProperty({
+    description: 'Employee position',
     example: 'Developer',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   position: string;
 
-  @ApiProperty({ 
-    description: 'Employee salary', 
+  @ApiProperty({
+    description: 'Employee salary',
     example: '5000000',
-    type: String 
+    type: String,
   })
   @IsNotEmpty()
   @IsString()
   sallary: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Employee status', 
+  @ApiPropertyOptional({
+    description: 'Employee status',
     example: 'active',
     enum: ['active', 'inactive'],
-    type: String 
+    type: String,
   })
   @IsEnum(EmploymentStatus)
   status?: EmploymentStatus;
@@ -148,7 +158,10 @@ export class ReturnResponseDto {
   @ApiPropertyOptional({ description: 'Employee division', example: 'IT' })
   division?: string;
 
-  @ApiPropertyOptional({ description: 'Employee position', example: 'Developer' })
+  @ApiPropertyOptional({
+    description: 'Employee position',
+    example: 'Developer',
+  })
   position?: string;
 
   @ApiPropertyOptional({ description: 'Employee salary', example: '5000000' })

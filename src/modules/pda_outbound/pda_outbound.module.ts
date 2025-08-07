@@ -14,9 +14,22 @@ import { InboundOutboundArea } from '../master/inoutarea/entities/inout.entity';
 import { Storagearea } from '../master/storage/entities/storagearea.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderForm, BatchOutbound, BatchInbound, Inventory, RelocInbound, Vehicles, Users, Sppb, InboundOutboundArea, Storagearea])],
+  imports: [
+    TypeOrmModule.forFeature([
+      OrderForm,
+      BatchOutbound,
+      BatchInbound,
+      Inventory,
+      RelocInbound,
+      Vehicles,
+      Users,
+      Sppb,
+      InboundOutboundArea,
+      Storagearea,
+    ]),
+  ],
   controllers: [PdaOutboundController],
   providers: [PdaOutboundService],
   exports: [PdaOutboundService],
 })
-export class PdaOutboundModule {} 
+export class PdaOutboundModule {}

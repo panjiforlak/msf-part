@@ -11,9 +11,19 @@ import { Storagearea } from '../master/storage/entities/storagearea.entity';
 import { S3Module } from '../../integrations/s3/s3.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Sppb, OrderForm, Users, Inventory, BatchOutbound, Storagearea]), S3Module],
+  imports: [
+    TypeOrmModule.forFeature([
+      Sppb,
+      OrderForm,
+      Users,
+      Inventory,
+      BatchOutbound,
+      Storagearea,
+    ]),
+    S3Module,
+  ],
   controllers: [SppbController],
   providers: [SppbService],
   exports: [SppbService],
 })
-export class SppbModule {} 
+export class SppbModule {}

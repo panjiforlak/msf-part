@@ -11,14 +11,14 @@ import {
 } from '@nestjs/common';
 import { EmployeeService } from './employee.service';
 import { JwtAuthGuard } from '../../../common/guard/jwt-auth.guard';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
   ApiQuery,
-  ApiBody 
+  ApiBody,
 } from '@nestjs/swagger';
 import { QueryParamDto, CreateEmployeeDto } from './dto/employee.dto';
 
@@ -30,30 +30,31 @@ export class EmployeeController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all employees',
-    description: 'Retrieve a paginated list of all employees with optional search functionality'
+    description:
+      'Retrieve a paginated list of all employees with optional search functionality',
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
-    type: String, 
-    description: 'Page number for pagination' 
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Page number for pagination',
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
-    type: String, 
-    description: 'Number of items per page' 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Number of items per page',
   })
-  @ApiQuery({ 
-    name: 'search', 
-    required: false, 
-    type: String, 
-    description: 'Search term for employee name or ID' 
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term for employee name or ID',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved employees list',
     schema: {
       type: 'object',
@@ -70,9 +71,9 @@ export class EmployeeController {
               employee_id: { type: 'string', example: 'EMP001' },
               department: { type: 'string', example: 'IT' },
               position: { type: 'string', example: 'Developer' },
-              status: { type: 'string', example: 'active' }
-            }
-          }
+              status: { type: 'string', example: 'active' },
+            },
+          },
         },
         meta: {
           type: 'object',
@@ -80,11 +81,11 @@ export class EmployeeController {
             total: { type: 'number', example: 10 },
             page: { type: 'number', example: 1 },
             limit: { type: 'number', example: 10 },
-            totalPages: { type: 'number', example: 1 }
-          }
-        }
-      }
-    }
+            totalPages: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -94,18 +95,18 @@ export class EmployeeController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get employee by ID',
-    description: 'Retrieve a specific employee by their ID'
+    description: 'Retrieve a specific employee by their ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Employee ID',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved employee',
     schema: {
       type: 'object',
@@ -119,11 +120,11 @@ export class EmployeeController {
             name: { type: 'string', example: 'John Doe' },
             employee_id: { type: 'string', example: 'EMP001' },
             department: { type: 'string', example: 'IT' },
-            position: { type: 'string', example: 'Developer' }
-          }
-        }
-      }
-    }
+            position: { type: 'string', example: 'Developer' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
@@ -134,11 +135,11 @@ export class EmployeeController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create new employee',
-    description: 'Create a new employee with the provided information'
+    description: 'Create a new employee with the provided information',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateEmployeeDto,
     description: 'Employee data to create',
     examples: {
@@ -149,19 +150,22 @@ export class EmployeeController {
           employee_id: 'EMP001',
           department: 'IT',
           position: 'Developer',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Employee created successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Create new employee successfully' },
+        message: {
+          type: 'string',
+          example: 'Create new employee successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -169,11 +173,11 @@ export class EmployeeController {
             name: { type: 'string', example: 'John Doe' },
             employee_id: { type: 'string', example: 'EMP001' },
             department: { type: 'string', example: 'IT' },
-            position: { type: 'string', example: 'Developer' }
-          }
-        }
-      }
-    }
+            position: { type: 'string', example: 'Developer' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Employee ID already exists' })
@@ -184,17 +188,17 @@ export class EmployeeController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update employee',
-    description: 'Update an existing employee by ID'
+    description: 'Update an existing employee by ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Employee ID to update',
-    example: 1
+    example: 1,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateEmployeeDto,
     description: 'Updated employee data',
     examples: {
@@ -205,13 +209,13 @@ export class EmployeeController {
           employee_id: 'EMP001',
           department: 'IT',
           position: 'Senior Developer',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Employee updated successfully',
     schema: {
       type: 'object',
@@ -225,15 +229,18 @@ export class EmployeeController {
             name: { type: 'string', example: 'John Doe' },
             employee_id: { type: 'string', example: 'EMP001' },
             department: { type: 'string', example: 'IT' },
-            position: { type: 'string', example: 'Senior Developer' }
-          }
-        }
-      }
-    }
+            position: { type: 'string', example: 'Senior Developer' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
-  @ApiResponse({ status: 409, description: 'Employee ID already in use by another employee' })
+  @ApiResponse({
+    status: 409,
+    description: 'Employee ID already in use by another employee',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   update(@Param('id') id: number, @Body() dto: CreateEmployeeDto) {
     return this.employeeService.update(id, dto);
@@ -241,27 +248,28 @@ export class EmployeeController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete employee',
-    description: 'Soft delete an employee by ID (marks as deleted but keeps in database)'
+    description:
+      'Soft delete an employee by ID (marks as deleted but keeps in database)',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Employee ID to delete',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Employee deleted successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
         message: { type: 'string', example: 'Employee deleted successfully' },
-        data: { type: 'null', example: null }
-      }
-    }
+        data: { type: 'null', example: null },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Employee not found' })

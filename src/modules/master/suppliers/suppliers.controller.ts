@@ -12,14 +12,14 @@ import {
 } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { JwtAuthGuard } from '../../../common/guard/jwt-auth.guard';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
   ApiQuery,
-  ApiBody 
+  ApiBody,
 } from '@nestjs/swagger';
 import {
   GetSuppliersQueryDto,
@@ -35,30 +35,31 @@ export class SuppliersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all suppliers',
-    description: 'Retrieve a paginated list of all suppliers with optional search functionality'
+    description:
+      'Retrieve a paginated list of all suppliers with optional search functionality',
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
-    type: String, 
-    description: 'Page number for pagination' 
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Page number for pagination',
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
-    type: String, 
-    description: 'Number of items per page' 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Number of items per page',
   })
-  @ApiQuery({ 
-    name: 'search', 
-    required: false, 
-    type: String, 
-    description: 'Search term for supplier name or code' 
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term for supplier name or code',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved suppliers list',
     schema: {
       type: 'object',
@@ -76,9 +77,9 @@ export class SuppliersController {
               address: { type: 'string', example: 'Jl. Supplier No. 123' },
               phone: { type: 'string', example: '021-1234567' },
               email: { type: 'string', example: 'contact@supplier.com' },
-              status: { type: 'string', example: 'active' }
-            }
-          }
+              status: { type: 'string', example: 'active' },
+            },
+          },
         },
         meta: {
           type: 'object',
@@ -86,11 +87,11 @@ export class SuppliersController {
             total: { type: 'number', example: 10 },
             page: { type: 'number', example: 1 },
             limit: { type: 'number', example: 10 },
-            totalPages: { type: 'number', example: 1 }
-          }
-        }
-      }
-    }
+            totalPages: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -100,18 +101,18 @@ export class SuppliersController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get supplier by ID',
-    description: 'Retrieve a specific supplier by their ID'
+    description: 'Retrieve a specific supplier by their ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Supplier ID',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Successfully retrieved supplier',
     schema: {
       type: 'object',
@@ -126,11 +127,11 @@ export class SuppliersController {
             code: { type: 'string', example: 'SUP001' },
             address: { type: 'string', example: 'Jl. Supplier No. 123' },
             phone: { type: 'string', example: '021-1234567' },
-            email: { type: 'string', example: 'contact@supplier.com' }
-          }
-        }
-      }
-    }
+            email: { type: 'string', example: 'contact@supplier.com' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Supplier not found' })
@@ -141,11 +142,11 @@ export class SuppliersController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create new supplier',
-    description: 'Create a new supplier with the provided information'
+    description: 'Create a new supplier with the provided information',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateSuppliersDto,
     description: 'Supplier data to create',
     examples: {
@@ -157,19 +158,22 @@ export class SuppliersController {
           address: 'Jl. Supplier No. 123',
           phone: '021-1234567',
           email: 'contact@supplier.com',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Supplier created successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Create new supplier successfully' },
+        message: {
+          type: 'string',
+          example: 'Create new supplier successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -178,11 +182,11 @@ export class SuppliersController {
             code: { type: 'string', example: 'SUP001' },
             address: { type: 'string', example: 'Jl. Supplier No. 123' },
             phone: { type: 'string', example: '021-1234567' },
-            email: { type: 'string', example: 'contact@supplier.com' }
-          }
-        }
-      }
-    }
+            email: { type: 'string', example: 'contact@supplier.com' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Supplier code already exists' })
@@ -193,17 +197,17 @@ export class SuppliersController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update supplier',
-    description: 'Update an existing supplier by ID'
+    description: 'Update an existing supplier by ID',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Supplier ID to update',
-    example: 1
+    example: 1,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateSuppliersDto,
     description: 'Updated supplier data',
     examples: {
@@ -215,13 +219,13 @@ export class SuppliersController {
           address: 'Jl. Supplier No. 456',
           phone: '021-7654321',
           email: 'newcontact@supplier.com',
-          status: 'active'
-        }
-      }
-    }
+          status: 'active',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Supplier updated successfully',
     schema: {
       type: 'object',
@@ -236,15 +240,18 @@ export class SuppliersController {
             code: { type: 'string', example: 'SUP001' },
             address: { type: 'string', example: 'Jl. Supplier No. 456' },
             phone: { type: 'string', example: '021-7654321' },
-            email: { type: 'string', example: 'newcontact@supplier.com' }
-          }
-        }
-      }
-    }
+            email: { type: 'string', example: 'newcontact@supplier.com' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Supplier not found' })
-  @ApiResponse({ status: 409, description: 'Supplier code already in use by another supplier' })
+  @ApiResponse({
+    status: 409,
+    description: 'Supplier code already in use by another supplier',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   update(@Param('id') id: number, @Body() dto: CreateSuppliersDto, @Req() req) {
     return this.services.update(id, dto, req.user.id);
@@ -252,27 +259,28 @@ export class SuppliersController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete supplier',
-    description: 'Soft delete a supplier by ID (marks as deleted but keeps in database)'
+    description:
+      'Soft delete a supplier by ID (marks as deleted but keeps in database)',
   })
-  @ApiParam({ 
-    name: 'id', 
-    type: 'number', 
+  @ApiParam({
+    name: 'id',
+    type: 'number',
     description: 'Supplier ID to delete',
-    example: 1
+    example: 1,
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Supplier deleted successfully',
     schema: {
       type: 'object',
       properties: {
         status: { type: 'boolean', example: true },
         message: { type: 'string', example: 'Supplier deleted successfully' },
-        data: { type: 'null', example: null }
-      }
-    }
+        data: { type: 'null', example: null },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Supplier not found' })

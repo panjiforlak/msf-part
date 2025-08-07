@@ -4,7 +4,7 @@ import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
 export class CreateRelocationDto {
   @ApiProperty({
     description: 'Barcode dari tabel batch_inbound',
-    example: 'abc123def456'
+    example: 'abc123def456',
   })
   @IsString()
   @IsNotEmpty()
@@ -12,9 +12,9 @@ export class CreateRelocationDto {
 
   @ApiProperty({
     description: 'ID dari batch_outbound untuk mengambil quantity',
-    example: 1
+    example: 1,
   })
   @IsNumber()
   @IsNotEmpty()
   batch_outbound_id: number;
-} 
+}

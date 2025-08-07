@@ -121,15 +121,29 @@ describe('PdaOutboundService', () => {
     }).compile();
 
     service = module.get<PdaOutboundService>(PdaOutboundService);
-    orderFormRepository = module.get<Repository<OrderForm>>(getRepositoryToken(OrderForm));
-    batchOutboundRepository = module.get<Repository<BatchOutbound>>(getRepositoryToken(BatchOutbound));
-    batchInboundRepository = module.get<Repository<BatchInbound>>(getRepositoryToken(BatchInbound));
-    inventoryRepository = module.get<Repository<Inventory>>(getRepositoryToken(Inventory));
-    relocInboundRepository = module.get<Repository<RelocInbound>>(getRepositoryToken(RelocInbound));
-    vehiclesRepository = module.get<Repository<Vehicles>>(getRepositoryToken(Vehicles));
+    orderFormRepository = module.get<Repository<OrderForm>>(
+      getRepositoryToken(OrderForm),
+    );
+    batchOutboundRepository = module.get<Repository<BatchOutbound>>(
+      getRepositoryToken(BatchOutbound),
+    );
+    batchInboundRepository = module.get<Repository<BatchInbound>>(
+      getRepositoryToken(BatchInbound),
+    );
+    inventoryRepository = module.get<Repository<Inventory>>(
+      getRepositoryToken(Inventory),
+    );
+    relocInboundRepository = module.get<Repository<RelocInbound>>(
+      getRepositoryToken(RelocInbound),
+    );
+    vehiclesRepository = module.get<Repository<Vehicles>>(
+      getRepositoryToken(Vehicles),
+    );
     usersRepository = module.get<Repository<Users>>(getRepositoryToken(Users));
     sppbRepository = module.get<Repository<Sppb>>(getRepositoryToken(Sppb));
-    inboundOutboundAreaRepository = module.get<Repository<InboundOutboundArea>>(getRepositoryToken(InboundOutboundArea));
+    inboundOutboundAreaRepository = module.get<Repository<InboundOutboundArea>>(
+      getRepositoryToken(InboundOutboundArea),
+    );
   });
 
   it('should be defined', () => {
@@ -176,7 +190,10 @@ describe('PdaOutboundService', () => {
 
       const result = await service.findAll(123, 'no');
 
-      expect(queryBuilder.where).toHaveBeenCalledWith('order_form.picker_id = :userId', { userId: 123 });
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'order_form.picker_id = :userId',
+        { userId: 123 },
+      );
       expect(result).toEqual([
         {
           ...mockData[0],
@@ -285,11 +302,16 @@ describe('PdaOutboundService', () => {
         getRawMany: jest.fn().mockResolvedValue(mockData),
       };
 
-      mockBatchOutboundRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+      mockBatchOutboundRepository.createQueryBuilder.mockReturnValue(
+        queryBuilder,
+      );
 
       const result = await service.findBatchOutboundByOrderFormId(10);
 
-      expect(queryBuilder.where).toHaveBeenCalledWith('bo.order_form_id = :orderFormId', { orderFormId: 10 });
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'bo.order_form_id = :orderFormId',
+        { orderFormId: 10 },
+      );
       expect(result).toEqual([
         {
           ...mockData[0],
@@ -335,7 +357,9 @@ describe('PdaOutboundService', () => {
         };
 
         mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
-        mockBatchOutboundRepository.findOne.mockResolvedValue(mockBatchOutbound);
+        mockBatchOutboundRepository.findOne.mockResolvedValue(
+          mockBatchOutbound,
+        );
         mockInventoryRepository.findOne.mockResolvedValue(mockInventory);
         mockRelocInboundRepository.create.mockReturnValue(mockRelocation);
         mockRelocInboundRepository.save.mockResolvedValue(mockRelocation);
@@ -384,12 +408,12 @@ describe('PdaOutboundService', () => {
 
         mockBatchInboundRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          HttpException,
-        );
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          'Barcode inbound \'invalid_barcode\' tidak ditemukan',
-        );
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow(HttpException);
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow("Barcode inbound 'invalid_barcode' tidak ditemukan");
       });
 
       it('should throw error when batch outbound not found', async () => {
@@ -407,12 +431,12 @@ describe('PdaOutboundService', () => {
         mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
         mockBatchOutboundRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          HttpException,
-        );
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          'Batch outbound dengan ID 999 tidak ditemukan',
-        );
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow(HttpException);
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow('Batch outbound dengan ID 999 tidak ditemukan');
       });
 
       it('should throw error when inventory not found', async () => {
@@ -433,16 +457,18 @@ describe('PdaOutboundService', () => {
         };
 
         mockBatchInboundRepository.findOne.mockResolvedValue(mockBatchInbound);
-        mockBatchOutboundRepository.findOne.mockResolvedValue(mockBatchOutbound);
+        mockBatchOutboundRepository.findOne.mockResolvedValue(
+          mockBatchOutbound,
+        );
         mockInventoryRepository.findOne.mockResolvedValue(null);
 
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          HttpException,
-        );
-        await expect(service.createRelocation(createRelocationDto, 123)).rejects.toThrow(
-          'Inventory dengan ID 10 tidak ditemukan',
-        );
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow(HttpException);
+        await expect(
+          service.createRelocation(createRelocationDto, 123),
+        ).rejects.toThrow('Inventory dengan ID 10 tidak ditemukan');
       });
     });
   });
-}); 
+});
