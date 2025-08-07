@@ -1,9 +1,35 @@
-import { Controller, Get, UseGuards, Query, Param, ParseIntPipe, Post, UseInterceptors, UploadedFile, Body, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Query,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+  ApiConsumes,
+  ApiBody,
+  ApiExtraModels,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { SppbService } from './sppb.service';
-import { SppbListResponseDto, SppbDetailResponseDto } from './dto/response.dto';
+import {
+  SppbListResponseDto,
+  SppbDetailResponseDto,
+  SparepartListItemDto,
+} from './dto/response.dto';
 import { SppbListQueryDto } from './dto/query.dto';
 import { UploadPhotoDto } from './dto/upload-photo.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -11,6 +37,11 @@ import { ApiResponse as ApiResponseType } from '../../common/helpers/response.he
 
 @ApiTags('SPPB')
 @ApiBearerAuth('jwt')
+@ApiExtraModels(
+  SppbListResponseDto,
+  SppbDetailResponseDto,
+  SparepartListItemDto,
+)
 @Controller('sppb')
 export class SppbController {
   constructor(private readonly sppbService: SppbService) {}
@@ -18,10 +49,31 @@ export class SppbController {
   @UseGuards(JwtAuthGuard)
   @Get('list')
   @ApiOperation({ summary: 'Get SPPB list with filters and pagination' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page', example: 10 })
-  @ApiQuery({ name: 'month', required: false, description: 'Filter by month (1-12)', example: 1 })
-  @ApiQuery({ name: 'keyword', required: false, description: 'Search keyword in sppb_number, department_name, author, picker', example: 'WHO001' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    description: 'Filter by month (1-12)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'keyword',
+    required: false,
+    description:
+      'Search keyword in sppb_number, department_name, author, picker',
+    example: 'WHO001',
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved SPPB list',
@@ -107,11 +159,17 @@ export class SppbController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Mechanic photo uploaded successfully' },
+        message: {
+          type: 'string',
+          example: 'Mechanic photo uploaded successfully',
+        },
         data: {
           type: 'object',
           properties: {
-            mechanic_photo: { type: 'string', example: 'http://example.com/photo.jpg' },
+            mechanic_photo: {
+              type: 'string',
+              example: 'http://example.com/photo.jpg',
+            },
           },
         },
       },
@@ -136,4 +194,4 @@ export class SppbController {
   ): Promise<ApiResponseType<{ mechanic_photo: string }>> {
     return this.sppbService.uploadMechanicPhoto(dto.sppb_id, file, req.user.id);
   }
-} 
+}
