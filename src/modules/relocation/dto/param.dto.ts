@@ -11,4 +11,7 @@ export class ParamsDto {
 
   @IsOptional()
   search?: string;
+
+  @IsOptional()
+  type?: string;
 }

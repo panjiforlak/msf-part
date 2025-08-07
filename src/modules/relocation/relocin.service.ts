@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RelocInbound } from './entities/relocin.entity';
-import { ILike, Not, Repository } from 'typeorm';
+import { DataSource, ILike, Not, Repository } from 'typeorm';
 import {
   ApiResponse,
   successResponse,
@@ -23,6 +23,7 @@ export class RelocInboundService {
   constructor(
     @InjectRepository(RelocInbound)
     private repository: Repository<RelocInbound>,
+    private dataSource: DataSource,
   ) {}
 
   async findByDocNo(uuid: string): Promise<RelocInbound | null> {
@@ -59,6 +60,97 @@ export class RelocInboundService {
       console.log(error.stack);
       if (error instanceof HttpException) throw error;
       return throwError('Failed to fetch Relocation Inbound', 500);
+    }
+  }
+
+  async findAllRelocationInbound(query: ParamsDto): Promise<ApiResponse<any>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const type = query.type;
+
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          'r.id AS id',
+          'r.reloc_type AS type',
+          "TO_CHAR(r.reloc_date, 'DD/MM/YYYY') AS date",
+          'i.inventory_name AS part_name',
+          'i.inventory_internal_code AS part_internal_code',
+          'r.quantity AS quantity',
+          'i.uom AS uom',
+          'u.name AS picker',
+          'sa.storage_code AS source',
+          'sa2.storage_code AS destination',
+        ])
+        .from('relocation', 'r')
+        .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
+        .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+        .leftJoin('users', 'u', 'r.picker_id = u.id')
+        .leftJoin('storage_area', 'sa', 'r.reloc_from = sa.id')
+        .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
+        .where('r."deletedAt" IS NULL')
+        .andWhere(`r.reloc_type != 'outbound'`);
+
+      if (search) {
+        qb.andWhere('LOWER(i.inventory_name) LIKE :search', {
+          search: `%${search}%`,
+        });
+      }
+
+      if (type) {
+        qb.andWhere('r.reloc_type = :type', { type });
+      }
+
+      qb.orderBy('r.reloc_type', 'DESC').offset(skip).limit(limit);
+
+      const result = await qb.getRawMany();
+
+      // Count total data tanpa pagination
+      const countQb = this.dataSource
+        .createQueryBuilder()
+        .select('COUNT(*)', 'total')
+        .from((subQb) => {
+          let sub = subQb
+            .select('r.id', 'id')
+            .from('relocation', 'r')
+            .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
+            .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
+            .leftJoin('users', 'u', 'r.picker_id = u.id')
+            .leftJoin('storage_area', 'sa', 'r.reloc_from = sa.id')
+            .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
+            .where('r."deletedAt" IS NULL')
+            .andWhere(`r.reloc_type != 'outbound'`);
+
+          if (search) {
+            sub = sub.andWhere('LOWER(i.inventory_name) LIKE :search', {
+              search: `%${search}%`,
+            });
+          }
+
+          if (type) {
+            sub = sub.andWhere('r.reloc_type = :type', { type });
+          }
+
+          return sub;
+        }, 'sub')
+        .setParameters({ search: `%${search}%`, type });
+
+      const countResult = await countQb.getRawOne();
+      const total = parseInt(countResult?.total ?? '0', 10);
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get all inventory successfully',
+      );
+    } catch (error) {
+      console.error('[InventoryService][findAll] Error:', error);
+      throw new InternalServerErrorException('Failed to fetch inventory');
     }
   }
 

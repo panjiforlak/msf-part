@@ -30,6 +30,12 @@ export class RelocInboundController {
     return this.services.findAll(query);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('/history')
+  findAllRelocInbound(@Query() query: ParamsDto) {
+    return this.services.findAllRelocationInbound(query);
+  }
+
   @Get('pda/:pickerId')
   findAllPDA(@Param('pickerId') pickerId: number, @Query() query: ParamsDto) {
     return this.services.findAllPDA(pickerId, query);
