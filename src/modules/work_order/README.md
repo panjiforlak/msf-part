@@ -198,6 +198,12 @@ Module ini menangani manajemen work order (perintah kerja) yang berisi informasi
 **Error Responses**:
 - `404`: Work order tidak ditemukan
 - `400`: Work order sudah selesai (status sudah completed)
+- `400`: Work order tidak dapat diselesaikan karena belum memiliki data SPPB dengan status completed
+
+**Validasi**:
+- Work order harus memiliki data di tabel `sppb` dengan `order_form_id` yang sesuai
+- Data SPPB harus memiliki `status` = `completed`
+- Jika tidak memenuhi syarat di atas, akan mengembalikan error 400
 
 ## Alur Proses
 

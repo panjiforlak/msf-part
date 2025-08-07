@@ -826,10 +826,15 @@ export class WorkOrderService {
     userId: number,
   ): Promise<ApiResponse<null>> {
     try {
+      console.log('Starting finishingWorkOrder for ID:', id);
+      console.log('Request data:', finishingWorkOrderDto);
+
       // Check if work order exists
       const workOrder = await this.orderFormRepository.findOne({
         where: { id },
       });
+
+      console.log('Work order found:', workOrder);
 
       if (!workOrder) {
         throw new HttpException(
@@ -852,23 +857,112 @@ export class WorkOrderService {
         );
       }
 
+      // Check if work order has sppb data with status 'completed'
+      console.log('Checking SPPB data for order_form_id:', id);
+      let sppbData;
+      try {
+        // First, let's check if there's any SPPB data for this work order
+        const allSppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id, sppb.status, sppb.sppb_number')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .getRawMany();
+
+        console.log('All SPPB data for work order:', allSppbData);
+
+        // Now check for completed status
+        sppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .andWhere('sppb.status = :status', { status: 'completed' })
+          .andWhere('sppb.deletedAt IS NULL')
+          .getOne();
+      } catch (error) {
+        console.error('Error querying SPPB data:', error);
+        // Try without deletedAt check if column doesn't exist
+        sppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .andWhere('sppb.status = :status', { status: 'completed' })
+          .getOne();
+      }
+
+      console.log('SPPB data found:', sppbData);
+
+      if (!sppbData) {
+        throw new HttpException(
+          {
+            status: 400,
+            error:
+              'Work order tidak dapat diselesaikan karena belum memiliki data SPPB dengan status completed',
+          },
+          400,
+        );
+      }
+
       // Update work order with end_date and status completed
+      let endDate: Date;
+      try {
+        console.log('Processing end_date:', finishingWorkOrderDto.end_date);
+        // Handle different date formats
+        if (finishingWorkOrderDto.end_date.includes('T')) {
+          // ISO format with time
+          endDate = new Date(finishingWorkOrderDto.end_date);
+        } else {
+          // Date only format (YYYY-MM-DD), add time to make it end of day
+          const dateOnly = finishingWorkOrderDto.end_date;
+          endDate = new Date(dateOnly + 'T23:59:59.999Z');
+        }
+
+        console.log('Processed endDate:', endDate);
+
+        // Validate if date is valid
+        if (isNaN(endDate.getTime())) {
+          throw new HttpException(
+            {
+              status: 400,
+              error: 'Format tanggal tidak valid',
+            },
+            400,
+          );
+        }
+      } catch (error) {
+        console.error('Error processing date:', error);
+        if (error instanceof HttpException) {
+          throw error;
+        }
+        throw new HttpException(
+          {
+            status: 400,
+            error: 'Format tanggal tidak valid',
+          },
+          400,
+        );
+      }
+
+      console.log('Updating work order with endDate:', endDate);
       await this.orderFormRepository.update(
         { id },
         {
-          end_date: new Date(finishingWorkOrderDto.end_date),
+          end_date: endDate,
           status: WorkOrderStatus.COMPLETED,
           updatedBy: userId,
           updatedAt: new Date(),
         },
       );
 
+      console.log('Work order updated successfully');
       return successResponse(null, 'Work order berhasil diselesaikan');
     } catch (error) {
+      console.error('Error in finishingWorkOrder:', error);
       if (error instanceof HttpException) {
         throw error;
       }
-      console.error('Error in finishingWorkOrder:', error);
       throw new InternalServerErrorException(
         'Terjadi kesalahan saat menyelesaikan work order',
       );
