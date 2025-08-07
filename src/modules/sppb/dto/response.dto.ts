@@ -1,82 +1,93 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SppbListResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'SPPB ID', example: 1 })
   sppb_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'SPPB Number', example: 'WHO001' })
   sppb_number: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'SPPB Date', example: '2024-01-15T10:00:00Z' })
   sppb_date: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Department Name', example: 'Maintenance' })
   department_name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Author Name', example: 'John Doe' })
   author: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Picker Name', example: 'Jane Smith' })
   picker: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Start Date', example: '2024-01-15T10:00:00Z' })
   start_date: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'End Date', example: '2024-01-15T10:00:00Z' })
   end_date: Date;
 }
 
 export class SparepartListItemDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Inventory ID', example: 1 })
   inventory_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Tanggal', example: '2024-01-15T10:00:00Z' })
   tanggal: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Part Number', example: 'ABC123' })
   part_number: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Part Name', example: 'Sparepart ABC' })
   part_name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Quantity', example: 5 })
   quantity: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Unit of Measure', example: 'PCS' })
   uom: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Rack Name', example: 'RACK-A' })
   rack: string;
 }
 
 export class SppbDetailResponseDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'SPPB ID', example: 1 })
   sppb_id: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'SPPB Number', example: 'WHO001' })
   sppb_number: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Mechanic Photo URL',
+    example: 'http://example.com/photo.jpg',
+    nullable: true,
+  })
   mechanic_photo: string | null;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Status',
+    example: 'completed',
+    enum: ['waiting', 'completed'],
+  })
   status: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Author Name', example: 'John Doe' })
   author: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Picker Name', example: 'Jane Smith' })
   picker: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Department Name', example: 'Maintenance' })
   department: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Start Date', example: '2024-01-15T10:00:00Z' })
   start_date: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'End Date', example: '2024-01-15T10:00:00Z' })
   end_date: Date;
 
-  @ApiProperty({ type: [SparepartListItemDto] })
+  @ApiProperty({
+    type: [SparepartListItemDto],
+    description: 'List of spareparts',
+  })
   sparepart_list: SparepartListItemDto[];
-} 
+}
