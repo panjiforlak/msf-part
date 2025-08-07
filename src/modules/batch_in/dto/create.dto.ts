@@ -159,14 +159,16 @@ export class PostPDAQueueDto {
   quantity: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsNumber()
   @IsNotEmpty()
-  storage_source_id: number;
+  storage_source_id?: number;
 
   @ApiProperty()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  storage_source: string;
+  storage_source?: string;
 
   @ApiProperty()
   @IsString()
