@@ -213,21 +213,24 @@ export class SppbService {
         'sppb-mechanic-photos',
       );
 
-      // Update SPPB dengan foto baru
+      // Update SPPB dengan foto baru, status completed, end_date, dan author
       await this.sppbRepository.update(
         { id: sppbId },
         {
           mechanic_photo: uploaded.url,
+          status: 'completed',
+          end_date: new Date(), // Tambahkan end_date dengan waktu saat ini
+          author: userId, // Tambahkan author dengan user ID dari bearer token
           updatedBy: userId,
         },
       );
 
       return successResponse(
         { mechanic_photo: uploaded.url },
-        'Mechanic photo uploaded successfully',
+        'Mechanic photo uploaded successfully and SPPB status updated to completed',
       );
     } catch (error) {
       return throwError('Failed to upload mechanic photo', 500);
     }
   }
-} 
+}

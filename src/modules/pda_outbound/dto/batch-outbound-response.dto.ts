@@ -43,4 +43,7 @@ export class BatchOutboundResponseDto {
 
   @ApiProperty()
   barcode_inbound: string;
+
+  @ApiProperty({ description: 'Status progress: pending, on_queue, on_destination' })
+  status_progres: string;
 } 
