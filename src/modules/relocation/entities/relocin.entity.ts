@@ -28,6 +28,9 @@ export class RelocInbound {
   batch_in_id: number;
 
   @Column({ type: 'int', default: 0 })
+  batch_out_id: number;
+
+  @Column({ type: 'int', default: 0 })
   reloc_from: number;
 
   @Column({ type: 'int', default: 0 })
