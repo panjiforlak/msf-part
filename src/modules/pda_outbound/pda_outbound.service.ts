@@ -184,10 +184,13 @@ export class PdaOutboundService {
         if (batchInbounds.length > 0) {
           const batchInIds = batchInbounds.map((bi) => bi.id);
 
-          // Cari relocation yang terkait dengan batch_in_id tersebut
+          // Cari relocation yang terkait dengan batch_in_id tersebut dan batch_out_id yang sesuai
           const relocations = await this.relocInboundRepository
             .createQueryBuilder('r')
             .where('r.batch_in_id IN (:...batchInIds)', { batchInIds })
+            .andWhere('r.batch_out_id = :batchOutId', {
+              batchOutId: batchOutbound.id,
+            })
             .andWhere("r.reloc_type = 'outbound'")
             .getMany();
 
@@ -214,9 +217,9 @@ export class PdaOutboundService {
 
     // Filter data berdasarkan isQueue parameter
     if (isQueue === true) {
-      // Jika isQueue = true, jangan tampilkan data dengan status on_destination
+      // Jika isQueue = true, hanya tampilkan data dengan status_progres = 'on_queue'
       return transformedData.filter(
-        (item) => item.status_progres !== 'on_destination',
+        (item) => item.status_progres === 'on_queue',
       );
     }
 
@@ -283,6 +286,7 @@ export class PdaOutboundService {
     // 5. Buat data relocation dengan quantity dari batch_outbound
     const relocation = this.relocInboundRepository.create({
       batch_in_id: batchInbound.id, // id dari tabel batch_inbound
+      batch_out_id: createRelocationDto.batch_outbound_id, // id dari tabel batch_outbound
       reloc_from: racksId, // racks_id dari tabel inventory
       reloc_to: 0, // dikosongkan
       reloc_type: 'outbound', // diisi dengan "outbound"
@@ -304,6 +308,7 @@ export class PdaOutboundService {
     return {
       id: savedRelocation.id,
       batch_in_id: savedRelocation.batch_in_id,
+      batch_out_id: savedRelocation.batch_out_id,
       reloc_from: savedRelocation.reloc_from,
       reloc_to: savedRelocation.reloc_to,
       reloc_type: savedRelocation.reloc_type,
@@ -331,17 +336,18 @@ export class PdaOutboundService {
       );
     }
 
-    // 1. Cari relocation berdasarkan batch_in_id yang didapat dari batch_inbound
+    // 1. Cari relocation berdasarkan batch_in_id yang didapat dari batch_inbound dan batch_out_id yang sesuai dengan batch_outbound_id
     const existingRelocation = await this.relocInboundRepository.findOne({
       where: {
         batch_in_id: batchInbound.id,
+        batch_out_id: scanDestinationDto.batch_outbound_id,
         reloc_type: 'outbound',
       },
     });
 
     if (!existingRelocation) {
       return throwError(
-        `Relocation dengan batch_in_id ${batchInbound.id} tidak ditemukan`,
+        `Relocation dengan batch_in_id ${batchInbound.id} dan batch_out_id ${scanDestinationDto.batch_outbound_id} tidak ditemukan`,
         404,
       );
     }
@@ -434,10 +440,13 @@ export class PdaOutboundService {
         if (relatedBatchInbounds.length > 0) {
           const batchInIds = relatedBatchInbounds.map((bi) => bi.id);
 
-          // Cek semua relocation dengan batch_in_id yang terkait
+          // Cek semua relocation dengan batch_in_id yang terkait dan batch_out_id yang sesuai
           const allRelatedRelocations = await this.relocInboundRepository
             .createQueryBuilder('reloc')
             .where('reloc.batch_in_id IN (:...batchInIds)', { batchInIds })
+            .andWhere('reloc.batch_out_id = :batchOutId', {
+              batchOutId: scanDestinationDto.batch_outbound_id,
+            })
             .andWhere('reloc.reloc_type = :relocType', {
               relocType: 'outbound',
             })
