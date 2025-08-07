@@ -25,10 +25,11 @@ export class SparepartDto {
 }
 
 export class CreateWorkOrderDto {
-  @ApiProperty({ 
-    description: 'Vehicle ID from vehicles table (can be 0 or null for non-vehicle orders)',
+  @ApiProperty({
+    description:
+      'Vehicle ID from vehicles table (can be 0 or null for non-vehicle orders)',
     required: false,
-    example: 0
+    example: 0,
   })
   @IsOptional()
   @IsNumber()
@@ -59,7 +60,10 @@ export class CreateWorkOrderDto {
   @IsNotEmpty()
   remark: string;
 
-  @ApiProperty({ enum: OrderType, description: 'Order type: sparepart or non sparepart' })
+  @ApiProperty({
+    enum: OrderType,
+    description: 'Order type: sparepart or non sparepart',
+  })
   @IsEnum(OrderType)
   @IsNotEmpty()
   order_type: OrderType;

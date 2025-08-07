@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkOrderStatus, OrderType } from '../../work_order/entities/order_form.entity';
+import {
+  WorkOrderStatus,
+  OrderType,
+} from '../../work_order/entities/order_form.entity';
 
 export class PdaOutboundResponseDto {
   @ApiProperty()
@@ -89,4 +92,4 @@ export class PdaOutboundResponseDto {
 
   @ApiProperty({ required: false })
   picker_name?: string;
-} 
+}

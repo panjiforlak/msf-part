@@ -91,7 +91,6 @@ export class RelocInboundService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       return throwError('Failed to fetch relocation inbound', 500);
-
     }
   }
 
@@ -103,7 +102,6 @@ export class RelocInboundService {
 
       if (!result) {
         return throwError('relocation inbound Area not found', 404);
-  
       }
 
       const response: any = {
@@ -124,7 +122,6 @@ export class RelocInboundService {
         throw error;
       }
       return throwError('Failed to get relocation inbound', 500);
-
     }
   }
 
@@ -151,7 +148,6 @@ export class RelocInboundService {
         throw error;
       }
       return throwError('Failed to create relocation inbound', 500);
-
     }
   }
 
@@ -180,7 +176,6 @@ export class RelocInboundService {
         throw error;
       }
       return throwError('Failed to create batch inbound', 500);
-
     }
   }
 
@@ -196,10 +191,9 @@ export class RelocInboundService {
 
       if (!params) {
         return throwError('Batch Inbound not found', 404);
-  
       }
 
-      const updatedBody = this.repository.merge(params!, updateDto, {
+      const updatedBody = this.repository.merge(params, updateDto, {
         updatedBy: userId,
       });
 
@@ -217,7 +211,6 @@ export class RelocInboundService {
       }
       console.log(error.stack);
       return throwError('Failed to update Doc Batch', 500);
-
     }
   }
 
@@ -229,13 +222,12 @@ export class RelocInboundService {
 
       if (!items) {
         return throwError('Batch inbound not found', 404);
-  
       }
 
-      items!.deletedBy = userId;
+      items.deletedBy = userId;
 
-      await this.repository.save(items!);
-      await this.repository.softRemove(items!);
+      await this.repository.save(items);
+      await this.repository.softRemove(items);
 
       return successResponse(null, 'Batch inbound deleted successfully');
     } catch (error) {
@@ -244,7 +236,6 @@ export class RelocInboundService {
       }
       console.log(error.stack);
       return throwError('Failed to delete batch inbound', 500);
-
     }
   }
 }

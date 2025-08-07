@@ -138,9 +138,15 @@ describe('PdaOutboundController', () => {
 
       mockService.createRelocation.mockResolvedValue(mockData);
 
-      const result = await controller.createRelocation(mockRequest, createRelocationDto);
+      const result = await controller.createRelocation(
+        mockRequest,
+        createRelocationDto,
+      );
 
-      expect(service.createRelocation).toHaveBeenCalledWith(createRelocationDto, 123);
+      expect(service.createRelocation).toHaveBeenCalledWith(
+        createRelocationDto,
+        123,
+      );
       expect(result).toEqual({
         statusCode: 201,
         message: 'Relocation berhasil dibuat',
@@ -148,4 +154,4 @@ describe('PdaOutboundController', () => {
       });
     });
   });
-}); 
+});

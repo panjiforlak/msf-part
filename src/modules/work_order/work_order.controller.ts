@@ -24,6 +24,7 @@ import { UpdateWorkOrderDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ApprovalDto } from './dto/approval.dto';
 import { AssignPickerDto } from './dto/assign-picker.dto';
+import { FinishingWorkOrderDto } from './dto/finishing-work-order.dto';
 
 @ApiTags('Work Order')
 @ApiBearerAuth('jwt')
@@ -262,6 +263,41 @@ export class WorkOrderController {
     @Req() req,
   ) {
     return this.workOrderService.assignPicker(id, assignPickerDto, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/finishing')
+  @ApiOperation({
+    summary: 'Finish work order',
+    description:
+      'Mark a work order as finished. This will update the status to "completed" and set the end_date.',
+  })
+  @SwaggerApiResponse({
+    status: 200,
+    description: 'Work order finished successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { type: 'null' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  @SwaggerApiResponse({ status: 404, description: 'Work order not found' })
+  @SwaggerApiResponse({
+    status: 400,
+    description: 'Bad request - validation error',
+  })
+  finishingWorkOrder(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() finishingWorkOrderDto: FinishingWorkOrderDto,
+    @Req() req,
+  ) {
+    return this.workOrderService.finishingWorkOrder(
+      id,
+      finishingWorkOrderDto,
+      req.user.id,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

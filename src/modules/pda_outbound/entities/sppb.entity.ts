@@ -21,10 +21,10 @@ export class Sppb {
   @Column({ type: 'text', nullable: true })
   mechanic_photo: string | null;
 
-  @Column({ 
-    type: 'enum', 
+  @Column({
+    type: 'enum',
     enum: ['waiting', 'completed'],
-    default: 'waiting'
+    default: 'waiting',
   })
   status: string;
 
@@ -45,4 +45,4 @@ export class Sppb {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
-} 
+}

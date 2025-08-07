@@ -22,6 +22,7 @@ import { WorkOrderResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ApprovalDto, ApprovalStatus } from './dto/approval.dto';
 import { AssignPickerDto } from './dto/assign-picker.dto';
+import { FinishingWorkOrderDto } from './dto/finishing-work-order.dto';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -91,7 +92,7 @@ export class WorkOrderService {
               LOWER(COALESCE(ap.name, '')) LIKE :search OR
               LOWER(COALESCE(of.departement, '')) LIKE :search
             )`,
-            { search: searchTerm }
+            { search: searchTerm },
           );
         }
 
@@ -133,7 +134,7 @@ export class WorkOrderService {
               LOWER(COALESCE(ap.name, '')) LIKE :search OR
               LOWER(COALESCE(of.departement, '')) LIKE :search
             )`,
-            { search: searchTerm }
+            { search: searchTerm },
           );
         }
 
@@ -318,7 +319,9 @@ export class WorkOrderService {
               .createQueryBuilder()
               .select('1')
               .from('users', 'u')
-              .where('u.id = :driverId', { driverId: createWorkOrderDto.driver })
+              .where('u.id = :driverId', {
+                driverId: createWorkOrderDto.driver,
+              })
               .getRawOne();
 
             if (!driverExists) {
@@ -336,10 +339,7 @@ export class WorkOrderService {
               .getRawOne();
 
             if (!mechanicExists) {
-              return throwError(
-                'Mechanic ID not found in users table',
-                400,
-              );
+              return throwError('Mechanic ID not found in users table', 400);
             }
           }
 
@@ -362,10 +362,11 @@ export class WorkOrderService {
               );
             }
 
-
-
             // 7. Check quantity from inventory table (only for sparepart orders)
-            if (!isNonSparepart && sparepart.quantity > inventoryExists.quantity) {
+            if (
+              !isNonSparepart &&
+              sparepart.quantity > inventoryExists.quantity
+            ) {
               return throwError(
                 `Quantity ${sparepart.quantity} exceeds available quantity ${inventoryExists.quantity} for inventory ID ${sparepart.inventory_id}`,
                 400,
@@ -496,29 +497,29 @@ export class WorkOrderService {
                 const relocOutbound = manager.create(
                   RelocOutbound,
                   relocOutboundData,
-              );
+                );
 
+                console.log(
+                  'Reloc outbound created for batch_in_id:',
+                  batchInbound.id,
+                );
+                const savedRelocOutbound = await manager.save(relocOutbound);
+                console.log(
+                  'Reloc outbound saved successfully for batch_in_id:',
+                  batchInbound.id,
+                  'with ID:',
+                  savedRelocOutbound.id,
+                );
+              }
+            } else {
               console.log(
-                'Reloc outbound created for batch_in_id:',
-                batchInbound.id,
-              );
-              const savedRelocOutbound = await manager.save(relocOutbound);
-              console.log(
-                'Reloc outbound saved successfully for batch_in_id:',
-                batchInbound.id,
-                'with ID:',
-                savedRelocOutbound.id,
+                'No batch_inbound found for inventory_id:',
+                sparepart.inventory_id,
               );
             }
-          } else {
-            console.log(
-              'No batch_inbound found for inventory_id:',
-              sparepart.inventory_id,
-            );
           }
-        }
 
-        console.log('Transaction completed successfully');
+          console.log('Transaction completed successfully');
         } catch (transactionError) {
           console.error('Error in transaction:', transactionError);
           throw transactionError;
@@ -566,18 +567,17 @@ export class WorkOrderService {
 
       if (!orderForm) {
         return throwError('Work order not found', 404);
-
       }
 
       await this.dataSource.transaction(async (manager) => {
         // 1. Update order form
-        const updatedOrderForm = manager.merge(OrderForm, orderForm!, {
+        const updatedOrderForm = manager.merge(OrderForm, orderForm, {
           ...updateWorkOrderDto,
-          vehicle_id: updateWorkOrderDto.vehicle_id || orderForm!.vehicle_id,
-          driver_id: updateWorkOrderDto.driver || orderForm!.driver_id,
-          mechanic_id: updateWorkOrderDto.mechanic || orderForm!.mechanic_id,
-          request_id: updateWorkOrderDto.request || orderForm!.request_id,
-          order_type: updateWorkOrderDto.order_type || orderForm!.order_type,
+          vehicle_id: updateWorkOrderDto.vehicle_id || orderForm.vehicle_id,
+          driver_id: updateWorkOrderDto.driver || orderForm.driver_id,
+          mechanic_id: updateWorkOrderDto.mechanic || orderForm.mechanic_id,
+          request_id: updateWorkOrderDto.request || orderForm.request_id,
+          order_type: updateWorkOrderDto.order_type || orderForm.order_type,
         });
 
         await manager.save(updatedOrderForm);
@@ -592,7 +592,7 @@ export class WorkOrderService {
             .where(
               'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
               {
-                orderId: orderForm!.id,
+                orderId: orderForm.id,
               },
             )
             .execute();
@@ -603,7 +603,7 @@ export class WorkOrderService {
             .delete()
             .from('batch_outbound')
             .where('order_form_id = :orderId', {
-              orderId: orderForm!.id,
+              orderId: orderForm.id,
             })
             .execute();
 
@@ -611,7 +611,7 @@ export class WorkOrderService {
           for (const sparepart of updateWorkOrderDto.sparepart_list) {
             const batchOutbound = manager.create(BatchOutbound, {
               inventory_id: sparepart.inventory_id,
-              order_form_id: orderForm!.id, // Link to order_form
+              order_form_id: orderForm.id, // Link to order_form
               quantity: sparepart.quantity,
               status: batchout_type.OUTBOUND,
               // createdBy: userId, // Commented out since createdBy doesn't exist
@@ -661,7 +661,6 @@ export class WorkOrderService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       return throwError('Failed to update work order', 500);
-
     }
   }
 
@@ -674,7 +673,6 @@ export class WorkOrderService {
 
       if (!orderForm) {
         return throwError('Work order not found', 404);
-
       }
 
       await this.dataSource.transaction(async (manager) => {
@@ -686,7 +684,7 @@ export class WorkOrderService {
           .where(
             'batch_in_id IN (SELECT bi.id FROM batch_inbound bi WHERE bi.inventory_id IN (SELECT bo.inventory_id FROM batch_outbound bo WHERE bo.order_form_id = :orderId))',
             {
-              orderId: orderForm!.id,
+              orderId: orderForm.id,
             },
           )
           .execute();
@@ -697,7 +695,7 @@ export class WorkOrderService {
           .delete()
           .from('batch_outbound')
           .where('order_form_id = :orderId', {
-            orderId: orderForm!.id,
+            orderId: orderForm.id,
           })
           .execute();
 
@@ -709,7 +707,6 @@ export class WorkOrderService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       return throwError('Failed to delete work order', 500);
-
     }
   }
 
@@ -726,7 +723,6 @@ export class WorkOrderService {
 
       if (!orderForm) {
         return throwError('Work order not found', 404);
-
       }
 
       // Jika status approval, update status menjadi 'in_progress'
@@ -742,11 +738,11 @@ export class WorkOrderService {
           {} as WorkOrderResponseDto,
           'Work order approved successfully',
         );
-      } 
-      
+      }
+
       if (approvalDto.status === ApprovalStatus.REJECTED) {
         // Jika reject, cek apakah picker_id sudah diassign
-        if (orderForm!.picker_id && orderForm!.picker_id !== 0) {
+        if (orderForm.picker_id && orderForm.picker_id !== 0) {
           return throwError(
             'Work order tidak dapat di-reject karena sudah di-assign picker',
             400,
@@ -766,14 +762,12 @@ export class WorkOrderService {
           'Work order rejected successfully',
         );
       }
-      
-      return throwError('Invalid approval status', 400);
 
+      return throwError('Invalid approval status', 400);
     } catch (error) {
       console.error('Approval error:', error);
       if (error instanceof HttpException) throw error;
       return throwError('Failed to process approval', 500);
-
     }
   }
 
@@ -791,7 +785,6 @@ export class WorkOrderService {
 
       if (!orderForm) {
         return throwError('Work order not found', 404);
-
       }
 
       // Validasi picker_id exists di tabel users
@@ -804,7 +797,6 @@ export class WorkOrderService {
 
       if (!userExists) {
         return throwError('Picker ID tidak ditemukan di tabel users', 400);
-
       }
 
       // Update picker_id di tabel order_form
@@ -825,7 +817,155 @@ export class WorkOrderService {
       console.error('Assign picker error:', error);
       if (error instanceof HttpException) throw error;
       return throwError('Failed to assign picker', 500);
+    }
+  }
 
+  async finishingWorkOrder(
+    id: number,
+    finishingWorkOrderDto: FinishingWorkOrderDto,
+    userId: number,
+  ): Promise<ApiResponse<null>> {
+    try {
+      console.log('Starting finishingWorkOrder for ID:', id);
+      console.log('Request data:', finishingWorkOrderDto);
+
+      // Check if work order exists
+      const workOrder = await this.orderFormRepository.findOne({
+        where: { id },
+      });
+
+      console.log('Work order found:', workOrder);
+
+      if (!workOrder) {
+        throw new HttpException(
+          {
+            status: 404,
+            error: 'Work order tidak ditemukan',
+          },
+          404,
+        );
+      }
+
+      // Check if work order is already completed
+      if (workOrder.status === WorkOrderStatus.COMPLETED) {
+        throw new HttpException(
+          {
+            status: 400,
+            error: 'Work order sudah selesai',
+          },
+          400,
+        );
+      }
+
+      // Check if work order has sppb data with status 'completed'
+      console.log('Checking SPPB data for order_form_id:', id);
+      let sppbData;
+      try {
+        // First, let's check if there's any SPPB data for this work order
+        const allSppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id, sppb.status, sppb.sppb_number')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .getRawMany();
+
+        console.log('All SPPB data for work order:', allSppbData);
+
+        // Now check for completed status
+        sppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .andWhere('sppb.status = :status', { status: 'completed' })
+          .andWhere('sppb.deletedAt IS NULL')
+          .getOne();
+      } catch (error) {
+        console.error('Error querying SPPB data:', error);
+        // Try without deletedAt check if column doesn't exist
+        sppbData = await this.dataSource
+          .createQueryBuilder()
+          .select('sppb.id')
+          .from('sppb', 'sppb')
+          .where('sppb.order_form_id = :orderFormId', { orderFormId: id })
+          .andWhere('sppb.status = :status', { status: 'completed' })
+          .getOne();
+      }
+
+      console.log('SPPB data found:', sppbData);
+
+      if (!sppbData) {
+        throw new HttpException(
+          {
+            status: 400,
+            error:
+              'Work order tidak dapat diselesaikan karena belum memiliki data SPPB dengan status completed',
+          },
+          400,
+        );
+      }
+
+      // Update work order with end_date and status completed
+      let endDate: Date;
+      try {
+        console.log('Processing end_date:', finishingWorkOrderDto.end_date);
+        // Handle different date formats
+        if (finishingWorkOrderDto.end_date.includes('T')) {
+          // ISO format with time
+          endDate = new Date(finishingWorkOrderDto.end_date);
+        } else {
+          // Date only format (YYYY-MM-DD), add time to make it end of day
+          const dateOnly = finishingWorkOrderDto.end_date;
+          endDate = new Date(dateOnly + 'T23:59:59.999Z');
+        }
+
+        console.log('Processed endDate:', endDate);
+
+        // Validate if date is valid
+        if (isNaN(endDate.getTime())) {
+          throw new HttpException(
+            {
+              status: 400,
+              error: 'Format tanggal tidak valid',
+            },
+            400,
+          );
+        }
+      } catch (error) {
+        console.error('Error processing date:', error);
+        if (error instanceof HttpException) {
+          throw error;
+        }
+        throw new HttpException(
+          {
+            status: 400,
+            error: 'Format tanggal tidak valid',
+          },
+          400,
+        );
+      }
+
+      console.log('Updating work order with endDate:', endDate);
+      await this.orderFormRepository.update(
+        { id },
+        {
+          end_date: endDate,
+          status: WorkOrderStatus.COMPLETED,
+          updatedBy: userId,
+          updatedAt: new Date(),
+        },
+      );
+
+      console.log('Work order updated successfully');
+      return successResponse(null, 'Work order berhasil diselesaikan');
+    } catch (error) {
+      console.error('Error in finishingWorkOrder:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Terjadi kesalahan saat menyelesaikan work order',
+      );
     }
   }
 

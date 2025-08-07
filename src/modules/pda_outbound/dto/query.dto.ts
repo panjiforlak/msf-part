@@ -3,11 +3,12 @@ import { IsOptional, IsIn } from 'class-validator';
 
 export class PdaOutboundQueryDto {
   @ApiPropertyOptional({
-    description: 'Parameter untuk superadmin, jika "yes" maka menampilkan semua data',
+    description:
+      'Parameter untuk superadmin, jika "yes" maka menampilkan semua data',
     enum: ['yes', 'no'],
-    example: 'no'
+    example: 'no',
   })
   @IsOptional()
   @IsIn(['yes', 'no'])
   superadmin?: string;
-} 
+}

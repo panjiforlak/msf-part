@@ -174,6 +174,37 @@ Module ini menangani manajemen work order (perintah kerja) yang berisi informasi
 }
 ```
 
+### 6. PUT /work-order/:id/finishing
+**Deskripsi**: Menyelesaikan work order dengan mengupdate status menjadi completed dan menambahkan end_date
+
+**Path Parameters**:
+- `id`: ID work order
+
+**Request Body**:
+```json
+{
+  "end_date": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response**:
+```json
+{
+  "data": null,
+  "message": "Work order berhasil diselesaikan"
+}
+```
+
+**Error Responses**:
+- `404`: Work order tidak ditemukan
+- `400`: Work order sudah selesai (status sudah completed)
+- `400`: Work order tidak dapat diselesaikan karena belum memiliki data SPPB dengan status completed
+
+**Validasi**:
+- Work order harus memiliki data di tabel `sppb` dengan `order_form_id` yang sesuai
+- Data SPPB harus memiliki `status` = `completed`
+- Jika tidak memenuhi syarat di atas, akan mengembalikan error 400
+
 ## Alur Proses
 
 ### Saat Create Work Order:
