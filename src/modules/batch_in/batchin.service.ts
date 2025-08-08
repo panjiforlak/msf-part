@@ -1062,15 +1062,15 @@ export class BatchInboundService {
           'reloc_final.reloc_to = sa2.id AND sa2."deletedAt" IS NULL',
         )
         .where('i."deletedAt" IS NULL')
-        .andWhere(
-          // item di box masih ada tidak akan tampil di R2R
-          `NOT EXISTS (
-            SELECT 1 FROM relocation r3
-            WHERE r3.batch_in_id = bi.id
-            AND r3.reloc_status = false
-            AND r3."deletedAt" IS NULL
-          )`,
-        )
+        // .andWhere(
+        //   // item di box masih ada tidak akan tampil di R2R
+        //   `NOT EXISTS (
+        //     SELECT 1 FROM relocation r3
+        //     WHERE r3.batch_in_id = bi.id
+        //     AND r3.reloc_status = false
+        //     AND r3."deletedAt" IS NULL
+        //   )`,
+        // )
         .setParameters(subQuery.getParameters());
 
       if (superadmin !== 'yes') {
