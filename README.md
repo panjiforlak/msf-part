@@ -96,3 +96,107 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# MSF Part
+
+## Database Changes
+
+### Menambahkan kolom quantity_temp_outbound ke tabel relocation
+
+Jalankan query berikut di database untuk menambahkan kolom `quantity_temp_outbound`:
+
+```sql
+ALTER TABLE relocation ADD COLUMN quantity_temp_outbound INTEGER DEFAULT 0;
+```
+
+### Memperbaiki struktur tabel SPPB
+
+Jika tabel SPPB belum memiliki kolom yang diperlukan, jalankan query berikut:
+
+```sql
+-- Hapus kolom uuid jika ada
+ALTER TABLE sppb DROP COLUMN IF EXISTS uuid;
+
+-- Pastikan kolom yang diperlukan ada
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS order_form_id INTEGER DEFAULT 0;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS sppb_number VARCHAR(20) UNIQUE;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS mechanic_photo TEXT;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'waiting';
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "createdBy" INTEGER DEFAULT 0;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMPTZ DEFAULT now();
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "updatedBy" INTEGER DEFAULT 0;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMPTZ;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "deletedBy" INTEGER DEFAULT 0;
+ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ;
+```
+
+## API Changes
+
+### Endpoint relocation telah diubah
+
+Endpoint `POST /api/pda-outbound/relocation` sekarang menggunakan body request yang berbeda:
+
+**Body Request Baru:**
+```json
+{
+  "barcode_inbound": "abc123def456",
+  "batch_outbound_id": 1
+}
+```
+
+**Perubahan:**
+- Quantity tidak lagi diambil dari body request
+- Quantity sekarang diambil otomatis dari tabel `batch_outbound` berdasarkan `batch_outbound_id`
+- Menambahkan validasi untuk memastikan `batch_outbound_id` ada di database
+
+**Proses yang dijalankan:**
+1. Validasi `barcode_inbound` ada di tabel `batch_inbound`
+2. Validasi `batch_outbound_id` ada di tabel `batch_outbound`
+3. Ambil `quantity` dari `batch_outbound`
+4. Buat data relocation dengan quantity dari `batch_outbound`
+
+### Endpoint scan-destination telah diubah
+
+Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body request yang berbeda:
+
+**Body Request Baru:**
+```json
+{
+  "batch_in_barcode": "abc123def456",
+  "inbound_outbound_area_id": 1,
+  "quantity": 1,
+  "batch_outbound_id": 18
+}
+```
+
+**Proses yang dijalankan:**
+1. Mencari batch_inbound berdasarkan `batch_in_barcode`
+2. Mencari relocation dengan `batch_in_id` yang sesuai dan `reloc_type = 'outbound'`
+3. Validasi `inbound_outbound_area_id` ada di tabel `inbound_outbound_area`
+4. Validasi `batch_outbound_id` ada di tabel `batch_outbound`
+5. Update `quantity_temp_outbound` di tabel relocation dengan menambahkan quantity baru
+6. Jika `quantity_temp_outbound >= quantity`, maka:
+   - Update `reloc_status` menjadi `true`
+   - Cari `order_form_id` dari tabel `batch_outbound` berdasarkan `batch_outbound_id`
+   - Cek semua relocation yang memiliki `order_form_id` yang sama
+   - Jika semua relocation sudah memiliki `reloc_status = true`, maka:
+     - Buat data baru di tabel `sppb` dengan:
+       - `order_form_id` dari `batch_outbound`
+       - `sppb_number` auto generate (format: WHO001, WHO002, dst)
+       - `mechanic_photo` = null
+       - `status` = 'waiting'
+
+**Response:**
+```json
+{
+  "id": 1,
+  "batch_in_id": 1,
+  "inbound_outbound_area_id": 1,
+  "quantity": 1,
+  "quantity_temp_outbound": 3,
+  "target_quantity": 3,
+  "is_completed": true,
+  "sppb_id": 1,
+  "sppb_number": "WHO001"
+}
+```

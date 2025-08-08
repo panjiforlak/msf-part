@@ -14,7 +14,9 @@ export class S3Service {
 
   constructor() {
     this.s3 = new S3Client({
+      endpoint: s3Config.endPoint, // https://minio-bucket.motorsights.com
       region: s3Config.region,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: s3Config.accessKeyId,
         secretAccessKey: s3Config.secretAccessKey,
@@ -25,19 +27,29 @@ export class S3Service {
   async uploadFile(
     file: Express.Multer.File,
     folder = 'uploads',
-  ): Promise<string> {
+  ): Promise<{ key: string; url: string }> {
     const key = `${folder}/${uuidv4()}${extname(file.originalname)}`;
-
     await this.s3.send(
       new PutObjectCommand({
         Bucket: s3Config.bucket,
         Key: key,
         Body: file.buffer,
+        ACL: 'public-read',
         ContentType: file.mimetype,
+        Metadata: {
+          originalName: file.originalname,
+          uploadedAt: new Date().toISOString(),
+          provider: s3Config.provider,
+        },
       }),
     );
 
-    return `https://${s3Config.bucket}.s3.${s3Config.region}.amazonaws.com/${key}`;
+    // Gunakan URL publik yang baru
+    const publicUrl = 'https://minio-bucket.motorsights.com';
+    return {
+      key,
+      url: `${publicUrl}/${s3Config.bucket}/${key}`,
+    };
   }
 
   async deleteFile(key: string): Promise<void> {

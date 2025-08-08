@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   CallHandler,
   ExecutionContext,
@@ -8,6 +5,8 @@ import {
   NestInterceptor,
   Logger,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import multer from 'multer';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 
 @Injectable()
@@ -20,7 +19,6 @@ export class LoggerInterceptor implements NestInterceptor {
     const url = req.url;
     const now = Date.now();
 
-    // Salin body tapi sembunyikan password
     const sanitizedBody = { ...req.body };
     if (sanitizedBody.password) sanitizedBody.password = '******';
 
@@ -47,4 +45,19 @@ export class LoggerInterceptor implements NestInterceptor {
       }),
     );
   }
+}
+
+export const MemoryFileInterceptor = () =>
+  FileInterceptor('file', {
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: memoryFileFilter,
+  });
+
+function memoryFileFilter(
+  req: Express.Request,
+  file: Express.Multer.File,
+  callback: multer.FileFilterCallback,
+): void {
+  callback(null, true);
 }
