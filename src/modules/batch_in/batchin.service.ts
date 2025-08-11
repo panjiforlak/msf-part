@@ -583,7 +583,11 @@ export class BatchInboundService {
           .andWhere('i.deletedAt IS NULL')
           .getRawOne();
 
-        if (storage.sa_storage_type === 'rack') {
+        if (!rackDestination) {
+          throwError(`Please set Rack destination on inventory master`, 404);
+        }
+        if (storage && storage.sa_storage_type === 'rack') {
+          console.log('masukkkk-----', rackDestination);
           if (storage.sa_id !== rackDestination.racks_id)
             throwError(`Rack mismatch, please scan the correct rack.`, 400);
         }
@@ -693,6 +697,7 @@ export class BatchInboundService {
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      console.log(error.stack);
       throw new InternalServerErrorException(
         'Failed to execute transactional insert/update',
       );

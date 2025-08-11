@@ -163,7 +163,6 @@ export class DocShippingService {
       );
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      console.error('errornya nih ===>', error.stack);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to create doc shipping');
     } finally {
@@ -233,7 +232,6 @@ export class DocShippingService {
       if (error instanceof HttpException) {
         throw error;
       }
-      console.log(error.stack);
       throw new InternalServerErrorException('Failed to delete Doc Shipping');
     }
   }

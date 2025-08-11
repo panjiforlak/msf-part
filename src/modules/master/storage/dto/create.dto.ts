@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -16,20 +17,18 @@ export class CreateStorageAreaDto {
   @MaxLength(255)
   remarks?: string;
 
-  @IsOptional()
   @IsString()
   @MaxLength(25)
   storage_code?: string;
 
-  @IsOptional()
   @IsEnum(StorageType)
+  @IsNotEmpty({ message: 'Storage Type value must be rack or box' })
   storage_type?: StorageType;
 
-  @IsOptional()
   @IsBoolean()
+  @IsOptional()
   storage_availability?: boolean;
 
-  @IsOptional()
   @IsEnum(StorageStatus)
   status?: StorageStatus;
 

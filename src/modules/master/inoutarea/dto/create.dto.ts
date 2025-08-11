@@ -12,7 +12,6 @@ import { inout_type } from '../entities/inout.entity';
 
 export class CreateInOutAreaDto {
   @ApiProperty()
-  @IsOptional()
   @IsString()
   @MaxLength(15)
   inout_area_code?: string;
@@ -24,7 +23,6 @@ export class CreateInOutAreaDto {
   remarks?: string;
 
   @ApiProperty()
-  @IsOptional()
   @IsEnum(inout_type)
   type?: inout_type;
 

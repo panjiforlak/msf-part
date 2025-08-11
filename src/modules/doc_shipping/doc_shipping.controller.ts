@@ -11,8 +11,6 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import { DocShippingService } from './doc_shipping.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -61,6 +59,7 @@ export class DocShippingController {
     @Body() dto: CreateDocShipDto,
     @Req() req,
   ) {
+    if (!file) throwError('File should not be empty', 400);
     if (typeof dto.items === 'string') {
       try {
         dto.items = JSON.parse(dto.items);

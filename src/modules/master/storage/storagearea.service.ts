@@ -100,15 +100,12 @@ export class StorageareaService {
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {
-      // const existing = await this.findByItemNumberInternal(
-      //   data.inventory_internal_code ?? '',
-      // );
-      // if (existing) {
-      //   throwError(
-      //     `Item Number ${data.inventory_internal_code} already exists`,
-      //     409,
-      //   );
-      // }
+      const existing = await this.repository.findOne({
+        where: { storage_code: data.storage_code },
+      });
+      if (existing) {
+        throwError(`Storage code already exists`, 409);
+      }
 
       const newBody = this.repository.create({
         ...data,
@@ -143,6 +140,18 @@ export class StorageareaService {
 
       if (!storage) {
         throwError('Storage not found', 404);
+      }
+
+      if (updateDto.storage_code) {
+        const existingVin = await this.repository.findOne({
+          where: {
+            storage_code: updateDto.storage_code,
+            barcode: Not(barcode),
+          },
+        });
+        if (existingVin) {
+          throwError('Storage Code already exist', 409);
+        }
       }
 
       const updatedBody = this.repository.merge(storage!, updateDto, {

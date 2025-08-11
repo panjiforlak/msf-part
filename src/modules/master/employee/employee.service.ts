@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   HttpException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
@@ -118,27 +119,20 @@ export class EmployeeService {
     data: CreateEmployeeDto,
   ): Promise<ApiResponse<ReturnResponseDto>> {
     try {
-      const nip = generateSimpleNIP(
-        Math.floor(100000 + Math.random() * 900000),
-      );
-      const fullname = data.first_name + ' ' + data.last_name;
-      const nipCode = generateNIPWithInitial(fullname, Number(nip));
-      console.log(nipCode);
-      const existing = await this.findByNip(nipCode);
+      const existing = await this.employeeRepository.findOne({
+        where: {
+          first_name: data.first_name,
+          last_name: data.last_name,
+        },
+      });
       if (existing) {
-        throwError(
-          `NIP ${existing.nip} already in use by another employee`,
-          409,
-        );
+        throwError(`Employe already registered`, 409);
       }
 
       const newEmployee = this.employeeRepository.create({
         ...data,
-        nip: nipCode,
         status: data.status as EmploymentStatus,
         createdBy: 1,
-        updatedBy: 1,
-        deletedBy: null,
       });
 
       const result = await this.employeeRepository.save(newEmployee);
@@ -159,6 +153,10 @@ export class EmployeeService {
       if (error instanceof HttpException) {
         throw error;
       }
+      if (error.code === '23505') {
+        throwError('NIP already exists', 409);
+      }
+      console.log(error);
       throw new InternalServerErrorException('Failed to create employee');
     }
   }

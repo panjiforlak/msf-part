@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -16,6 +17,7 @@ export class CreateDocShipDto {
   @ApiProperty()
   @IsString()
   @MaxLength(35)
+  @IsNotEmpty()
   doc_ship_no?: string;
 
   @ApiProperty({
