@@ -40,20 +40,9 @@ export class CreateDocShipDto {
       "status_reloc": "inbound"
     }]`,
   })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return [];
-      }
-    }
-    return value;
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsString()
   @Type(() => BatchInboundItemDto)
-  items: BatchInboundItemDto[];
+  items: any;
   // @ApiProperty()
   // @IsString()
   // @MaxLength(255)
@@ -68,21 +57,27 @@ export class CreateDocShipDto {
 
 export class BatchInboundItemDto {
   @ApiProperty()
+  @IsString()
   inventory_id: number;
 
   @ApiProperty()
+  @IsNumber()
   quantity: number;
 
   @ApiProperty()
+  @IsNumber()
   supplier_id: number;
 
   @ApiProperty()
+  @IsNumber()
   price: number;
 
   @ApiProperty()
+  @IsNumber()
   picker_id: number;
 
   @ApiProperty()
+  @IsNumber()
   life_time: number;
 
   @ApiProperty()

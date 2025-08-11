@@ -13,7 +13,7 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
-import { CreateDocShipDto } from './dto/create.dto';
+import { BatchInboundItemDto, CreateDocShipDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -125,6 +125,7 @@ export class DocShippingService {
         throwError('items must be an array', 400);
       }
 
+      console.log(data.items);
       // Simpan doc_shipping
       const newDocShipping = this.repository.create({
         ...data,
@@ -132,7 +133,6 @@ export class DocShippingService {
         createdBy: userId,
       });
       const savedDocShip = await queryRunner.manager.save(newDocShipping);
-
       // Simpan semua batch_inbound, sambil bawa doc_ship_id
       const batchData = data.items.map((item) => ({
         inventory_id: item.inventory_id,
