@@ -77,9 +77,9 @@ export class InOutAreaService {
 
       const response: any = {
         id: result.id,
+        type: result.type,
         barcode: result.barcode,
-        storage_type: result.storage_type,
-        storage_availability: result.storage_availability,
+        inout_area_code: result.inout_area_code,
         status: result.status,
         remarks: result.remarks,
       };
@@ -98,16 +98,6 @@ export class InOutAreaService {
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {
-      // const existing = await this.findByItemNumberInternal(
-      //   data.inventory_internal_code ?? '',
-      // );
-      // if (existing) {
-      //   throwError(
-      //     `Item Number ${data.inventory_internal_code} already exists`,
-      //     409,
-      //   );
-      // }
-
       const newBody = this.repository.create({
         ...data,
         createdBy: userId,
@@ -124,6 +114,9 @@ export class InOutAreaService {
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
+      }
+      if (error.code === '23505') {
+        throwError('Inbound Outbound Area code already exists', 409);
       }
       throw new InternalServerErrorException('Failed to create storagearea');
     }

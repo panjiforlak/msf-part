@@ -95,15 +95,12 @@ export class ComponentsService {
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
     try {
-      // const existing = await this.findByItemNumberInternal(
-      //   data.inventory_internal_code ?? '',
-      // );
-      // if (existing) {
-      //   throwError(
-      //     `Item Number ${data.inventory_internal_code} already exists`,
-      //     409,
-      //   );
-      // }
+      const existing = await this.repository.findOne({
+        where: { component_name: data.component_name },
+      });
+      if (existing) {
+        throwError(`Component already exists`, 409);
+      }
 
       const newBody = this.repository.create({
         ...data,
@@ -138,6 +135,17 @@ export class ComponentsService {
 
       if (!components) {
         throwError('components area not found', 404);
+      }
+      if (updateDto.component_name) {
+        const existingComponent = await this.repository.findOne({
+          where: {
+            component_name: ILike(updateDto.component_name.toLowerCase()),
+            uuid: Not(uuid),
+          },
+        });
+        if (existingComponent) {
+          throwError('Component name already in use by another component', 409);
+        }
       }
 
       const updatedBody = this.repository.merge(components!, updateDto, {

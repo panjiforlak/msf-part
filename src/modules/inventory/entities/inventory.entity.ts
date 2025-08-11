@@ -47,6 +47,10 @@ export class Inventory {
   @Column({ type: 'varchar', length: 30, nullable: true })
   uom: string;
 
+  @ApiProperty({ required: false })
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  spesification: string;
+
   @ApiProperty()
   @Column({ name: 'quantity', type: 'int', nullable: true, default: 0 })
   quantity: number;

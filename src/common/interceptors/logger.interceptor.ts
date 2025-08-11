@@ -4,6 +4,7 @@ import {
   Injectable,
   NestInterceptor,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
@@ -51,7 +52,18 @@ export const MemoryFileInterceptor = () =>
   FileInterceptor('file', {
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: memoryFileFilter,
+    fileFilter: (req, file, callback) => {
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return callback(
+          new BadRequestException(
+            'Invalid file type. Only JPEG, PNG, and PDF are allowed.',
+          ),
+          false,
+        );
+      }
+      callback(null, true);
+    },
   });
 
 function memoryFileFilter(

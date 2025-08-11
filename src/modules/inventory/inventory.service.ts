@@ -297,6 +297,9 @@ export class InventoryService {
       if (error instanceof HttpException) {
         throw error;
       }
+      if (error.code === '23505') {
+        throwError('Inventory code already exists', 409);
+      }
       throw new InternalServerErrorException('Failed to create items');
     }
   }

@@ -132,21 +132,27 @@ export class CreateSuppliersDto {
   remarks?: string;
 
   @ApiPropertyOptional({ description: 'Created by user ID', example: 1 })
+  @IsOptional()
   createdBy?: number;
 
   @ApiPropertyOptional({ description: 'Creation timestamp' })
+  @IsOptional()
   createdAt?: Date;
 
   @ApiPropertyOptional({ description: 'Updated by user ID', example: 1 })
+  @IsOptional()
   updatedBy?: number;
 
   @ApiPropertyOptional({ description: 'Last update timestamp' })
+  @IsOptional()
   updatedAt?: Date | null;
 
   @ApiPropertyOptional({ description: 'Deleted by user ID', example: 1 })
+  @IsOptional()
   deletedBy?: number;
 
   @ApiPropertyOptional({ description: 'Deletion timestamp' })
+  @IsOptional()
   deletedAt?: Date | null;
 }
 

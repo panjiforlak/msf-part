@@ -73,7 +73,6 @@ export class VehicleService {
         'Get all vehicle susccessfuly',
       );
     } catch (error) {
-      console.log(error.stack);
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch vehicles');
     }
@@ -83,14 +82,11 @@ export class VehicleService {
     try {
       const result: any = await this.vehicleRepository.findOne({
         where: { id },
+        withDeleted: false,
       });
 
       if (!result) {
         throwError('Vehicle not found', 404);
-      }
-
-      if (result.status !== 'active') {
-        throwError('Vehicle has been deleted', 404);
       }
 
       const response: any = {

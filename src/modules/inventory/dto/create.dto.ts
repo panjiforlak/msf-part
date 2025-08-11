@@ -1,5 +1,6 @@
 import {
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,38 +10,49 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateInventoryDto {
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Nomor item eksternal',
     example: 'IN-1HGBH41JXMN1918',
     maxLength: 30,
   })
-  @IsOptional()
   @IsString()
   @Length(1, 30)
+  @IsNotEmpty()
   inventory_code?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Nomor item internal',
     example: 'INI-1HGBH41JXMN1918',
     maxLength: 30,
   })
-  @IsOptional()
   @IsString()
   @Length(1, 30)
+  @IsNotEmpty()
   inventory_internal_code?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Nama item',
     example: 'Fuel Pump',
     maxLength: 65,
   })
-  @IsOptional()
   @IsString()
   @Length(1, 65)
+  @IsNotEmpty()
   inventory_name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Spesification item',
+    example: '',
+    maxLength: 100,
+  })
+  @IsString()
+  @Length(1, 65)
+  @IsOptional()
+  spesification?: string;
 
   @ApiProperty()
   @IsNumber()
+  @IsNotEmpty()
   component_id: number;
 
   @ApiProperty({
@@ -48,20 +60,22 @@ export class CreateInventoryDto {
     example: 2.2,
   })
   @IsNumber()
+  @IsNotEmpty()
   weight: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Unit of Measurement (UOM)',
     example: 'kg',
     maxLength: 30,
   })
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(30)
-  uom?: string;
+  uom: string;
 
   @ApiProperty()
   @IsNumber()
+  @IsNotEmpty()
   quantity: number;
 
   @ApiProperty({
@@ -70,10 +84,12 @@ export class CreateInventoryDto {
     maxLength: 255,
   })
   @IsString()
+  @IsOptional()
   @MaxLength(255)
   remarks: string;
 
   @ApiProperty()
   @IsNumber()
+  @IsOptional()
   racks_id: number;
 }

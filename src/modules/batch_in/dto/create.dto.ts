@@ -67,7 +67,7 @@ export class CreatePDABatchInDto {
   batch_in_id: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
   storage_id: string;
 
@@ -84,6 +84,7 @@ export class CreatePDABatchInDto {
   @ApiProperty()
   @IsEnum(StorageTypeEnum)
   @IsNotEmpty()
+  @IsOptional()
   storage_type: StorageTypeEnum;
 }
 export class CreatePDAStorageB2RDto {
@@ -98,7 +99,7 @@ export class CreatePDAStorageB2RDto {
   storage_source_id: number;
 
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
   storage_source: string;
 
@@ -120,6 +121,7 @@ export class CreatePDAStorageB2RDto {
   @ApiProperty()
   @IsEnum(StorageTypeEnum)
   @IsNotEmpty()
+  @IsOptional()
   storage_type: StorageTypeEnum;
 }
 export class PostPDAQueueDto {

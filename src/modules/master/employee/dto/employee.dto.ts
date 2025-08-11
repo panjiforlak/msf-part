@@ -128,7 +128,7 @@ export class CreateEmployeeDto {
     example: '5000000',
     type: String,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   sallary: string;
 
