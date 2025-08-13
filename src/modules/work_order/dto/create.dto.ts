@@ -39,6 +39,11 @@ export class CreateWorkOrderDto {
   @IsOptional()
   tindakan: string;
 
+  @ApiProperty({ description: 'Description' })
+  @IsString()
+  @IsOptional()
+  description: string;
+
   @ApiProperty({ description: 'Select-Option : Get ID From Table m_activity' })
   @IsNumber()
   @IsOptional()

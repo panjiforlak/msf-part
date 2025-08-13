@@ -150,4 +150,8 @@ export class OrderForm {
     default: MaterialType.BARU,
   })
   material_type: MaterialType;
+
+  @ApiProperty()
+  @Column({ type: 'text', nullable: true })
+  description: string;
 }

@@ -415,6 +415,7 @@ export class WorkOrderService {
             tindakan: createWorkOrderDto.tindakan,
             activity_id: createWorkOrderDto.activity_id,
             material_type: createWorkOrderDto.material_type,
+            description: createWorkOrderDto.description,
             createdBy: userId,
           });
 
