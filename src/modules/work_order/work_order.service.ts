@@ -71,6 +71,7 @@ export class WorkOrderService {
             'of.status AS status',
             'of.approval_remark AS approval_remark',
             "COALESCE(a.name, 'N/A') AS problem",
+            'of.description AS problem_detail',
             'of.tindakan AS tindakan',
             "COALESCE(cBy.name, 'N/A') AS createdby",
           ])
