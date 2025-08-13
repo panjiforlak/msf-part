@@ -70,7 +70,6 @@ export class WorkOrderService {
             'of.end_date AS end_date',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
-            'of.activity_id AS tindakan',
             "COALESCE(a.name, 'N/A') AS problem",
             'of.tindakan AS tindakan',
             "COALESCE(cBy.name, 'N/A') AS createdby",
