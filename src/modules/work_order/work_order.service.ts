@@ -85,7 +85,7 @@ export class WorkOrderService {
           .leftJoin('users', 'req', 'of.request_id = req.id')
           .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
           .leftJoin('users', 'ap', 'of.approval_by = ap.id')
-          .leftJoin('m_activity', 'a', 'of.activity_id = a.id');
+          .leftJoin('m_activities', 'a', 'of.activity_id = a.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -222,7 +222,7 @@ export class WorkOrderService {
           .leftJoin('users', 'req', 'of.request_id = req.id')
           .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
           .leftJoin('users', 'ap', 'of.approval_by = ap.id')
-          .leftJoin('m_activity', 'a', 'of.activity_id = a.id')
+          .leftJoin('m_activities', 'a', 'of.activity_id = a.id')
           .where('of.id = :id', { id });
 
         orderForm = await qb.getRawOne();
