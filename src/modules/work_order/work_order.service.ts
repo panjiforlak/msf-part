@@ -74,6 +74,7 @@ export class WorkOrderService {
             "COALESCE(a.name, 'N/A') AS problem",
             'of.description AS problem_detail',
             'of.tindakan AS tindakan',
+            'of.material_type AS material_type',
             "COALESCE(cBy.name, 'N/A') AS createdby",
           ])
           .from('order_form', 'of')
@@ -210,6 +211,7 @@ export class WorkOrderService {
             "COALESCE(a.name, 'N/A') AS problem",
             'of.description AS problem_detail',
             'of.tindakan AS tindakan',
+            'of.material_type AS material_type',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
           ])
