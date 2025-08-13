@@ -13,7 +13,7 @@ export enum EnumCategory {
   DELAY = 'delay',
 }
 
-@Entity('m_activity')
+@Entity('m_activities')
 export class Activity {
   @PrimaryGeneratedColumn()
   id: number;
