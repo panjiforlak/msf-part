@@ -57,6 +57,7 @@ export class WorkOrderService {
           .select([
             'of.id AS id',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(v.vehicle_number, 'N/A') AS fleet_number",
             "COALESCE(dr.name, 'N/A') AS driver",
             "COALESCE(mc.name, 'N/A') AS mechanic",
             "COALESCE(pk.name, 'N/A') AS picker",
@@ -85,6 +86,7 @@ export class WorkOrderService {
             `(
               CAST(of.id AS TEXT) LIKE :search OR
               LOWER(COALESCE(v.vin_number, '')) LIKE :search OR
+              LOWER(COALESCE(v.vehicle_number, '')) LIKE :search OR
               LOWER(COALESCE(dr.name, '')) LIKE :search OR
               LOWER(COALESCE(mc.name, '')) LIKE :search OR
               LOWER(COALESCE(pk.name, '')) LIKE :search OR
