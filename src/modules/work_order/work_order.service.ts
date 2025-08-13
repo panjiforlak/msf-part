@@ -70,6 +70,7 @@ export class WorkOrderService {
             'of.end_date AS end_date',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
+            `COALESCE(cBy.name, 'N/A') AS "createdBy"`,
           ])
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
@@ -77,6 +78,7 @@ export class WorkOrderService {
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'pk', 'of.picker_id = pk.id')
           .leftJoin('users', 'req', 'of.request_id = req.id')
+          .leftJoin('users', 'cBy', 'of."createdBy" = cBy.id')
           .leftJoin('users', 'ap', 'of.approval_by = ap.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
