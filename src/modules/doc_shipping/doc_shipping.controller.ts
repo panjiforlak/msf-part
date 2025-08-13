@@ -58,7 +58,7 @@ export class DocShippingController {
     new ValidationPipe({
       whitelist: false,
       transform: false,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
     }),
   )
   @ApiConsumes('multipart/form-data')

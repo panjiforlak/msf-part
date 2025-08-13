@@ -20,6 +20,7 @@ import { ComponentsModule } from './modules/master/components/components.module'
 import { WorkOrderModule } from './modules/work_order/work_order.module';
 import { PdaOutboundModule } from './modules/pda_outbound/pda_outbound.module';
 import { SppbModule } from './modules/sppb/sppb.module';
+import { ActivityModule } from './modules/master/activity/activity.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { SppbModule } from './modules/sppb/sppb.module';
     WorkOrderModule,
     PdaOutboundModule,
     SppbModule,
+    ActivityModule,
   ],
 })
 export class AppModule {}
