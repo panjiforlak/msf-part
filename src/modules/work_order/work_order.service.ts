@@ -56,6 +56,7 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
+            'of.order_no AS order_no',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
             "COALESCE(v.vehicle_number, 'N/A') AS fleet_number",
             "COALESCE(dr.name, 'N/A') AS driver",
@@ -196,6 +197,7 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
+            'of.order_no AS order_no',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
             "COALESCE(dr.name, 'N/A') AS driver",
             "COALESCE(mc.name, 'N/A') AS mechanic",
@@ -205,6 +207,9 @@ export class WorkOrderService {
             'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
+            "COALESCE(a.name, 'N/A') AS problem",
+            'of.description AS problem_detail',
+            'of.tindakan AS tindakan',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
           ])
@@ -213,6 +218,9 @@ export class WorkOrderService {
           .leftJoin('users', 'dr', 'of.driver_id = dr.id')
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'req', 'of.request_id = req.id')
+          .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id')
+          .leftJoin('m_activity', 'a', 'of.activity_id = a.id')
           .where('of.id = :id', { id });
 
         orderForm = await qb.getRawOne();
