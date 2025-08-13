@@ -70,6 +70,9 @@ export class WorkOrderService {
             'of.end_date AS end_date',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
+            'of.activity_id AS tindakan',
+            "COALESCE(a.name, 'N/A') AS problem",
+            'of.tindakan AS tindakan',
             "COALESCE(cBy.name, 'N/A') AS createdby",
           ])
           .from('order_form', 'of')
@@ -79,7 +82,8 @@ export class WorkOrderService {
           .leftJoin('users', 'pk', 'of.picker_id = pk.id')
           .leftJoin('users', 'req', 'of.request_id = req.id')
           .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
-          .leftJoin('users', 'ap', 'of.approval_by = ap.id');
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id')
+          .leftJoin('m_activity', 'a', 'of.activity_id = a.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -396,6 +400,7 @@ export class WorkOrderService {
           // 8. Create order form
           const orderForm = manager.create(OrderForm, {
             vehicle_id: createWorkOrderDto.vehicle_id || 0, // Set to 0 if null/undefined
+            order_no: createWorkOrderDto.order_no,
             admin_id: userId,
             driver_id: createWorkOrderDto.driver,
             mechanic_id: createWorkOrderDto.mechanic,
@@ -408,6 +413,9 @@ export class WorkOrderService {
               ? new Date(createWorkOrderDto.end_date)
               : null,
             status: createWorkOrderDto.status,
+            tindakan: createWorkOrderDto.tindakan,
+            activity_id: createWorkOrderDto.activity_id,
+            material_type: createWorkOrderDto.material_type,
             createdBy: userId,
           });
 
