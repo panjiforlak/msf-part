@@ -246,6 +246,7 @@ export class BatchInboundService {
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
+          `CASE WHEN sa."storage_availability" = TRUE THEN 'Available'  ELSE 'Full' END AS storage_availability`,
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
@@ -804,6 +805,7 @@ export class BatchInboundService {
           'bi.barcode AS barcode',
           `TO_CHAR(MIN(r."createdAt"), 'YYYY-MM-DD HH24:MI') AS "createdAt"`, // ✅ ambil waktu pertama
           'bi.picker_id AS picker_id',
+          `CASE WHEN sa.storage_availability = TRUE THEN 'Available'  ELSE 'Full' END AS storage_availability`,
         ])
         .from('relocation', 'r')
         .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
@@ -812,7 +814,7 @@ export class BatchInboundService {
         .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
         .where(baseWhere.join(' AND '), params)
         .groupBy(
-          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id',
+          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id,sa.storage_availability',
         )
         .having(
           `(SUM(r.quantity) - COALESCE((
