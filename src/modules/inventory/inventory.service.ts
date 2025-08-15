@@ -55,6 +55,7 @@ export class InventoryService {
           'i.inventory_internal_code AS part_number_internal',
           'i.inventory_name AS inventory_name',
           'c.component_name AS component_name',
+          'i.uom AS uom',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'inbound' THEN ri.quantity ELSE 0 END), 0) AS qty_in",
