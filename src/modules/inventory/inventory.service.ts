@@ -218,10 +218,12 @@ export class InventoryService {
               'arrival_date', b.arrival_date,
               'batch_number', b.barcode,
               'quantity', b.quantity,
-              'batch_number', b.barcode
+              'batch_number', b.barcode,
+              'supplier_name', s.supplier_name
               ) ORDER BY b.id), '[]')`,
             )
             .from('batch_inbound', 'b')
+            .leftJoin('suppliers', 's', 'b.supplier_id=s.id')
             .where('b.inventory_id = i.id');
         }, 'batch_inbound_list') // alias
         .addSelect((subQuery) => {
