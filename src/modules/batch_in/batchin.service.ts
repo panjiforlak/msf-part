@@ -261,7 +261,7 @@ export class BatchInboundService {
       }
 
       qb.andWhere('bi."deletedAt" IS NULL');
-      qb.andWhere(`bi."status_reloc" = 'inbound'`); //status reloc triger by post pda
+      // qb.andWhere(`bi."status_reloc" = 'inbound'`); //status reloc triger by post pda
 
       if (search) {
         qb.andWhere('LOWER(bi.barcode) LIKE :search', {
@@ -590,7 +590,6 @@ export class BatchInboundService {
           throwError(`Please set Rack destination on inventory master`, 404);
         }
         if (storage && storage.sa_storage_type === 'rack') {
-          console.log('masukkkk-----', rackDestination);
           if (storage.sa_id !== rackDestination.racks_id)
             throwError(`Rack mismatch, please scan the correct rack.`, 400);
         }

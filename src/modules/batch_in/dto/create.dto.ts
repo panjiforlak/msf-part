@@ -101,6 +101,7 @@ export class CreatePDAStorageB2RDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   storage_source: string;
 
   @ApiProperty()

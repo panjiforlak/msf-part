@@ -40,6 +40,7 @@ export class CreateDocShipDto {
       "status_reloc": "inbound"
     }]`,
   })
+  @IsString()
   @Type(() => BatchInboundItemDto)
   items: any;
   // @ApiProperty()
