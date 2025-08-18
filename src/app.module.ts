@@ -21,6 +21,7 @@ import { WorkOrderModule } from './modules/work_order/work_order.module';
 import { PdaOutboundModule } from './modules/pda_outbound/pda_outbound.module';
 import { SppbModule } from './modules/sppb/sppb.module';
 import { ActivityModule } from './modules/master/activity/activity.module';
+import { FormOrderModule } from './modules/form_order/form_order.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ActivityModule } from './modules/master/activity/activity.module';
     PdaOutboundModule,
     SppbModule,
     ActivityModule,
+    FormOrderModule,
   ],
 })
 export class AppModule {}

@@ -23,14 +23,12 @@ import { ParamsDto } from './dto/param.dto';
 export class ActivityController {
   constructor(private readonly services: ActivityService) {}
 
-  @ApiTags('Activity Get All')
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: ParamsDto) {
     return this.services.findAll(query);
   }
 
-  @ApiTags('Activity Detail')
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: number) {
