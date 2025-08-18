@@ -23,14 +23,12 @@ import { ParamsDto } from './dto/param.dto';
 export class ActivityController {
   constructor(private readonly services: ActivityService) {}
 
-  @ApiTags('Activity Get All')
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() query: ParamsDto) {
     return this.services.findAll(query);
   }
 
-  @ApiTags('Activity Detail')
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: number) {
@@ -38,14 +36,12 @@ export class ActivityController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @ApiTags('Activity Create')
   @Post()
   create(@Body() dto: CreateActivityDto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @ApiTags('Activity Update')
   @Put(':id')
   update(@Param('id') id: number, @Body() dto: UpdateDto, @Req() req) {
     return this.services.update(id, dto, req.user.id);
