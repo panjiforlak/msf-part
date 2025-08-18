@@ -10,7 +10,7 @@ import {
 export enum EnumCategory {
   BREAKDOWN = 'breakdown',
   WORKING = 'working',
-  DELAY = 'delay',
+  DELAY = 'stand-by',
 }
 
 @Entity('m_activities')
@@ -26,7 +26,7 @@ export class Activity {
     enum: EnumCategory,
     default: EnumCategory.BREAKDOWN,
   })
-  category: EnumCategory;
+  status: EnumCategory;
 
   @Column({ type: 'int', default: 0 })
   createdBy: number;

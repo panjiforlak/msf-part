@@ -4,7 +4,7 @@ import { EnumCategory } from '../entities/activity.entity';
 export class ResponseDto {
   id: number;
   name: string;
-  category: EnumCategory;
+  status: EnumCategory;
   createdBy: number;
   createdAt: Date;
   updatedBy: number;

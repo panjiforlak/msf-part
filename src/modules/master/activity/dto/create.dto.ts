@@ -17,7 +17,7 @@ export class CreateActivityDto {
   name?: string;
 
   @IsEnum(EnumCategory)
-  category?: EnumCategory;
+  status?: EnumCategory;
 
   @IsOptional()
   createdBy?: number;
