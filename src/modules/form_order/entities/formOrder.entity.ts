@@ -29,31 +29,15 @@ export class FormOrder {
   })
   uuid: string;
 
-  @ApiProperty({
-    description: 'ID inventory yang terkait dengan form order',
-    example: 1,
-  })
   @Column()
   inventory_id: number;
 
-  @ApiProperty({
-    description: 'Nomor form order',
-    example: 'IN-1HGBH41JXMN1918',
-  })
   @Column()
   form_order_number: string;
 
-  @ApiProperty({
-    description: 'Jumlah item yang dipesan',
-    example: 10,
-  })
   @Column()
   quantity: number;
 
-  @ApiProperty({
-    description: 'Status dari form order',
-    example: 'ENUM => ordered | pending | packing | in-order | finished',
-  })
   @Column({
     type: 'enum',
     enum: enumFormOrderStatus,
