@@ -38,12 +38,14 @@ export class ActivityController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiTags('Activity Create')
   @Post()
   create(@Body() dto: CreateActivityDto, @Req() req) {
     return this.services.create(dto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiTags('Activity Update')
   @Put(':id')
   update(@Param('id') id: number, @Body() dto: UpdateDto, @Req() req) {
     return this.services.update(id, dto, req.user.id);
