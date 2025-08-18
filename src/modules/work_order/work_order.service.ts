@@ -56,7 +56,9 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
+            'of.order_no AS order_no',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
+            "COALESCE(v.vehicle_number, 'N/A') AS fleet_number",
             "COALESCE(dr.name, 'N/A') AS driver",
             "COALESCE(mc.name, 'N/A') AS mechanic",
             "COALESCE(pk.name, 'N/A') AS picker",
@@ -69,6 +71,11 @@ export class WorkOrderService {
             'of.end_date AS end_date',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
+            "COALESCE(a.name, 'N/A') AS problem",
+            'of.description AS problem_detail',
+            'of.tindakan AS tindakan',
+            'of.material_type AS material_type',
+            "COALESCE(cBy.name, 'N/A') AS createdby",
           ])
           .from('order_form', 'of')
           .leftJoin('vehicles', 'v', 'of.vehicle_id = v.id')
@@ -76,7 +83,9 @@ export class WorkOrderService {
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'pk', 'of.picker_id = pk.id')
           .leftJoin('users', 'req', 'of.request_id = req.id')
-          .leftJoin('users', 'ap', 'of.approval_by = ap.id');
+          .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id')
+          .leftJoin('m_activities', 'a', 'of.activity_id = a.id');
         // .where('of."deletedAt" IS NULL'); // Commented out since deletedAt doesn't exist
 
         if (query.search) {
@@ -85,6 +94,7 @@ export class WorkOrderService {
             `(
               CAST(of.id AS TEXT) LIKE :search OR
               LOWER(COALESCE(v.vin_number, '')) LIKE :search OR
+              LOWER(COALESCE(v.vehicle_number, '')) LIKE :search OR
               LOWER(COALESCE(dr.name, '')) LIKE :search OR
               LOWER(COALESCE(mc.name, '')) LIKE :search OR
               LOWER(COALESCE(pk.name, '')) LIKE :search OR
@@ -188,6 +198,7 @@ export class WorkOrderService {
           .createQueryBuilder()
           .select([
             'of.id AS id',
+            'of.order_no AS order_no',
             "COALESCE(v.vin_number, 'N/A') AS vin_number",
             "COALESCE(dr.name, 'N/A') AS driver",
             "COALESCE(mc.name, 'N/A') AS mechanic",
@@ -197,6 +208,10 @@ export class WorkOrderService {
             'of.order_type AS order_type',
             'of.start_date AS start_date',
             'of.end_date AS end_date',
+            "COALESCE(a.name, 'N/A') AS problem",
+            'of.description AS problem_detail',
+            'of.tindakan AS tindakan',
+            'of.material_type AS material_type',
             'of.status AS status',
             'of.approval_remark AS approval_remark',
           ])
@@ -205,6 +220,9 @@ export class WorkOrderService {
           .leftJoin('users', 'dr', 'of.driver_id = dr.id')
           .leftJoin('users', 'mc', 'of.mechanic_id = mc.id')
           .leftJoin('users', 'req', 'of.request_id = req.id')
+          .leftJoin('users', 'cBy', 'of.createdby = cBy.id')
+          .leftJoin('users', 'ap', 'of.approval_by = ap.id')
+          .leftJoin('m_activities', 'a', 'of.activity_id = a.id')
           .where('of.id = :id', { id });
 
         orderForm = await qb.getRawOne();
@@ -392,6 +410,7 @@ export class WorkOrderService {
           // 8. Create order form
           const orderForm = manager.create(OrderForm, {
             vehicle_id: createWorkOrderDto.vehicle_id || 0, // Set to 0 if null/undefined
+            order_no: createWorkOrderDto.order_no,
             admin_id: userId,
             driver_id: createWorkOrderDto.driver,
             mechanic_id: createWorkOrderDto.mechanic,
@@ -404,6 +423,10 @@ export class WorkOrderService {
               ? new Date(createWorkOrderDto.end_date)
               : null,
             status: createWorkOrderDto.status,
+            tindakan: createWorkOrderDto.tindakan,
+            activity_id: createWorkOrderDto.activity_id,
+            material_type: createWorkOrderDto.material_type,
+            description: createWorkOrderDto.description,
             createdBy: userId,
           });
 

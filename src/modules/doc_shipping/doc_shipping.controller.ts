@@ -11,6 +11,9 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UsePipes,
+  ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { DocShippingService } from './doc_shipping.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -20,7 +23,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateDocShipDto } from './dto/create.dto';
+import { BatchInboundItemDto, CreateDocShipDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
@@ -51,6 +54,13 @@ export class DocShippingController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: false,
+      transform: false,
+      forbidNonWhitelisted: false,
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create Document Shipping' })
   @UseInterceptors(MemoryFileInterceptor())
@@ -67,6 +77,7 @@ export class DocShippingController {
         throwError('Invalid format for items (should be JSON array)', 400);
       }
     }
+
     const uploaded = await this.s3services.uploadFile(file, 'doc-shipping');
     return this.services.create(dto, req.user.id, uploaded);
   }

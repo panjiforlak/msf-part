@@ -24,12 +24,21 @@ export enum OrderType {
   NON_SPAREPART = 'non sparepart',
 }
 
+export enum MaterialType {
+  BARU = 'baru',
+  BEKAS = 'bekas',
+  REKONDISI = 'rekondisi',
+}
+
 @Entity('order_form')
 export class OrderForm {
   @ApiProperty()
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty()
+  @Column({ type: 'varchar' })
+  order_no: string;
   // @ApiProperty()
   // @Column({ type: 'uuid', default: () => 'gen_random_uuid()', unique: true })
   // uuid: string;
@@ -125,4 +134,24 @@ export class OrderForm {
   @ApiProperty()
   @Column({ name: 'approval_remark', type: 'text', nullable: true })
   approvalRemark: string | null;
+
+  @ApiProperty()
+  @Column({ type: 'int', default: 0 })
+  activity_id: number;
+
+  @ApiProperty()
+  @Column({ type: 'text', nullable: true })
+  tindakan: string;
+
+  @ApiProperty({ enum: MaterialType })
+  @Column({
+    type: 'enum',
+    enum: MaterialType,
+    default: MaterialType.BARU,
+  })
+  material_type: MaterialType;
+
+  @ApiProperty()
+  @Column({ type: 'text', nullable: true })
+  description: string;
 }

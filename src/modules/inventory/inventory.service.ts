@@ -55,10 +55,11 @@ export class InventoryService {
           'i.inventory_internal_code AS part_number_internal',
           'i.inventory_name AS inventory_name',
           'c.component_name AS component_name',
+          'i.uom AS uom',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'inbound' THEN ri.quantity ELSE 0 END), 0) AS qty_in",
-          'COALESCE(SUM(CASE WHEN ri.quantity < 0 THEN ri.quantity ELSE 0 END), 0) AS qty_out',
+          "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'outbound' AND ri.reloc_status=true THEN ri.quantity ELSE 0 END), 0) AS qty_out",
           'i.quantity AS qty_on_hand',
         ])
         .from('inventory', 'i')
@@ -183,15 +184,17 @@ export class InventoryService {
         .leftJoin('storage_area', 'sa', 'sa.id = i.racks_id')
         .leftJoin('batch_inbound', 'bi', 'bi.inventory_id = i.id')
         .leftJoin(
+          //inbound
           'relocation',
           'ri',
-          'ri.batch_in_id = bi.id AND ri.reloc_to != 0',
+          "ri.batch_in_id = bi.id AND ri.reloc_to != 0 AND ri.reloc_type='inbound'",
         )
         .leftJoin('batch_outbound', 'bo', 'bo.inventory_id = i.id')
         .leftJoin(
-          'reloc_outbound',
+          //outbound
+          'relocation',
           'ro',
-          'ro.batch_in_id = bo.id AND ro.reloc_to != 0',
+          "ro.batch_in_id = bi.id AND ro.reloc_type='outbound' AND ro.reloc_status=true",
         )
 
         .select([
@@ -218,10 +221,12 @@ export class InventoryService {
               'arrival_date', b.arrival_date,
               'batch_number', b.barcode,
               'quantity', b.quantity,
-              'batch_number', b.barcode
+              'batch_number', b.barcode,
+              'supplier_name', s.supplier_name
               ) ORDER BY b.id), '[]')`,
             )
             .from('batch_inbound', 'b')
+            .leftJoin('suppliers', 's', 'b.supplier_id=s.id')
             .where('b.inventory_id = i.id');
         }, 'batch_inbound_list') // alias
         .addSelect((subQuery) => {

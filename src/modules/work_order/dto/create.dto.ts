@@ -10,7 +10,11 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { WorkOrderStatus, OrderType } from '../entities/order_form.entity';
+import {
+  WorkOrderStatus,
+  OrderType,
+  MaterialType,
+} from '../entities/order_form.entity';
 
 export class SparepartDto {
   @ApiProperty({ description: 'Inventory ID from inventory table' })
@@ -25,6 +29,34 @@ export class SparepartDto {
 }
 
 export class CreateWorkOrderDto {
+  @ApiProperty({ description: 'Generate from FE WO/GR NO' })
+  @IsString()
+  @IsOptional()
+  order_no: string;
+
+  @ApiProperty({ description: 'Please Insert tindakan' })
+  @IsString()
+  @IsOptional()
+  tindakan: string;
+
+  @ApiProperty({ description: 'Description' })
+  @IsString()
+  @IsOptional()
+  description: string;
+
+  @ApiProperty({ description: 'Select-Option : Get ID From Table m_activity' })
+  @IsNumber()
+  @IsOptional()
+  activity_id: number;
+
+  @ApiProperty({
+    enum: MaterialType,
+    description: 'Material type enum : (baru,bekas,rekondisi)',
+  })
+  @IsEnum(MaterialType)
+  @IsNotEmpty()
+  material_type: MaterialType;
+
   @ApiProperty({
     description:
       'Vehicle ID from vehicles table (can be 0 or null for non-vehicle orders)',

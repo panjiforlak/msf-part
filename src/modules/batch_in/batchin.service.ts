@@ -161,12 +161,14 @@ export class BatchInboundService {
           'u.name AS picker_name',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
+          's."supplier_name" AS supplier_name',
           'bi."status_reloc" AS status',
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
         .leftJoin('doc_shipping', 'ds', 'bi.doc_ship_id = ds.id')
         .leftJoin('users', 'u', 'bi.picker_id = u.id')
+        .leftJoin('suppliers', 's', 'bi.supplier_id = s.id')
         .where('bi."deletedAt" IS NULL');
 
       if (search) {
@@ -246,6 +248,7 @@ export class BatchInboundService {
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
+          `CASE WHEN sa."storage_availability" = TRUE THEN 'Available'  ELSE 'Full' END AS storage_availability`,
         ])
         .from('batch_inbound', 'bi')
         .leftJoin('inventory', 'i', 'bi.inventory_id = i.id')
@@ -258,7 +261,7 @@ export class BatchInboundService {
       }
 
       qb.andWhere('bi."deletedAt" IS NULL');
-      qb.andWhere(`bi."status_reloc" = 'inbound'`); //status reloc triger by post pda
+      // qb.andWhere(`bi."status_reloc" = 'inbound'`); //status reloc triger by post pda
 
       if (search) {
         qb.andWhere('LOWER(bi.barcode) LIKE :search', {
@@ -587,7 +590,6 @@ export class BatchInboundService {
           throwError(`Please set Rack destination on inventory master`, 404);
         }
         if (storage && storage.sa_storage_type === 'rack') {
-          console.log('masukkkk-----', rackDestination);
           if (storage.sa_id !== rackDestination.racks_id)
             throwError(`Rack mismatch, please scan the correct rack.`, 400);
         }
@@ -804,6 +806,7 @@ export class BatchInboundService {
           'bi.barcode AS barcode',
           `TO_CHAR(MIN(r."createdAt"), 'YYYY-MM-DD HH24:MI') AS "createdAt"`, // ✅ ambil waktu pertama
           'bi.picker_id AS picker_id',
+          `CASE WHEN sa.storage_availability = TRUE THEN 'Available'  ELSE 'Full' END AS storage_availability`,
         ])
         .from('relocation', 'r')
         .leftJoin('batch_inbound', 'bi', 'r.batch_in_id = bi.id')
@@ -812,7 +815,7 @@ export class BatchInboundService {
         .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
         .where(baseWhere.join(' AND '), params)
         .groupBy(
-          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id',
+          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id,sa.storage_availability',
         )
         .having(
           `(SUM(r.quantity) - COALESCE((
@@ -1039,7 +1042,19 @@ export class BatchInboundService {
                 AND r2.reloc_status = false
             ), 0)) AS quantity`,
           'reloc_final.reloc_to AS rack_source_id',
-          'sa2.storage_code AS rack_source',
+          `(i.quantity - COALESCE((
+            SELECT SUM(r2.quantity)
+            FROM relocation r2
+            WHERE r2.batch_in_id = bi.id
+              AND r2.reloc_type = 'inbound'
+              AND r2.reloc_status = false
+          ), 0)) AS quantity`,
+          `CASE 
+            WHEN sa2.storage_code IS NOT NULL 
+            AND sa2.storage_code != sa.storage_code 
+            THEN sa2.storage_code 
+            ELSE NULL 
+          END AS rack_source`,
           'sa.storage_code AS rack_destination',
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
