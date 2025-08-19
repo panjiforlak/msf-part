@@ -43,7 +43,7 @@ export class ActivityController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  update(@Param('id') id: number, @Body() dto: UpdateDto, @Req() req) {
+  update(@Param('id') id: number, @Body() dto: CreateActivityDto, @Req() req) {
     return this.services.update(id, dto, req.user.id);
   }
 

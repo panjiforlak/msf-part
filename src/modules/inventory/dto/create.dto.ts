@@ -8,6 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateInventoryDto {
   @ApiProperty({
@@ -53,6 +54,7 @@ export class CreateInventoryDto {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
+  @Type(() => Number)
   component_id: number;
 
   @ApiProperty({
@@ -61,6 +63,7 @@ export class CreateInventoryDto {
   })
   @IsNumber()
   @IsNotEmpty()
+  @Type(() => Number)
   weight: number;
 
   @ApiProperty({
@@ -76,6 +79,7 @@ export class CreateInventoryDto {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
+  @Type(() => Number)
   quantity: number;
 
   @ApiProperty({
@@ -91,5 +95,21 @@ export class CreateInventoryDto {
   @ApiProperty()
   @IsNumber()
   @IsOptional()
+  @Type(() => Number)
   racks_id: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  safety_stock: number;
+
+  @ApiPropertyOptional({
+    description: 'Photo inventory',
+    example: '',
+    maxLength: 100,
+  })
+  @IsString()
+  @IsOptional()
+  inventory_photo?: any;
 }

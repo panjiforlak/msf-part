@@ -60,6 +60,14 @@ export class Inventory {
   remarks: string;
 
   @ApiProperty()
+  @Column({ type: 'integer' })
+  safety_stock: number;
+
+  @ApiProperty()
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  inventory_photo?: string | null;
+
+  @ApiProperty()
   @Column({ name: 'racks_id', type: 'int', nullable: true, default: 0 })
   racks_id: number;
 
