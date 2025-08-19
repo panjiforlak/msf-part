@@ -20,6 +20,12 @@ export class ResponseDto {
   inventory_name: string;
 
   @ApiProperty()
+  safety_stock: number;
+
+  @ApiProperty()
+  inventory_photo: string;
+
+  @ApiProperty()
   component_id: number;
 
   @ApiProperty()

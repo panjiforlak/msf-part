@@ -19,6 +19,9 @@ import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { ItemsSpnumLog } from './entities/items_spnum_log.entity';
 import { DataSource } from 'typeorm';
+import { S3Service } from 'src/integrations/s3/s3.service';
+import { s3Config } from 'src/integrations/s3/s3.config';
+import { Console } from 'console';
 
 @Injectable()
 export class InventoryService {
@@ -28,6 +31,7 @@ export class InventoryService {
     @InjectRepository(ItemsSpnumLog)
     private readonly spnumLogRepository: Repository<ItemsSpnumLog>,
     private readonly dataSource: DataSource,
+    private readonly s3services: S3Service,
   ) {}
 
   async findByItemNumberInternal(
@@ -58,6 +62,9 @@ export class InventoryService {
           'i.uom AS uom',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
+          'i.inventory_photo AS inventory_photo',
+          'i.safety_stock AS safety_stock',
+          `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'inbound' THEN ri.quantity ELSE 0 END), 0) AS qty_in",
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'outbound' AND ri.reloc_status=true THEN ri.quantity ELSE 0 END), 0) AS qty_out",
           'i.quantity AS qty_on_hand',
@@ -82,6 +89,8 @@ export class InventoryService {
         .addGroupBy('i.racks_id')
         .addGroupBy('c.component_name')
         .addGroupBy('sa.storage_code')
+        .addGroupBy('i.inventory_photo')
+        .addGroupBy('i.safety_stock')
         .addGroupBy('i.quantity')
         .orderBy('i.id', 'DESC')
         .offset(skip)
@@ -212,6 +221,9 @@ export class InventoryService {
           'i.quantity AS qty_onhand',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
+          'i.safety_stock AS safety_stock',
+          'i.inventory_photo AS inventory_photo',
+          `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
         ])
         .addSelect((subQuery) => {
           return subQuery
@@ -258,6 +270,8 @@ export class InventoryService {
         .addGroupBy('i.quantity')
         .addGroupBy('i.racks_id')
         .addGroupBy('sa.storage_code')
+        .addGroupBy('i.safety_stock')
+        .addGroupBy('i.inventory_photo')
         .getRawOne();
 
       if (!result) {
@@ -277,6 +291,7 @@ export class InventoryService {
   async create(
     data: CreateInventoryDto,
     userId: number,
+    photo: { key: string; url: string } | null = null,
   ): Promise<ApiResponse<ResponseDto>> {
     try {
       const existing = await this.findByItemNumberInternal(
@@ -291,6 +306,7 @@ export class InventoryService {
 
       const newBody = this.repository.create({
         ...data,
+        inventory_photo: photo?.url ?? null,
         createdBy: userId,
       });
 
@@ -313,6 +329,7 @@ export class InventoryService {
     uuid: string,
     updateDto: UpdateDto,
     userId: number,
+    inventoryPhoto?: any,
   ): Promise<ApiResponse<Inventory>> {
     try {
       const items = await this.repository.findOne({
@@ -336,6 +353,7 @@ export class InventoryService {
       if (!items) {
         throwError('Items not found', 404);
       }
+
       if (updateDto.inventory_internal_code) {
         const existingCheck = await this.repository.findOne({
           where: {
@@ -348,8 +366,21 @@ export class InventoryService {
         }
       }
 
+      // cek apakah inventory_photo ada existing
+      if (items?.inventory_photo) {
+        if (inventoryPhoto) {
+          const oldUrl = items.inventory_photo;
+          const oldKey = oldUrl.split(`${s3Config.bucket}/`)[1];
+
+          if (oldKey) {
+            await this.s3services.deleteFile(oldKey);
+          }
+        }
+      }
+
       const updatedBody = this.repository.merge(items!, updateDto, {
         updatedBy: userId,
+        inventory_photo: inventoryPhoto.url ?? items?.inventory_photo,
       });
 
       const result = await this.repository.save(updatedBody);
@@ -360,6 +391,8 @@ export class InventoryService {
         inventory_code: result.inventory_code,
         inventory_code_internal: result.inventory_internal_code,
         inventory_name: result.inventory_name,
+        safety_stock: result.safety_stock,
+        inventory_photo: result.inventory_photo,
         weight: result.weight,
       };
       return successResponse(response, 'inventory updated successfully');
@@ -367,6 +400,7 @@ export class InventoryService {
       if (error instanceof HttpException) {
         throw error;
       }
+      console.log(error.stack);
       throw new InternalServerErrorException('Failed to update inventory');
     }
   }

@@ -18,12 +18,15 @@ import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { DataSource } from 'typeorm';
+import { FormOrderDetail } from './entities/formOrderDetail.entity';
 
 @Injectable()
 export class FormOrderService {
   constructor(
     @InjectRepository(FormOrder)
     private repository: Repository<FormOrder>,
+    @InjectRepository(FormOrderDetail)
+    private repositoryDetail: Repository<FormOrderDetail>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -38,26 +41,20 @@ export class FormOrderService {
         .createQueryBuilder('fo')
         .select([
           'fo.uuid AS uuid',
-          'i.inventory_name AS part_name',
           'fo.form_order_number AS form_order_number',
-          'fo.quantity AS quantity',
           'fo.status AS status',
+          `COALESCE(u2.name, '') AS approved_spv`,
+          `COALESCE(u3.name, '') AS approved_pjo`,
           'u.name AS "createdBy"',
           `TO_CHAR(u."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
         ])
-        .leftJoin(
-          'inventory',
-          'i',
-          'i.id = fo.inventory_id AND i."deletedAt" IS NULL',
-        )
         .leftJoin('users', 'u', 'u.id = fo."createdBy"')
+        .leftJoin('users', 'u2', 'u2.id = fo.approved_spv')
+        .leftJoin('users', 'u3', 'u3.id = fo.approved_pjo')
         .where('fo."deletedAt" IS NULL')
-        .andWhere(
-          'i.inventory_name ILIKE :search OR fo.form_order_number ILIKE :search',
-          {
-            search: `%${search}%`,
-          },
-        );
+        .andWhere('fo.form_order_number ILIKE :search', {
+          search: `%${search}%`,
+        });
 
       if (search) {
         qb.andWhere('LOWER(fo.form_order_number) LIKE :search', {
@@ -73,17 +70,11 @@ export class FormOrderService {
       const countQb = this.repository
         .createQueryBuilder('fo')
         .select('COUNT(DISTINCT fo.id)', 'total')
-        .leftJoin(
-          'inventory',
-          'i',
-          'i.id = fo.inventory_id AND i."deletedAt" IS NULL',
-        )
         .leftJoin('users', 'u', 'u.id = fo."createdBy"')
         .where('fo."deletedAt" IS NULL')
-        .andWhere(
-          '(i.inventory_name ILIKE :search OR fo.form_order_number ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        .andWhere('( fo.form_order_number ILIKE :search)', {
+          search: `%${search}%`,
+        });
 
       const countResult = await countQb.getRawOne();
       const total = parseInt(countResult?.total ?? '0', 10);
@@ -102,27 +93,54 @@ export class FormOrderService {
     }
   }
 
-  async findById(uuid: string): Promise<ApiResponse<any>> {
+  async findById(fo_no: string): Promise<ApiResponse<any>> {
     try {
       const qb = this.repository
         .createQueryBuilder('fo')
         .select([
           'fo.uuid AS uuid',
           'fo.form_order_number AS form_order_number',
-          'i.inventory_name AS part_name',
-          'fo.quantity AS quantity',
+          'fo.remarks AS remarks',
           'fo.status AS status',
+          `COALESCE(u2.name, '') AS approved_spv`,
+          `COALESCE(u3.name, '') AS approved_pjo`,
           'u.name AS "createdBy"',
           `TO_CHAR(fo."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
         ])
+        // ambil array detail
+        .addSelect(
+          `
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', rfo.id,
+              'uuid', i.uuid,
+              'inventory_id', rfo.inventory_id,
+              'part_name', i.inventory_name,
+              'uom', i.uom,
+              'quantity', rfo.quantity,
+              'on_hand', i.quantity
+            )
+          ) FILTER (WHERE rfo.id IS NOT NULL), '[]'
+        ) AS details
+      `,
+        )
+        .leftJoin(
+          'r_form_order_detail',
+          'rfo',
+          'rfo.fo_id = fo.id AND rfo."deletedAt" IS NULL',
+        )
         .leftJoin(
           'inventory',
           'i',
-          'i.id = fo.inventory_id AND i."deletedAt" IS NULL',
+          'i.id = rfo.inventory_id AND i."deletedAt" IS NULL',
         )
         .leftJoin('users', 'u', 'u.id = fo."createdBy"')
+        .leftJoin('users', 'u2', 'u2.id = fo.approved_spv')
+        .leftJoin('users', 'u3', 'u3.id = fo.approved_pjo')
         .where('fo."deletedAt" IS NULL')
-        .andWhere('fo.uuid = :uuid', { uuid });
+        .andWhere('fo.form_order_number = :fo_no', { fo_no })
+        .groupBy('fo.id, u.name, u2.name, u3.name');
 
       const result = await qb.getRawOne();
 
@@ -143,48 +161,104 @@ export class FormOrderService {
     data: CreateFormOrderDto,
     userId: number,
   ): Promise<ApiResponse<ResponseDto>> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const existing = await this.repository.findOne({
-        where: { form_order_number: data.form_order_number },
-      });
+      const today = new Date();
+      const yyyymmdd = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const lastOrder = await queryRunner.manager
+        .getRepository(FormOrder)
+        .createQueryBuilder('fo')
+        .where('fo.form_order_number LIKE :prefix', {
+          prefix: `FO-${yyyymmdd}-%`,
+        })
+        .orderBy('fo.form_order_number', 'DESC')
+        .getOne();
+
+      let nextSeq = 1;
+      if (lastOrder) {
+        const parts = lastOrder.form_order_number.split('-'); // sekarang pake '-'
+        const lastSeq = parseInt(parts[2], 10);
+        nextSeq = lastSeq + 1;
+      }
+      const newFoNumber = formatFormOrderNumber(today, nextSeq);
+
+      // cek exist......
+      const existing = await queryRunner.manager
+        .getRepository(FormOrder)
+        .createQueryBuilder('hfo')
+        .where('hfo.form_order_number = :form_order_number', {
+          form_order_number: newFoNumber,
+        })
+        .andWhere('hfo.deletedAt IS NULL')
+        .getOne();
+
       if (existing) {
-        throwError(
-          `Form Order Number ${data.form_order_number} already exists`,
-          409,
-        );
+        throwError(`Form Order No ${newFoNumber} already exists`, 409);
       }
 
-      const newBody = this.repository.create({
-        ...data,
+      // h_form_order
+      const formOrder = queryRunner.manager.create(FormOrder, {
+        form_order_number: newFoNumber,
+        remarks: data.remarks,
+        status: data.status ?? enumFormOrderStatus.WAITSPV,
         createdBy: userId,
       });
 
-      const result = await this.repository.save(newBody);
-      const response = plainToInstance(ResponseDto, result);
+      const savedFormOrder = await queryRunner.manager.save(
+        FormOrder,
+        formOrder,
+      );
 
+      // r_form_order_detail
+      if (Array.isArray(data.fo_details) && data.fo_details.length > 0) {
+        const details = data.fo_details.map((d) =>
+          queryRunner.manager.create(FormOrderDetail, {
+            fo_id: savedFormOrder.id,
+            inventory_id: d.inventory_id,
+            quantity: d.quantity,
+            createdBy: userId,
+          }),
+        );
+
+        await queryRunner.manager.save(FormOrderDetail, details);
+      }
+
+      await queryRunner.commitTransaction();
+
+      const response = plainToInstance(ResponseDto, savedFormOrder);
       return successResponse(
         response,
         'Create new form order successfully',
         201,
       );
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+
       if (error instanceof HttpException) {
         throw error;
       }
-      if (error.code === '23505') {
-        throwError('form order no already exists', 409);
-      }
+      console.error(error.stack);
+
       throw new InternalServerErrorException('Failed to create form order');
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async update(
-    uuid: string,
+    fo_no: string,
     updateDto: UpdateDto,
     userId: number,
   ): Promise<ApiResponse<FormOrder>> {
     try {
-      const form_order = await this.repository.findOne({ where: { uuid } });
+      const form_order = await this.repository.findOne({
+        where: { form_order_number: fo_no },
+      });
       if (!form_order) {
         throwError('Form Order not found', 404);
       }
@@ -192,8 +266,7 @@ export class FormOrderService {
       if (updateDto.form_order_number) {
         const existing = await this.repository.findOne({
           where: {
-            form_order_number: updateDto.form_order_number,
-            uuid: Not(uuid),
+            form_order_number: Not(fo_no),
           },
         });
         if (existing) {
@@ -212,9 +285,7 @@ export class FormOrderService {
 
       const response: any = {
         id: result.id,
-        inventory_id: result.inventory_id,
         form_order_number: result.form_order_number,
-        quantity: result.quantity,
         status: result.status,
       };
 
@@ -227,9 +298,11 @@ export class FormOrderService {
     }
   }
 
-  async remove(uuid: string, userId: number): Promise<ApiResponse<null>> {
+  async remove(fo_no: string, userId: number): Promise<ApiResponse<null>> {
     try {
-      const form_order = await this.repository.findOne({ where: { uuid } });
+      const form_order = await this.repository.findOne({
+        where: { form_order_number: fo_no },
+      });
 
       if (!form_order) {
         throwError('Form Order not found', 404);
@@ -248,4 +321,13 @@ export class FormOrderService {
       throw new InternalServerErrorException('Failed to delete form order');
     }
   }
+}
+
+function padNumber(num: number, size = 4): string {
+  return num.toString().padStart(size, '0');
+}
+
+function formatFormOrderNumber(date: Date, seq: number): string {
+  const yyyymmdd = date.toISOString().slice(0, 10).replace(/-/g, ''); // 20250819
+  return `FO-${yyyymmdd}-${padNumber(seq, 4)}`;
 }

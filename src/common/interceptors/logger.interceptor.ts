@@ -48,8 +48,8 @@ export class LoggerInterceptor implements NestInterceptor {
   }
 }
 
-export const MemoryFileInterceptor = () =>
-  FileInterceptor('file', {
+export const MemoryFileInterceptor = (fieldname = 'file') =>
+  FileInterceptor(fieldname, {
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, callback) => {
