@@ -52,10 +52,15 @@ export class InventoryController {
     @Body() dto: CreateInventoryDto,
     @Req() req,
   ) {
-    const inventoryPhoto = await this.s3services.uploadFile(
-      inventory_photo,
-      'inventories',
-    );
+    let inventoryPhoto: any = '';
+
+    if (inventory_photo) {
+      inventoryPhoto = await this.s3services.uploadFile(
+        inventory_photo,
+        'inventories',
+      );
+    }
+
     return this.services.create(dto, req.user.id, inventoryPhoto);
   }
 
@@ -69,7 +74,7 @@ export class InventoryController {
     @Body() dto: UpdateDto,
     @Req() req,
   ) {
-    let inventoryPhoto;
+    let inventoryPhoto: any = '';
     if (inventory_photo) {
       inventoryPhoto = await this.s3services.uploadFile(
         inventory_photo,
