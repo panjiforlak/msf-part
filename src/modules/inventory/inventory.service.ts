@@ -221,6 +221,9 @@ export class InventoryService {
           'i.quantity AS qty_onhand',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
+          'i.safety_stock AS safety_stock',
+          'i.inventory_photo AS inventory_photo',
+          `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
         ])
         .addSelect((subQuery) => {
           return subQuery
@@ -267,6 +270,8 @@ export class InventoryService {
         .addGroupBy('i.quantity')
         .addGroupBy('i.racks_id')
         .addGroupBy('sa.storage_code')
+        .addGroupBy('i.safety_stock')
+        .addGroupBy('i.inventory_photo')
         .getRawOne();
 
       if (!result) {
