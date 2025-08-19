@@ -7,10 +7,9 @@ export class UpdateDto extends PartialType(CreateFormOrderDto) {
   inventory_id?: number;
 
   form_order_number?: string;
+
   @ApiProperty()
   remarks?: string;
-
-  quantity?: number;
 
   status?: enumFormOrderStatus;
 

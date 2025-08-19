@@ -13,7 +13,7 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
-import { CreateFormOrderDto } from './dto/create.dto';
+import { CreateFormOrderDetailDto, CreateFormOrderDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
@@ -287,6 +287,52 @@ export class FormOrderService {
         id: result.id,
         form_order_number: result.form_order_number,
         status: result.status,
+      };
+
+      return successResponse(response, 'Form Order updated successfully');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to update Form Order');
+    }
+  }
+
+  async updateInv(
+    fo_no: string,
+    inv_id: number,
+    updateDto: CreateFormOrderDetailDto,
+    userId: number,
+  ): Promise<ApiResponse<FormOrder>> {
+    try {
+      const form_order = await this.repository.findOne({
+        where: { form_order_number: fo_no },
+      });
+      if (!form_order) {
+        throwError('Form Order not found', 404);
+      }
+
+      const form_order_detail = await this.repositoryDetail.findOne({
+        where: { fo_id: form_order?.id, id: inv_id },
+      });
+
+      if (!form_order_detail) {
+        throwError('Detail inventory not found', 404);
+      }
+
+      const updatedData = {
+        ...updateDto,
+        createdBy: userId,
+      };
+
+      const updateFormOrder = this.repositoryDetail.merge(
+        form_order_detail!,
+        updatedData,
+      );
+      const result = await this.repositoryDetail.save(updateFormOrder);
+
+      const response: any = {
+        id: result.id,
       };
 
       return successResponse(response, 'Form Order updated successfully');

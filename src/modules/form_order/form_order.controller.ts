@@ -13,9 +13,10 @@ import {
 import { FormOrderService } from './form_order.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CreateFormOrderDto } from './dto/create.dto';
+import { CreateFormOrderDetailDto, CreateFormOrderDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
 import { ParamsDto } from './dto/param.dto';
+import { Inventory } from '../inventory/entities/inventory.entity';
 
 @ApiTags('Form Order')
 @ApiBearerAuth('jwt')
@@ -45,6 +46,17 @@ export class FormOrderController {
   @Put(':fo_no')
   update(@Param('fo_no') fo_no: string, @Body() dto: UpdateDto, @Req() req) {
     return this.services.update(fo_no, dto, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':fo_no/:inventory_id')
+  updateFOInventory(
+    @Param('fo_no') fo_no: string,
+    @Param('inventory_id') inventory_id: number,
+    @Body() dto: CreateFormOrderDetailDto,
+    @Req() req,
+  ) {
+    return this.services.updateInv(fo_no, inventory_id, dto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
