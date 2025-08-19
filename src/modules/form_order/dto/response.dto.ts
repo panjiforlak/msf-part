@@ -5,16 +5,22 @@ export class ResponseDto {
   id: number;
 
   @ApiProperty()
-  inventory_id: number;
-
-  @ApiProperty()
   form_order_number: string;
 
   @ApiProperty()
-  quantity: number;
+  status: string;
 
   @ApiProperty()
-  status: string;
+  approved_spv: string;
+
+  @ApiProperty()
+  approved_pjo: string;
+
+  @ApiProperty()
+  approved_date_spv: Date;
+
+  @ApiProperty()
+  approved_date_pjo: Date;
 
   @ApiProperty()
   createdAt: Date;

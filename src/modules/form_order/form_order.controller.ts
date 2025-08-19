@@ -30,9 +30,9 @@ export class FormOrderController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':uuid')
-  findOne(@Param('uuid') uuid: string) {
-    return this.services.findById(uuid);
+  @Get(':fo_no')
+  findOne(@Param('fo_no') fo_no: string) {
+    return this.services.findById(fo_no);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -42,14 +42,14 @@ export class FormOrderController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(':uuid')
-  update(@Param('uuid') uuid: string, @Body() dto: UpdateDto, @Req() req) {
-    return this.services.update(uuid, dto, req.user.id);
+  @Put(':fo_no')
+  update(@Param('fo_no') fo_no: string, @Body() dto: UpdateDto, @Req() req) {
+    return this.services.update(fo_no, dto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':uuid')
-  remove(@Param('uuid') uuid: string, @Req() req) {
-    return this.services.remove(uuid, req.user.id);
+  @Delete(':fo_no')
+  remove(@Param('fo_no') fo_no: string, @Req() req) {
+    return this.services.remove(fo_no, req.user.id);
   }
 }

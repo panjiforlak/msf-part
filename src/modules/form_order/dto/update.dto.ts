@@ -23,4 +23,16 @@ export class UpdateDto extends PartialType(CreateFormOrderDto) {
     example: `ENUM => ('breakdown','working','delay','idle')`,
   })
   status?: enumFormOrderStatus;
+
+  @ApiProperty()
+  approved_spv: number;
+
+  @ApiProperty()
+  approved_pjo: number;
+
+  @ApiProperty()
+  approved_date_spv: Date;
+
+  @ApiProperty()
+  approved_date_pjo: Date;
 }

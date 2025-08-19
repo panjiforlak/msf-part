@@ -14,6 +14,8 @@ export enum enumFormOrderStatus {
   PACKING = 'packing',
   INORDER = 'in-order',
   FINISHED = 'finished',
+  WAITSPV = 'waiting-for-spv',
+  WAITPJO = 'waiting-for-pjo',
 }
 
 @Entity('h_form_order')
@@ -30,20 +32,29 @@ export class FormOrder {
   uuid: string;
 
   @Column()
-  inventory_id: number;
-
-  @Column()
   form_order_number: string;
-
-  @Column()
-  quantity: number;
 
   @Column({
     type: 'enum',
     enum: enumFormOrderStatus,
-    default: enumFormOrderStatus.ORDERED,
+    default: enumFormOrderStatus.WAITSPV,
   })
   status: enumFormOrderStatus;
+
+  @Column()
+  remarks: string;
+
+  @Column()
+  approved_spv: number;
+
+  @Column()
+  approved_pjo: number;
+
+  @Column()
+  approved_date_spv: Date;
+
+  @Column()
+  approved_date_pjo: Date;
 
   @Column()
   createdBy: number;
