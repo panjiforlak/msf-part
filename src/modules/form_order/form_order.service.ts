@@ -114,10 +114,12 @@ export class FormOrderService {
           json_agg(
             json_build_object(
               'id', rfo.id,
+              'uuid', i.uuid,
               'inventory_id', rfo.inventory_id,
               'part_name', i.inventory_name,
               'uom', i.uom,
-              'quantity', rfo.quantity
+              'quantity', rfo.quantity,
+              'on_hand', i.quantity
             )
           ) FILTER (WHERE rfo.id IS NOT NULL), '[]'
         ) AS details
