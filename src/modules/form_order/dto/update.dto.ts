@@ -4,35 +4,21 @@ import { ApiProperty } from '@nestjs/swagger';
 import { enumFormOrderStatus } from '../entities/formOrder.entity';
 
 export class UpdateDto extends PartialType(CreateFormOrderDto) {
-  @ApiProperty({
-    example: 1,
-  })
   inventory_id?: number;
 
-  @ApiProperty({
-    example: 'IN-1HGBH41JXMN1918',
-  })
   form_order_number?: string;
+  @ApiProperty()
+  remarks?: string;
 
-  @ApiProperty({
-    example: 10,
-  })
   quantity?: number;
 
-  @ApiProperty({
-    example: `ENUM => ('breakdown','working','delay','idle')`,
-  })
   status?: enumFormOrderStatus;
 
-  @ApiProperty()
   approved_spv: number;
 
-  @ApiProperty()
   approved_pjo: number;
 
-  @ApiProperty()
   approved_date_spv: Date;
 
-  @ApiProperty()
   approved_date_pjo: Date;
 }

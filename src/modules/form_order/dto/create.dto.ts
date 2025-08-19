@@ -41,10 +41,6 @@ export class CreateFormOrderDto {
   @IsNotEmpty()
   remarks?: string;
 
-  @ApiProperty({
-    description: 'Status form order',
-    example: 'ENUM => ordered | pending | packing | in-order | finished',
-  })
   @IsOptional()
   @IsEnum(enumFormOrderStatus)
   status?: enumFormOrderStatus;
