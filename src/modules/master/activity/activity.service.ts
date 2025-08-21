@@ -25,21 +25,21 @@ export class ActivityService {
     private repository: Repository<Activity>,
   ) {}
 
-  async findAll(query: ParamsDto): Promise<ApiResponse<Activity[]>> {
+  async findAll(query: ParamsDto): Promise<any> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
 
-      const whereCondition = query.search
-        ? { name: query.search as any } // pastikan sesuai enum
-        : {};
+      const whereCondition =
+        query.search && query.search.trim() !== ''
+          ? { name: ILike(`%${query.search}%`) }
+          : {};
+
       const [result, total] = await this.repository.findAndCount({
         where: whereCondition,
         withDeleted: false,
-        order: {
-          id: 'DESC',
-        },
+        order: { id: 'DESC' },
         skip,
         take: limit,
       });
@@ -49,7 +49,7 @@ export class ActivityService {
         total,
         page,
         limit,
-        'Get all storage area susccessfuly',
+        'Get all activity successfully',
       );
     } catch (error) {
       console.log(error.stack);
