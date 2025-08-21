@@ -82,8 +82,9 @@ export class StorageareaService {
         storage_code: result.storage_code,
         storage_type: result.storage_type,
         storage_availability: result.storage_availability,
-        status: result.status,
+        max_capacity: result.max_capacity,
         remarks: result.remarks,
+        status: result.status,
       };
 
       return successResponse(response);

@@ -29,6 +29,10 @@ export class CreateStorageAreaDto {
   @IsOptional()
   storage_availability?: boolean;
 
+  @IsNumber()
+  @IsOptional()
+  max_capacity?: number;
+
   @IsEnum(StorageStatus)
   status?: StorageStatus;
 

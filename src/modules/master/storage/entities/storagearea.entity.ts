@@ -48,6 +48,9 @@ export class Storagearea {
   @Column({ type: 'boolean', default: true })
   storage_availability: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  max_capacity: number;
+
   @Column({
     type: 'enum',
     enum: StorageStatus,
