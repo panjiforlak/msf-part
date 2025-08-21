@@ -17,6 +17,11 @@ export class ParamsDto {
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  date_range?: string;
+
   @ApiPropertyOptional({
     description: 'Filter by order type',
     enum: ['sparepart', 'non sparepart'],
@@ -26,4 +31,7 @@ export class ParamsDto {
   @IsString()
   @IsIn(['sparepart', 'non sparepart'])
   order_type?: string;
+
+  start_date_from?: string; // YYYY-MM-DD
+  start_date_to?: string; // YYYY-MM-DD
 }

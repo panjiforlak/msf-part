@@ -111,7 +111,13 @@ export class WorkOrderService {
             orderType: query.order_type,
           });
         }
-
+        // 🔎 Date range filter
+        if (query.start_date_from && query.start_date_to) {
+          qb.andWhere('of.start_date BETWEEN :startFrom AND :startTo', {
+            startFrom: query.start_date_from,
+            startTo: query.start_date_to,
+          });
+        }
         result = await qb
           .orderBy('of.id', 'DESC')
           .offset(skip)
@@ -151,6 +157,13 @@ export class WorkOrderService {
         if (query.order_type) {
           countQb.andWhere('of.order_type = :orderType', {
             orderType: query.order_type,
+          });
+        }
+
+        if (query.start_date_from && query.start_date_to) {
+          countQb.andWhere('of.start_date BETWEEN :startFrom AND :startTo', {
+            startFrom: query.start_date_from,
+            startTo: query.start_date_to,
           });
         }
 
