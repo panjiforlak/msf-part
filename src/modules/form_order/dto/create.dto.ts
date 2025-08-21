@@ -38,7 +38,7 @@ export class CreateFormOrderDto {
     example: 'Masukan Remarks',
   })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   remarks?: string;
 
   @IsOptional()

@@ -274,12 +274,33 @@ export class FormOrderService {
         }
       }
 
-      const updatedData = {
+      let updatedData: any = {
         ...updateDto,
         status: updateDto.status as enumFormOrderStatus,
         createdBy: userId,
       };
 
+      if (
+        updateDto.status &&
+        updateDto.status === enumFormOrderStatus.WAITPJO
+      ) {
+        updatedData = {
+          ...updatedData,
+          approved_spv: userId,
+          approved_date_spv: new Date(),
+        };
+      }
+      if (
+        updateDto.status &&
+        updateDto.status === enumFormOrderStatus.FINISHED
+      ) {
+        updatedData = {
+          ...updatedData,
+          approved_pjo: userId,
+          approved_date_pjo: new Date(),
+        };
+      }
+      console.log('updatedData', updatedData);
       const updateFormOrder = this.repository.merge(form_order!, updatedData);
       const result = await this.repository.save(updateFormOrder);
 
