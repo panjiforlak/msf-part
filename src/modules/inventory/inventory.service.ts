@@ -62,6 +62,7 @@ export class InventoryService {
           'i.uom AS uom',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
+          'COALESCE(sa.max_capacity, 0) AS max_capacity',
           'i.inventory_photo AS inventory_photo',
           'i.safety_stock AS safety_stock',
           `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
@@ -89,6 +90,7 @@ export class InventoryService {
         .addGroupBy('i.racks_id')
         .addGroupBy('c.component_name')
         .addGroupBy('sa.storage_code')
+        .addGroupBy('sa.max_capacity')
         .addGroupBy('i.inventory_photo')
         .addGroupBy('i.safety_stock')
         .addGroupBy('i.quantity')
@@ -221,6 +223,7 @@ export class InventoryService {
           'i.quantity AS qty_onhand',
           'i.racks_id AS racks_id',
           'sa.storage_code AS racks_name',
+          'COALESCE(sa.max_capacity, 0) AS max_capacity',
           'i.safety_stock AS safety_stock',
           'i.inventory_photo AS inventory_photo',
           `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
@@ -270,6 +273,7 @@ export class InventoryService {
         .addGroupBy('i.quantity')
         .addGroupBy('i.racks_id')
         .addGroupBy('sa.storage_code')
+        .addGroupBy('sa.max_capacity')
         .addGroupBy('i.safety_stock')
         .addGroupBy('i.inventory_photo')
         .getRawOne();

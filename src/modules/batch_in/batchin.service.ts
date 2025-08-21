@@ -24,6 +24,7 @@ import { UpdateDto } from './dto/update.dto';
 import { ResponseDto } from './dto/response.dto';
 import { ParamsDto } from './dto/param.dto';
 import { DataSource } from 'typeorm';
+import { QueueInbound } from './entities/queue_inbound.entity';
 
 @Injectable()
 export class BatchInboundService {
@@ -245,6 +246,7 @@ export class BatchInboundService {
             WHERE r.batch_in_id = bi.id AND r.reloc_type= 'inbound'
           ), 0)::int) AS quantity`,
           'sa.storage_code AS rack_destination',
+          'sa.max_capacity AS rack_capacity',
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi."picker_id" AS picker_id',
@@ -321,49 +323,36 @@ export class BatchInboundService {
       const superadmin = query.superadmin ?? 'no';
       const storage = query.storage?.toLowerCase() ?? '';
 
-      const whereConditions: string[] = [];
-      const params: any[] = [];
-
-      let paramIndex = 1;
+      const qb = this.dataSource
+        .getRepository(QueueInbound) // pastikan entity ini ada
+        .createQueryBuilder('tiq');
 
       // Filter berdasarkan picker_id kalau bukan superadmin
       if (superadmin !== 'yes') {
-        whereConditions.push(`picker_id = $${paramIndex++}`);
-        params.push(picker_id);
+        qb.andWhere('tiq.picker_id = :picker_id', { picker_id });
       }
 
+      // Storage filter
       if (!storage) {
-        whereConditions.push(`storage_source IS NULL`);
+        qb.andWhere('tiq.storage_source IS NULL');
+      } else if (storage === 'b2r' || storage === 'r2r') {
+        qb.andWhere('tiq.storage_source IS NOT NULL');
       }
 
-      if (storage === 'b2r' || storage === 'r2r') {
-        whereConditions.push(`storage_source IS NOT NULL`);
-      }
-
-      // Filter berdasarkan pencarian (search)
+      // Search
       if (search) {
-        whereConditions.push(`LOWER(batch) LIKE $${paramIndex++}`);
-        params.push(`%${search}%`);
+        qb.andWhere('LOWER(tiq.batch) LIKE :search', { search: `%${search}%` });
       }
 
-      const whereClause = whereConditions.length
-        ? `WHERE ${whereConditions.join(' AND ')}`
-        : '';
-
-      // Hitung total data
-      const countQuery = `SELECT COUNT(*) FROM temp_inbound_queue ${whereClause}`;
-      const countResult = await this.dataSource.query(countQuery, params);
-      const total = parseInt(countResult[0].count, 10);
+      // Hitung total
+      const total = await qb.getCount();
 
       // Ambil data dengan pagination
-      const dataQuery = `
-      SELECT *
-      FROM temp_inbound_queue
-      ${whereClause}
-      ORDER BY id ASC
-      OFFSET ${skip} LIMIT ${limit}
-    `;
-      const result = await this.dataSource.query(dataQuery, params);
+      const result = await qb
+        .orderBy('tiq.id', 'ASC')
+        .skip(skip)
+        .take(limit)
+        .getMany();
 
       return paginateResponse(
         result,
