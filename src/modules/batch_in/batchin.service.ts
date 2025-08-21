@@ -792,6 +792,7 @@ export class BatchInboundService {
           'r.reloc_to AS box_source_id',
           'sa2.storage_code AS box_source',
           'sa.storage_code AS rack_destination',
+          'sa.max_capacity AS rack_capacity',
           'bi.barcode AS barcode',
           `TO_CHAR(MIN(r."createdAt"), 'YYYY-MM-DD HH24:MI') AS "createdAt"`, // ✅ ambil waktu pertama
           'bi.picker_id AS picker_id',
@@ -804,7 +805,7 @@ export class BatchInboundService {
         .leftJoin('storage_area', 'sa2', 'r.reloc_to = sa2.id')
         .where(baseWhere.join(' AND '), params)
         .groupBy(
-          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, bi.barcode, bi.picker_id,sa.storage_availability',
+          'r.batch_in_id, bi.barcode, bi.inventory_id, i.inventory_name, i.inventory_code, i.inventory_internal_code, r.reloc_to, sa2.storage_code, sa.storage_code, sa.max_capacity, bi.barcode, bi.picker_id,sa.storage_availability',
         )
         .having(
           `(SUM(r.quantity) - COALESCE((
@@ -1045,6 +1046,7 @@ export class BatchInboundService {
             ELSE NULL 
           END AS rack_source`,
           'sa.storage_code AS rack_destination',
+          'sa.max_capacity AS rack_capacity',
           'bi.barcode AS barcode',
           `TO_CHAR(bi."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
           'bi.picker_id AS picker_id',
