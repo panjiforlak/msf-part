@@ -11,7 +11,7 @@ import {
   successResponse,
   throwError,
 } from '../../common/helpers/response.helper';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import { paginateResponse, unslug } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
 import { CreateFormOrderDetailDto, CreateFormOrderDto } from './dto/create.dto';
 import { UpdateDto } from './dto/update.dto';
@@ -80,7 +80,9 @@ export class FormOrderService {
       const total = parseInt(countResult?.total ?? '0', 10);
       const parsed = result.map((item) => ({
         ...item,
+        status: unslug(item.status),
       }));
+
       return paginateResponse(
         parsed,
         total,
