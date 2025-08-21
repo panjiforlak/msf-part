@@ -17,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: payload.sub,
       username: payload.username,
+      role_code: payload.role_code, // Assuming roles is a string or an object
       roles: payload.roles, // Assuming roles is a string or an object
       isActive: payload.isActive ? 'active' : 'inactive', // Optional: add isActive field
     };

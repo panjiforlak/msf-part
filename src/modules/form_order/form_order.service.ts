@@ -254,6 +254,7 @@ export class FormOrderService {
     fo_no: string,
     updateDto: UpdateDto,
     userId: number,
+    roleCode: string,
   ): Promise<ApiResponse<FormOrder>> {
     try {
       const form_order = await this.repository.findOne({
@@ -280,20 +281,28 @@ export class FormOrderService {
         createdBy: userId,
       };
 
+      // Handle status changes for SPV
       if (
         updateDto.status &&
         updateDto.status === enumFormOrderStatus.WAITPJO
       ) {
+        if (roleCode.toLowerCase() !== 'SPVWH'.toLowerCase()) {
+          throwError('Only SPV can approve this order', 403);
+        }
         updatedData = {
           ...updatedData,
           approved_spv: userId,
           approved_date_spv: new Date(),
         };
       }
+      // Handle status changes for PJO
       if (
         updateDto.status &&
         updateDto.status === enumFormOrderStatus.FINISHED
       ) {
+        if (roleCode.toLowerCase() !== 'PJO'.toLowerCase()) {
+          throwError('Only PJO can approve this order', 403);
+        }
         updatedData = {
           ...updatedData,
           approved_pjo: userId,

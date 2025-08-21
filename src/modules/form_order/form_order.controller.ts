@@ -45,7 +45,7 @@ export class FormOrderController {
   @UseGuards(JwtAuthGuard)
   @Put(':fo_no')
   update(@Param('fo_no') fo_no: string, @Body() dto: UpdateDto, @Req() req) {
-    return this.services.update(fo_no, dto, req.user.id);
+    return this.services.update(fo_no, dto, req.user.id, req.user.role_code);
   }
 
   @UseGuards(JwtAuthGuard)
