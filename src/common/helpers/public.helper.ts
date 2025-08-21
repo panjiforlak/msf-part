@@ -73,3 +73,12 @@ export function generateNIPWithInitial(name: string, id: number): string {
 
   return `${initials}${symbol}${paddedId}`;
 }
+
+export const unslug = (text: string): string => {
+  if (!text) return '';
+
+  return text
+    .split('-') // pisahkan berdasarkan "-"
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // kapital huruf pertama
+    .join(' '); // gabung pakai spasi
+};
