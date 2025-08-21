@@ -65,7 +65,7 @@ export class InventoryService {
           'COALESCE(sa.max_capacity, 0) AS max_capacity',
           'i.inventory_photo AS inventory_photo',
           'i.safety_stock AS safety_stock',
-          `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
+          `CASE WHEN i.quantity <= (i.safety_stock + 5) THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'inbound' THEN ri.quantity ELSE 0 END), 0) AS qty_in",
           "COALESCE(SUM(CASE WHEN ri.quantity >= 0 AND ri.reloc_type = 'outbound' AND ri.reloc_status=true THEN ri.quantity ELSE 0 END), 0) AS qty_out",
           'i.quantity AS qty_on_hand',
@@ -226,7 +226,7 @@ export class InventoryService {
           'COALESCE(sa.max_capacity, 0) AS max_capacity',
           'i.safety_stock AS safety_stock',
           'i.inventory_photo AS inventory_photo',
-          `CASE WHEN i.quantity <= i.safety_stock THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
+          `CASE WHEN i.quantity <= (i.safety_stock + 5) THEN 'Not Safe' ELSE 'Safe' END AS fo_status`,
         ])
         .addSelect((subQuery) => {
           return subQuery
