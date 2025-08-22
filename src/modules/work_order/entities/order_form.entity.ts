@@ -91,6 +91,10 @@ export class OrderForm {
   @Column({ type: 'timestamptz', nullable: true })
   end_date: Date | null;
 
+  @ApiProperty()
+  @CreateDateColumn({ name: 'breakdown_time', type: 'timestamptz' })
+  breakdown_time: Date;
+
   @ApiProperty({ enum: WorkOrderStatus })
   @Column({
     type: 'enum',

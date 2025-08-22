@@ -15,6 +15,9 @@ export class SparepartResponseDto {
   quantity: number;
 
   @ApiProperty()
+  breakdown_time: Date;
+
+  @ApiProperty()
   start_date: Date;
 
   @ApiProperty()
@@ -69,6 +72,9 @@ export class WorkOrderResponseDto {
 
   @ApiProperty({ required: false })
   end_date: Date | null;
+
+  @ApiProperty()
+  breakdown_time: Date;
 
   @ApiProperty({ enum: WorkOrderStatus })
   status: WorkOrderStatus;
