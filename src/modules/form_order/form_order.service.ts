@@ -45,6 +45,7 @@ export class FormOrderService {
           'fo.status AS status',
           `COALESCE(u2.name, '') AS approved_spv`,
           `COALESCE(u3.name, '') AS approved_pjo`,
+          'fo.remarks AS "remarks"',
           'u.name AS "createdBy"',
           `TO_CHAR(u."createdAt", 'YYYY-MM-DD HH24:MI') AS "createdAt"`,
         ])

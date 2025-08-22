@@ -437,6 +437,7 @@ export class WorkOrderService {
             end_date: createWorkOrderDto.end_date
               ? new Date(createWorkOrderDto.end_date)
               : null,
+            breakdown_time: new Date(createWorkOrderDto.breakdown_time),
             status: createWorkOrderDto.status,
             tindakan: createWorkOrderDto.tindakan,
             activity_id: createWorkOrderDto.activity_id,
