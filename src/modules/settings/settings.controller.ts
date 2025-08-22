@@ -37,9 +37,9 @@ export class SettingsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(':slug')
-  update(@Param('slug') slug: string, @Body() dto: UpdateSettingsDto) {
-    return this.settingService.updateBySlug(slug, dto);
+  @Put()
+  update(@Body() updateDto: Record<string, string>) {
+    return this.settingService.updateAll(updateDto);
   }
 
   @UseGuards(JwtAuthGuard)

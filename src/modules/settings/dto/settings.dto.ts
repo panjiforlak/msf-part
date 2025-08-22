@@ -69,6 +69,9 @@ export class CreatedSettingsDto {
 
   @IsString()
   value?: string;
+
+  @IsString()
+  form_type?: string;
 }
 export class SettingsResponseDto {
   @IsNumber()
@@ -80,4 +83,7 @@ export class SettingsResponseDto {
 
   @IsString()
   value?: string;
+
+  @IsString()
+  form_type?: string;
 }

@@ -17,5 +17,9 @@ export class Settings {
 
   @Expose()
   @Column()
+  form_type: string;
+
+  @Expose()
+  @Column()
   isActive?: boolean;
 }

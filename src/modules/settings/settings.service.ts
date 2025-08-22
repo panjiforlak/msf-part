@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   HttpException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Settings } from './entities/settings.entity';
@@ -79,29 +80,25 @@ export class SettingsService {
     }
   }
 
-  async updateBySlug(
-    slug: string,
-    updateDto: UpdateSettingsDto,
-  ): Promise<ApiResponse<string>> {
+  async updateAll(
+    updateDto: Record<string, string>,
+  ): Promise<ApiResponse<any>> {
     try {
-      const settings = await this.settingsRepository.findOne({
-        where: { key: slug },
-      });
+      const entries = Object.entries(updateDto);
 
-      if (!settings) {
-        throwError('Settings not found', 404);
+      for (const [key, value] of entries) {
+        await this.settingsRepository.update({ key }, { value });
       }
 
-      const updatedSettings = this.settingsRepository.merge(
-        settings!,
-        updateDto,
+      const results = await this.settingsRepository.find();
+
+      return successResponse(
+        results.map((r) => ({
+          key: r.key,
+          value: r.value,
+        })),
+        'All settings updated successfully',
       );
-      const result = await this.settingsRepository.save(updatedSettings);
-      const response: any = {
-        key: result.key,
-        value: result.value,
-      };
-      return successResponse(response, 'Settings updated successfully');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
