@@ -13,5 +13,5 @@ export class ParamsDto {
   @ApiProperty({ example: 'daily | mothly | annualy' })
   @IsOptional()
   @IsString()
-  filteredBy?: string;
+  periode_type?: string;
 }

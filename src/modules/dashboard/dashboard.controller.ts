@@ -13,6 +13,12 @@ export class DashboardController {
   @UseGuards(JwtAuthGuard)
   @Get('/count')
   count(@Query() query: ParamsDto) {
-    return this.services.findAll(query);
+    return this.services.dashboardCount(query);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/tren')
+  tren(@Query() query: ParamsDto) {
+    return this.services.dashboardTren(query);
   }
 }
