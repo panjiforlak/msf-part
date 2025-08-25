@@ -437,7 +437,9 @@ export class WorkOrderService {
             end_date: createWorkOrderDto.end_date
               ? new Date(createWorkOrderDto.end_date)
               : null,
-            breakdown_time: new Date(createWorkOrderDto.breakdown_time),
+            breakdown_time: createWorkOrderDto.breakdown_time
+              ? new Date(createWorkOrderDto.breakdown_time)
+              : null,
             status: createWorkOrderDto.status,
             tindakan: createWorkOrderDto.tindakan,
             activity_id: createWorkOrderDto.activity_id,
@@ -445,7 +447,6 @@ export class WorkOrderService {
             description: createWorkOrderDto.description,
             createdBy: userId,
           });
-
           console.log('Order form created:', orderForm);
           savedOrderForm = await manager.save(orderForm);
           console.log('Order form saved:', savedOrderForm);

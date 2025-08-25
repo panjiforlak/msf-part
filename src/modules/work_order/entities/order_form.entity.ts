@@ -93,7 +93,7 @@ export class OrderForm {
 
   @ApiProperty()
   @CreateDateColumn({ name: 'breakdown_time', type: 'timestamptz' })
-  breakdown_time: Date;
+  breakdown_time: Date | null;
 
   @ApiProperty({ enum: WorkOrderStatus })
   @Column({

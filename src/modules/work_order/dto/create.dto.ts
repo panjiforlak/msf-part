@@ -54,7 +54,7 @@ export class CreateWorkOrderDto {
     description: 'Material type enum : (baru,bekas,rekondisi)',
   })
   @IsEnum(MaterialType)
-  @IsNotEmpty()
+  @IsOptional()
   material_type: MaterialType;
 
   @ApiProperty({
@@ -123,8 +123,8 @@ export class CreateWorkOrderDto {
     format: 'date',
     description: 'Start date in YYYY-MM-DD format',
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   breakdown_time: string;
 
   @ApiProperty({ enum: WorkOrderStatus, description: 'Work order status' })
