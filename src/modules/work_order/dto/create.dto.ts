@@ -124,7 +124,7 @@ export class CreateWorkOrderDto {
     description: 'Start date in YYYY-MM-DD format',
   })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   breakdown_time: string;
 
   @ApiProperty({ enum: WorkOrderStatus, description: 'Work order status' })
